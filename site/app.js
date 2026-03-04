@@ -32,24 +32,24 @@
      ══════════════════════════════════ */
   const PATHS = {
     beginner: [
-      'Interview Framework',
-      'Estimation and Numbers',
-      'Database Selection',
-      'Caching',
-      'API Design and Load Balancing',
+      'The System Design Interview Framework',
+      'Numbers Every Engineer Must Know',
+      'Database Selection Guide',
+      'Caching Deep Dive',
+      'API Design & API Gateway',
     ],
     mid: [
-      'Distributed Fundamentals',
-      'Consistency and Transactions',
+      'Distributed System Fundamentals',
       'Resilience Patterns',
-      'Observability',
-      'High Availability and Scaling',
+      'Observability & Monitoring',
+      'High Availability & Auto Scaling',
+      'Microservices vs Monolith',
     ],
     advanced: [
       'AI Agent System Design',
-      'Collaboration Editing',
+      'Real-time Collaboration (Google Docs)',
       'Probabilistic Data Structures',
-      'Privacy and Compliance',
+      'Stream Processing & Top-K Systems',
       'Distributed Locking',
     ],
   };
@@ -58,6 +58,7 @@
      Category → CSS class
      ══════════════════════════════════ */
   function catClass(category) {
+    /* Remove spaces, &, punctuation — keep letters only, all lower */
     return 'cat-' + (category || '').toLowerCase().replace(/[^a-z]/g, '');
   }
 
@@ -294,6 +295,15 @@
       card.setAttribute('role', 'listitem');
       card.style.animationDelay = Math.min(i * 25, 350) + 'ms';
 
+      /* Build subtopics HTML */
+      const subtopicsHtml = (topic.subtopics && topic.subtopics.length > 0)
+        ? `<ul class="card-subtopics" aria-label="Subtopics">
+             ${topic.subtopics.map(s =>
+               `<li class="card-subtopic">${highlight(s, q)}</li>`
+             ).join('')}
+           </ul>`
+        : '';
+
       card.innerHTML = `
         <div class="card-top">
           <span class="card-category">${esc(topic.category)}</span>
@@ -315,9 +325,12 @@
           </div>
         </div>
         <div class="card-content">
-          <div class="card-icon" aria-hidden="true">${esc(topic.icon || '📄')}</div>
-          <h3 class="card-title">${highlight(topic.title, q)}</h3>
+          <div class="card-title-row">
+            <span class="card-icon" aria-hidden="true">${esc(topic.icon || '📄')}</span>
+            <h3 class="card-title">${highlight(topic.title, q)}</h3>
+          </div>
           <p class="card-summary">${highlight(topic.summary, q)}</p>
+          ${subtopicsHtml}
         </div>
         <div class="card-footer">
           <a class="card-link" href="${esc(topic.path)}" target="_blank" rel="noopener noreferrer">

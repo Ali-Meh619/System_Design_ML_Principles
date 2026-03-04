@@ -48,93 +48,100 @@ Most system design resources are either scattered blog posts or 400-page books. 
 
 ---
 
-## 🗂️ Topic Coverage
+## 🗂️ Topic Coverage (35 Topics)
 
 <details>
-<summary><strong>📚 Fundamentals (2)</strong></summary>
+<summary><strong>🟠 Foundation (4)</strong></summary>
 
-- 🎯 [Interview Framework](docs/fundamentals/interview-framework.md) — 4-step structure: Clarify → Estimate → Propose → Deep dive
-- 📊 [Estimation and Numbers](docs/fundamentals/estimation-and-numbers.md) — QPS, storage, latency ladder, capacity planning
+- 📐 [The System Design Interview Framework](docs/fundamentals/interview-framework.md) — 4-step universal structure: Clarify → Estimate → Design → Deep Dive
+- 🔢 [Numbers Every Engineer Must Know](docs/fundamentals/estimation-and-numbers.md) — Latency hierarchy, scale reference points, back-of-envelope formulas
+- 💾 [IO Fundamentals: Read vs Write](docs/fundamentals/io-fundamentals.md) — Latency hierarchy, random vs sequential access, OS page cache, write amplification
+- 🔌 [Networking & Concurrency](docs/fundamentals/networking-concurrency.md) — TCP vs UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3 (QUIC), event loop, goroutines
 
 </details>
 
 <details>
-<summary><strong>🏗️ Architecture (2)</strong></summary>
+<summary><strong>🟣 Data Storage (5)</strong></summary>
 
-- ⚡ [IO, Networking, and Concurrency](docs/architecture/io-networking-concurrency.md) — Blocking vs async, TCP vs UDP, HTTP/2 vs HTTP/3
-- 🔌 [API Design and Load Balancing](docs/architecture/api-and-load-balancing.md) — REST/gRPC/GraphQL, API gateway, consistent hashing
-
-</details>
-
-<details>
-<summary><strong>🗄️ Data (6)</strong></summary>
-
-- 🗄️ [Database Selection](docs/data/databases.md) — Relational, document, key-value, wide-column, search
-- ⚡ [Caching](docs/data/caching.md) — Cache-aside, write-through, LRU/LFU, cache stampede
-- 📨 [Queues and Streaming](docs/data/queues-and-streaming.md) — At-least-once, exactly-once, DLQ, outbox pattern
-- 🔄 [Advanced Data Patterns](docs/data/advanced-data-patterns.md) — CQRS, event sourcing, materialized views
-- 🔬 [Database Internals](docs/data/database-internals.md) — B-tree vs LSM, WAL, replication, isolation levels
-- 🔢 [ID Generation and Pagination](docs/data/id-generation-and-pagination.md) — Snowflake IDs, keyset pagination
+- 🗄️ [Database Selection Guide](docs/data/databases.md) — SQL vs NoSQL tension, 7 database types with when-to-use decision matrix
+- ⚡ [Caching Deep Dive](docs/data/caching.md) — 5 cache layers, read/write patterns, eviction, cache invalidation strategies
+- 📨 [Message Queues & Event Streaming](docs/data/queues-and-streaming.md) — Queue vs Kafka event log, delivery guarantees, DLQ, outbox pattern
+- 🌐 [Storage & CDN](docs/architecture/storage-and-cdn.md) — Object/block/file storage, CDN pull vs push, cache invalidation
+- 🔩 [Database Internals](docs/data/database-internals.md) — B-tree vs LSM, indexes, replication, CDC, sharding, ACID vs BASE, isolation levels
 
 </details>
 
 <details>
-<summary><strong>🌐 Distributed (4)</strong></summary>
+<summary><strong>🔵 API & Networking (3)</strong></summary>
 
-- 🌐 [Distributed Fundamentals](docs/distributed/distributed-fundamentals.md) — CAP, consistency, quorum, vector clocks
-- ⚖️ [Consistency and Transactions](docs/distributed/consistency-and-transactions.md) — Saga vs 2PC, conflict resolution
-- 🏗️ [Microservices vs Monolith](docs/distributed/microservices-vs-monolith.md) — When to decompose, hidden costs
-- 🔐 [Distributed Locking](docs/distributed/distributed-locking.md) — Lease-based locks, fencing tokens, safer alternatives
-
-</details>
-
-<details>
-<summary><strong>🛡️ Reliability (3)</strong></summary>
-
-- 🛡️ [Resilience Patterns](docs/reliability/resilience-patterns.md) — Circuit breaker, retry, bulkhead, load shedding
-- 👁️ [Observability](docs/reliability/observability.md) — Metrics, logs, traces, SLO mapping, alerting
-- 📈 [High Availability and Scaling](docs/reliability/high-availability-and-scaling.md) — Active-active, autoscaling, multi-region
+- 🔌 [API Design & API Gateway](docs/architecture/api-design.md) — REST vs gRPC vs GraphQL, gateway responsibilities, rate limiting algorithms
+- ⚖️ [Load Balancing & Networking](docs/architecture/load-balancing.md) — L4 vs L7, round-robin/least-connections/consistent hashing, health checks
+- 🔴 [Real-time Communication](docs/systems/realtime-communication.md) — Polling, SSE, WebSockets compared; scaling stateful WS servers with Redis pub/sub
 
 </details>
 
 <details>
-<summary><strong>🔒 Security (2)</strong></summary>
+<summary><strong>🟢 Distributed Systems (5)</strong></summary>
 
-- 🔒 [Security and Authentication](docs/security/security-and-authentication.md) — JWT, OAuth, RBAC/ABAC, API hardening
-- 📋 [Privacy and Compliance](docs/security/privacy-and-compliance.md) — GDPR, PII, data residency, encryption
-
-</details>
-
-<details>
-<summary><strong>⚙️ Systems (6)</strong></summary>
-
-- 🔍 [Search and Typeahead](docs/systems/search-and-typeahead.md) — Inverted index, prefix trie, relevance ranking
-- 💬 [Realtime Communication](docs/systems/realtime-communication.md) — WebSocket, SSE, pub-sub, connection scaling
-- ✏️ [Collaboration Editing](docs/systems/collaboration-editing.md) — OT vs CRDT, offline sync, conflict semantics
-- 🗺️ [Geo Systems](docs/systems/geo-systems.md) — Geohash, quadtree, proximity queries, geofencing
-- 🔗 [Webhooks](docs/systems/webhooks.md) — Signed delivery, retry policies, idempotent consumption
-- 📱 [Mobile System Design](docs/systems/mobile-system-design.md) — Offline-first, delta sync, push notifications
+- 🌐 [Distributed System Fundamentals](docs/distributed/distributed-fundamentals.md) — CAP, consistency models, consistent hashing, Saga vs 2PC, quorum, vector clocks
+- 🔄 [Core Design Patterns](docs/architecture/core-design-patterns.md) — Fan-out (social feed), CQRS, event sourcing, outbox pattern, inventory contention
+- 🧱 [Microservices vs Monolith](docs/distributed/microservices-vs-monolith.md) — When to decompose, service discovery, sync vs async communication
+- 🛡️ [Resilience Patterns](docs/reliability/resilience-patterns.md) — Timeouts, retries + jitter, circuit breaker, fallbacks, backpressure, load shedding
+- 🔒 [Distributed Locking](docs/distributed/distributed-locking.md) — Why local locks fail, Redis Redlock, fencing tokens
 
 </details>
 
 <details>
-<summary><strong>🤖 AI (3)</strong></summary>
+<summary><strong>🟡 Search & Analytics (3)</strong></summary>
 
-- 🤖 [ML in System Design](docs/ai/ml-in-system-design.md) — Feature stores, model serving, MLOps, drift detection
-- 🧠 [AI Agent System Design](docs/ai/ai-agent-system-design.md) — Planner/tool/memory, guardrails, multi-agent patterns
-- 🎲 [Probabilistic Data Structures](docs/ai/probabilistic-data-structures.md) — Bloom filter, HyperLogLog, Count-Min sketch
+- 🔍 [Search & Typeahead Systems](docs/systems/search-and-typeahead.md) — Inverted index, prefix trie autocomplete, relevance ranking (TF-IDF, BM25)
+- 📊 [Stream Processing & Top-K Systems](docs/data/stream-processing.md) — Count-Min Sketch, Lambda vs Kappa architecture, Flink, windowing
+- 📍 [Geo & Location Systems](docs/systems/geo-systems.md) — Geohash, quadtree, proximity queries, Uber-style driver matching
 
 </details>
 
 <details>
-<summary><strong>📐 Templates (2) + 🎯 Playbooks (4)</strong></summary>
+<summary><strong>🟢 Scale & Reliability (4)</strong></summary>
 
-- 📐 [Reusable Design Templates](docs/templates/reusable-design-templates.md) — Content platform, social feed, chat, booking
-- 📝 [Scenario Cheat Sheet](docs/templates/scenario-cheat-sheet.md) — Fast lookup for read-heavy, realtime, global systems
-- 🎪 [Interview Day Playbook](playbooks/interview-day-playbook.md) — Practical execution sequence for the real interview
-- ⏱️ [30-Minute Round](playbooks/system-design-30min.md) — Time-boxed workflow with mandatory outputs
-- ⏰ [60-Minute Round](playbooks/system-design-60min.md) — Expanded deep-dive workflow for full sessions
-- 🔀 [Decision Matrix](playbooks/decision-matrix.md) — Quick decision aid: DB, service boundary, consistency, messaging
+- 📡 [Observability & Monitoring](docs/reliability/observability.md) — Metrics, logs, traces (the three pillars), SLOs, error budgets, OpenTelemetry
+- 📈 [High Availability & Auto Scaling](docs/reliability/high-availability-and-scaling.md) — Active-passive vs active-active, autoscaling signals, multi-region patterns
+- 🆔 [Unique ID Generation](docs/data/id-generation.md) — UUID v4/v7/ULID, Twitter Snowflake, ticket servers — when to use each
+- 📄 [API Pagination](docs/data/pagination.md) — Why offset pagination fails, cursor-based and keyset pagination at scale
+
+</details>
+
+<details>
+<summary><strong>🔴 Security (2)</strong></summary>
+
+- 🔐 [Security & Authentication](docs/security/security-and-authentication.md) — Sessions vs JWT, OAuth 2.0 flow, API security checklist
+- 🛡️ [Privacy & Data Compliance](docs/security/privacy-and-compliance.md) — PII handling, encryption strategies, GDPR/CCPA, data residency
+
+</details>
+
+<details>
+<summary><strong>🩷 AI & Advanced (4)</strong></summary>
+
+- 🔁 [Advanced Data Patterns](docs/data/advanced-data-patterns.md) — Pre-computation, materialized views, ETL vs ELT, hot spot problem, backfill
+- 🤖 [Machine Learning in System Design](docs/ai/ml-in-system-design.md) — 5-layer ML pipeline, feature store, recommendation systems, model serving
+- 🧠 [AI Agent System Design](docs/ai/ai-agent-system-design.md) — Planner/tool/memory anatomy, multi-agent patterns, safety, LLM-as-a-Judge
+- 🎲 [Probabilistic Data Structures](docs/ai/probabilistic-data-structures.md) — Bloom filter, HyperLogLog, Count-Min Sketch at massive scale
+
+</details>
+
+<details>
+<summary><strong>🩵 Specialized Systems (3)</strong></summary>
+
+- 📝 [Real-time Collaboration (Google Docs)](docs/systems/collaboration-editing.md) — OT vs CRDT, operation logs, full Google Docs architecture
+- 🎣 [Webhooks System Design](docs/systems/webhooks.md) — Signed delivery, exponential retry, idempotency keys, full architecture
+- 📱 [Mobile System Design](docs/systems/mobile-system-design.md) — Offline-first, delta sync, push notifications (APNs/FCM), battery constraints
+
+</details>
+
+<details>
+<summary><strong>🟦 Reference (2)</strong></summary>
+
+- 🎯 [Common Scenarios & Solutions](docs/templates/scenario-cheat-sheet.md) — 9 cheat-sheet patterns: read-heavy, write-heavy, realtime, search, Top-K, fan-out, files, global consistency, collaboration
+- 📋 [Reusable Design Templates](docs/templates/reusable-design-templates.md) — 12 complete blueprints: YouTube, Twitter feed, WhatsApp, Uber, TinyURL, Rate Limiter, Metrics, TicketMaster, AI Agent, Typeahead, Google Docs, LeetCode
 
 </details>
 
@@ -147,19 +154,19 @@ Pick a path based on your experience level, then use the **[interactive site](ht
 ### 🌱 Beginner — Build your foundation
 
 ```
-Interview Framework → Estimation & Numbers → Database Selection → Caching → API Design
+Interview Framework → Numbers to Know → Database Selection → Caching Deep Dive → API Design & Gateway
 ```
 
 ### 🚀 Mid-Level — Master distributed systems
 
 ```
-Distributed Fundamentals → Consistency & Transactions → Resilience Patterns → Observability → HA & Scaling
+Distributed Fundamentals → Resilience Patterns → Observability & Monitoring → High Availability & Scaling → Microservices vs Monolith
 ```
 
 ### 🏆 Advanced — Push beyond the standard interview
 
 ```
-AI Agent System Design → Collaboration Editing → Probabilistic Data Structures → Privacy & Compliance → Distributed Locking
+AI Agent System Design → Real-time Collaboration → Probabilistic Data Structures → Stream Processing & Top-K → Distributed Locking
 ```
 
 ---
