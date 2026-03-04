@@ -117,7 +117,12 @@
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 1rem);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -126,6 +131,8 @@ body {
   line-height: 1.6;
   transition: background var(--t-theme), color var(--t-theme);
   min-height: 100vh;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 /* ════════════════════════════════
@@ -245,9 +252,9 @@ body {
    ════════════════════════════════ */
 .hero {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   background: linear-gradient(135deg, var(--hero-a) 0%, var(--hero-b) 50%, var(--hero-c) 100%);
-  padding: 4.5rem 1.25rem 4rem;
+  padding: 4.5rem 1.25rem 4.5rem;
   color: white;
 }
 
@@ -412,6 +419,8 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.25rem 5rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* ════════════════════════════════
@@ -735,6 +744,10 @@ body {
 .topic-card:focus-within .card-actions,
 .topic-card.is-bookmarked .card-actions,
 .topic-card.is-read .card-actions { opacity: 1; }
+
+@media (hover: none) {
+  .card-actions { opacity: 1; }
+}
 
 .card-action-btn {
   background: none;
@@ -1495,7 +1508,7 @@ kbd {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 380px;
+  max-width: 520px;
 }
 
 .reader-header-actions {
@@ -1523,6 +1536,8 @@ kbd {
   padding: 0;
   scroll-behavior: smooth;
   position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .reader-content {
@@ -1761,6 +1776,12 @@ kbd {
   border-color: var(--border);
 }
 
+.reader-content pre code.hljs {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
 [data-theme="dark"] .reader-content pre code {
   color: #e2e8f0;
 }
@@ -1787,7 +1808,7 @@ kbd {
     padding: 1.25rem 1rem 2rem;
   }
   .reader-title {
-    max-width: 200px;
+    max-width: 180px;
     font-size: 0.95rem;
   }
   .reader-content table {
@@ -1800,4 +1821,171 @@ kbd {
   .reader-footer {
     gap: 0.4rem;
   }
+}
+
+/* ════════════════════════════════
+   COMPLETED SIDEBAR
+   ════════════════════════════════ */
+.completed-sidebar {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 380px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--t-slow), background var(--t-theme), border-color var(--t-theme);
+}
+.completed-sidebar[hidden] { display: flex !important; }
+.completed-sidebar.open { transform: translateX(0); }
+
+.completed-sidebar .sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.completed-sidebar .sidebar-header h3 { font-size: 0.97rem; font-weight: 700; }
+
+.completed-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.65rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.completed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  color: var(--text);
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--t-base);
+}
+.completed-item:hover { background: var(--bg-elevated); }
+
+.completed-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(34,197,94,.12);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .completed-check { color: #4ade80; background: rgba(34,197,94,.18); }
+
+.completed-item-info { flex: 1; min-width: 0; }
+.completed-item-cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.completed-item-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.completed-item-remove {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: var(--r-sm);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity var(--t-base), color var(--t-base);
+  flex-shrink: 0;
+}
+.completed-item:hover .completed-item-remove { opacity: 1; }
+.completed-item-remove:hover { color: #ef4444; }
+
+.completed-empty {
+  color: var(--text-muted);
+  font-size: 0.87rem;
+  padding: 2.5rem 1.2rem;
+  text-align: center;
+  line-height: 1.7;
+}
+
+.completed-footer {
+  padding: 0.85rem 1.2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.completed-footer-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.completed-footer-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+[data-theme="dark"] .completed-footer-pct { color: var(--primary); }
+
+@media (max-width: 640px) {
+  .completed-sidebar { width: 100%; }
+}
+
+/* ════════════════════════════════
+   BACK TO TOP
+   ════════════════════════════════ */
+.back-to-top {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--t-base), transform var(--t-base), background var(--t-base);
+}
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.back-to-top:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
 }

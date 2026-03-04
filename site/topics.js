@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design Playbook — Topics
-   35 sections mirroring the original SystemDesignPlaybook.html
+   37 sections across 10 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 

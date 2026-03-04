@@ -139,7 +139,18 @@
   function initTheme() {
     const saved = load(LS.THEME, null);
     const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', saved || preferred);
+    const theme = saved || preferred;
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  function syncHighlightTheme(theme) {
+    document.querySelectorAll('link[href*="highlightjs"]').forEach(link => {
+      if (link.href.includes('github-dark')) {
+        link.media = theme === 'dark' ? 'all' : 'not all';
+      } else if (link.href.includes('github.min')) {
+        link.media = theme === 'dark' ? 'not all' : 'all';
+      }
+    });
   }
 
   function toggleTheme() {
@@ -147,6 +158,7 @@
     const next    = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     store(LS.THEME, next);
+    syncHighlightTheme(next);
     showToast(next === 'dark' ? '🌙 Dark mode on' : '☀️ Light mode on');
   }
 
@@ -244,7 +256,8 @@
       const btn = document.createElement('button');
       btn.type      = 'button';
       btn.className = `filter-btn${state.category === cat ? ' active' : ''}`;
-      btn.textContent = cat;
+      const count = cat === 'All' ? topics.length : topics.filter(t => t.category === cat).length;
+      btn.textContent = cat === 'All' ? `All (${count})` : `${cat} (${count})`;
       btn.addEventListener('click', () => {
         state.category = cat;
         if (state.path) { state.path = null; syncPathButtons(); }
@@ -681,6 +694,13 @@
       img.setAttribute('loading', 'lazy');
     });
 
+    /* Syntax highlighting for code blocks */
+    if (typeof hljs !== 'undefined') {
+      wrapper.querySelectorAll('pre code').forEach(block => {
+        try { hljs.highlightElement(block); } catch (_) {}
+      });
+    }
+
     elR.content.appendChild(wrapper);
   }
 
@@ -726,6 +746,84 @@
     toggleRead(readerTopic.title);
     syncReaderButtons(readerTopic.title);
   });
+
+  /* ══════════════════════════════════
+     Completed topics sidebar
+     ══════════════════════════════════ */
+  const elC = {
+    sidebar:  $('completedSidebar'),
+    close:    $('closeCompleted'),
+    list:     $('completedList'),
+    empty:    $('emptyCompleted'),
+    backdrop: $('completedBackdrop'),
+    footerText: $('completedFooterText'),
+    footerPct:  $('completedFooterPct'),
+  };
+
+  function renderCompletedSidebar() {
+    if (!elC.list) return;
+    elC.list.innerHTML = '';
+    const done = topics.filter(t => read.includes(t.title));
+    const pct  = topics.length ? Math.round((done.length / topics.length) * 100) : 0;
+
+    if (elC.empty) elC.empty.style.display = done.length ? 'none' : '';
+    if (elC.footerText) elC.footerText.textContent = `${done.length} of ${topics.length} completed`;
+    if (elC.footerPct)  elC.footerPct.textContent  = pct + '%';
+
+    done.forEach(topic => {
+      const cc   = catClass(topic.category);
+      const item = document.createElement('div');
+      item.className = `completed-item ${cc}`;
+      item.innerHTML =
+        '<div class="completed-check">✓</div>' +
+        '<div class="completed-item-info">' +
+          '<div class="completed-item-cat">' + esc(topic.category) + '</div>' +
+          '<div class="completed-item-title">' + esc(topic.title) + '</div>' +
+        '</div>' +
+        '<button class="completed-item-remove" title="Mark as unread" aria-label="Mark as unread: ' + esc(topic.title) + '">✕</button>';
+
+      item.querySelector('.completed-item-info').addEventListener('click', () => {
+        closeCompletedSidebar();
+        setTimeout(() => openReader(topic), 350);
+      });
+      item.querySelector('.completed-item-info').style.cursor = 'pointer';
+
+      item.querySelector('.completed-item-remove').addEventListener('click', e => {
+        e.stopPropagation();
+        toggleRead(topic.title);
+        renderCompletedSidebar();
+      });
+
+      elC.list.appendChild(item);
+    });
+  }
+
+  function openCompletedSidebar() {
+    if (!elC.sidebar) return;
+    elC.sidebar.hidden = false;
+    if (elC.backdrop) elC.backdrop.hidden = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        elC.sidebar.classList.add('open');
+        if (elC.backdrop) elC.backdrop.classList.add('visible');
+      });
+    });
+    renderCompletedSidebar();
+    setTimeout(() => elC.close && elC.close.focus(), 100);
+  }
+
+  function closeCompletedSidebar() {
+    if (!elC.sidebar) return;
+    elC.sidebar.classList.remove('open');
+    if (elC.backdrop) elC.backdrop.classList.remove('visible');
+    setTimeout(() => {
+      elC.sidebar.hidden = true;
+      if (elC.backdrop) elC.backdrop.hidden = true;
+    }, 350);
+  }
+
+  if (elC.close) elC.close.addEventListener('click', closeCompletedSidebar);
+  if (elC.backdrop) elC.backdrop.addEventListener('click', closeCompletedSidebar);
 
   /* ══════════════════════════════════
      Learning path buttons
@@ -860,7 +958,10 @@
       return;
     }
 
-    /* Sidebar */
+    /* Sidebars */
+    if (elC.sidebar && elC.sidebar.classList.contains('open')) {
+      if (e.key === 'Escape') { e.preventDefault(); closeCompletedSidebar(); return; }
+    }
     if (el.bookmarkSidebar.classList.contains('open')) {
       if (e.key === 'Escape') { e.preventDefault(); closeSidebar(); return; }
     }
@@ -943,24 +1044,39 @@
     render();
   });
 
-  el.progressStatCard && el.progressStatCard.addEventListener('click', () => {
-    const done = topics.filter(t => read.includes(t.title)).length;
-    showToast(`✅ ${done} of ${topics.length} topics completed`);
-  });
+  el.progressStatCard && el.progressStatCard.addEventListener('click', openCompletedSidebar);
   el.progressStatCard && el.progressStatCard.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      const done = topics.filter(t => read.includes(t.title)).length;
-      showToast(`✅ ${done} of ${topics.length} topics completed`);
-    }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCompletedSidebar(); }
   });
+
+  /* ══════════════════════════════════
+     Back to top
+     ══════════════════════════════════ */
+  const backToTop = $('backToTop');
+  if (backToTop) {
+    window.addEventListener('scroll', () => {
+      backToTop.classList.toggle('visible', window.scrollY > 600);
+    }, { passive: true });
+    backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 
   /* ══════════════════════════════════
      Init
      ══════════════════════════════════ */
   initTheme();
+  syncHighlightTheme(document.documentElement.getAttribute('data-theme') || 'light');
   initStaticCounts();
-  setView(state.view);
+
+  /* setView already calls renderCards, so skip the redundant render() after */
+  el.topicGrid.classList.toggle('list-view', state.view === 'list');
+  el.viewGrid.classList.toggle('active',  state.view === 'grid');
+  el.viewList.classList.toggle('active',  state.view === 'list');
+  el.viewGrid.setAttribute('aria-pressed', String(state.view === 'grid'));
+  el.viewList.setAttribute('aria-pressed', String(state.view === 'list'));
+  store(LS.VIEW, state.view);
+
   syncPathButtons();
   render();
   initParticles();
