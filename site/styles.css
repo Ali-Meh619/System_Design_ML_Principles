@@ -1023,6 +1023,8 @@ mark {
   padding: 1.25rem;
 }
 
+.quiz-overlay[hidden] { display: none !important; }
+
 .quiz-card {
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -1208,6 +1210,8 @@ mark {
   justify-content: center;
   padding: 1.25rem;
 }
+
+.modal-overlay[hidden] { display: none !important; }
 
 .modal {
   background: var(--bg-panel);
@@ -1406,8 +1410,10 @@ kbd {
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
-  animation: fadeIn 0.2s var(--ease);
+  animation: readerFadeIn 0.2s var(--ease);
 }
+
+.reader-overlay[hidden] { display: none !important; }
 
 .reader-overlay.is-closing {
   animation: fadeOut 0.25s var(--ease) forwards;
@@ -1415,6 +1421,11 @@ kbd {
 
 .reader-overlay.is-closing .reader-panel {
   animation: slideOutRight 0.25s var(--ease) forwards;
+}
+
+@keyframes readerFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes fadeOut {
@@ -1722,29 +1733,6 @@ kbd {
   margin: 2rem 0;
 }
 
-/* Reader loading state */
-.reader-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  gap: 1rem;
-  color: var(--text-muted);
-}
-
-.reader-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 
 .reader-footer {
   display: flex;
