@@ -604,13 +604,27 @@
     elR.markRead.classList.toggle('btn-quiz--done', isRead);
   }
 
-  function loadMarkdown(topic) {
-    /* Reset: clear content, show spinner */
-    const loadingEl = elR.loading;
-    elR.content.innerHTML = '';
-    loadingEl.hidden = false;
-    elR.content.appendChild(loadingEl);
+  function clearReaderContent() {
+    /* Remove everything from readerContent except the loading spinner */
+    for (let i = elR.content.childNodes.length - 1; i >= 0; i--) {
+      const node = elR.content.childNodes[i];
+      if (node !== elR.loading) elR.content.removeChild(node);
+    }
+  }
+
+  function showReaderLoading() {
+    clearReaderContent();
+    elR.loading.removeAttribute('hidden');
+    if (!elR.content.contains(elR.loading)) elR.content.appendChild(elR.loading);
     if (elR.body) elR.body.scrollTop = 0;
+  }
+
+  function hideReaderLoading() {
+    elR.loading.setAttribute('hidden', '');
+  }
+
+  function loadMarkdown(topic) {
+    showReaderLoading();
 
     if (mdCache[topic.path]) {
       renderMarkdown(mdCache[topic.path]);
@@ -619,7 +633,7 @@
 
     fetch(topic.path)
       .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status} — could not load file`);
         return r.text();
       })
       .then(md => {
@@ -627,48 +641,51 @@
         renderMarkdown(md);
       })
       .catch(err => {
-        elR.content.innerHTML = `
-          <div style="padding:2rem;text-align:center;color:var(--text-muted);">
-            <p style="font-size:2rem">😔</p>
-            <p>Could not load content.</p>
-            <p style="font-size:0.85rem;margin-top:0.5rem;">${err.message}</p>
-            <a href="${esc(topic.path)}" target="_blank" rel="noopener noreferrer"
-               style="color:var(--primary);text-decoration:underline;margin-top:1rem;display:inline-block;">
-              Open file directly →
-            </a>
-          </div>`;
+        hideReaderLoading();
+        const errDiv = document.createElement('div');
+        errDiv.style.cssText = 'padding:2.5rem 2rem;text-align:center;color:var(--text-muted);';
+        const ghPath = topic.path.replace(/^\.\.\//, '');
+        errDiv.innerHTML = `
+          <p style="font-size:2rem;margin:0 0 0.75rem">😔</p>
+          <p style="font-weight:600;color:var(--text);margin:0 0 0.4rem">Could not load content</p>
+          <p style="font-size:0.85rem;opacity:0.7;margin:0 0 1.25rem">${esc(err.message)}</p>
+          <a href="https://github.com/Ali-Meh619/System_Design_Principles/blob/main/${esc(ghPath)}"
+             target="_blank" rel="noopener noreferrer"
+             style="color:var(--primary);text-decoration:underline;">
+            View on GitHub →
+          </a>`;
+        elR.content.appendChild(errDiv);
       });
   }
 
   /* Configure marked once on load */
   (function initMarked() {
-    if (typeof marked !== 'undefined') {
-      try {
-        marked.use({ gfm: true, breaks: false, mangle: false, headerIds: false });
-      } catch (_) {
-        /* marked v4 fallback */
-        try { marked.setOptions({ gfm: true, breaks: false }); } catch (__) {}
-      }
+    if (typeof marked !== 'undefined' && typeof marked.use === 'function') {
+      try { marked.use({ gfm: true, breaks: false }); } catch (_) {}
     }
   })();
 
   function renderMarkdown(md) {
-    /* Preserve loading element reference before clearing */
-    const loadingEl = elR.loading;
-    elR.content.innerHTML = '';
+    hideReaderLoading();
+    clearReaderContent();
 
-    if (typeof marked === 'undefined' || typeof marked.parse !== 'function') {
+    const wrapper = document.createElement('div');
+
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+      try {
+        wrapper.innerHTML = marked.parse(md);
+      } catch (_) {
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'white-space:pre-wrap;padding:1.5rem;line-height:1.6;font-size:0.9rem;';
+        pre.textContent = md;
+        wrapper.appendChild(pre);
+      }
+    } else {
       const pre = document.createElement('pre');
       pre.style.cssText = 'white-space:pre-wrap;padding:1.5rem;line-height:1.6;font-size:0.9rem;';
       pre.textContent = md;
-      elR.content.appendChild(pre);
-      return;
+      wrapper.appendChild(pre);
     }
-
-    const html = marked.parse(md);
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
 
     /* Fix relative image paths: ../../assets/ → ../assets/ (relative to site/) */
     wrapper.querySelectorAll('img').forEach(img => {
@@ -676,13 +693,13 @@
       if (src.startsWith('../../assets/')) {
         img.setAttribute('src', src.replace('../../assets/', '../assets/'));
       }
-      img.style.cssText = 'max-width:100%;border-radius:8px;margin:1.25rem 0;border:1px solid var(--border);';
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = '8px';
+      img.style.margin = '1.25rem 0';
+      img.style.display = 'block';
       img.setAttribute('loading', 'lazy');
     });
 
-    /* Re-attach loading element (hidden) for reuse */
-    loadingEl.hidden = true;
-    elR.content.appendChild(loadingEl);
     elR.content.appendChild(wrapper);
   }
 
