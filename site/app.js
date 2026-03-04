@@ -670,6 +670,16 @@
     const wrapper = document.createElement('div');
     wrapper.innerHTML = html;
 
+    /* Fix relative image paths: ../../assets/ → ../assets/ (relative to site/) */
+    wrapper.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src') || '';
+      if (src.startsWith('../../assets/')) {
+        img.setAttribute('src', src.replace('../../assets/', '../assets/'));
+      }
+      img.style.cssText = 'max-width:100%;border-radius:8px;margin:1.25rem 0;border:1px solid var(--border);';
+      img.setAttribute('loading', 'lazy');
+    });
+
     /* Re-attach loading element (hidden) for reuse */
     loadingEl.hidden = true;
     elR.content.appendChild(loadingEl);

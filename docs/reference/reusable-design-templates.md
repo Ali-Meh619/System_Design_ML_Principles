@@ -16,6 +16,8 @@
 6. **Scaling:** CDN handles most load. API servers: stateless → horizontal scale. DB: read replicas + Redis cache for hot queries.
 7. **Key trade-offs to mention:** Eventual consistency for view counts (Redis counter, batch-flush to DB hourly). CDN cache TTL (longer = cheaper + stale; shorter = fresher + expensive).
 
+![Read-Heavy System Architecture](../../assets/system_design_template_01_youtube.png)
+
 ---
 
 ## Template 2: Social Feed / Write-Heavy System (Twitter, Instagram)
@@ -28,6 +30,8 @@
 4. **Celebrities (>10K followers):** Don't fan-out on write — too expensive. At read time, fetch recent tweets from followed celebrities and merge with pre-built feed.
 5. **Media:** Images/videos stored in S3, served via CDN. Only URLs stored in tweets table.
 6. **Trending topics:** Kafka stream of all tweets → Count-Min Sketch for top hashtags per 15-minute window → Redis sorted set for real-time trending display
+
+![Social Feed System Architecture](../../assets/system_design_template_02_twitter.png)
 
 ---
 
@@ -43,6 +47,8 @@
 6. **Media:** Upload to S3 first, get URL, then send URL as message. Media served via CDN.
 7. **Group messages:** For large groups (e.g., 1000-member Slack channel), use fan-out via Kafka. For small groups, direct server-to-server delivery.
 
+![Real-time Chat Architecture](../../assets/system_design_template_03_whatsapp.png)
+
 ---
 
 ## Template 4: Location-Based Service (Uber, Yelp, Google Maps)
@@ -56,6 +62,8 @@
 5. **Business search (Yelp):** Business metadata in PostgreSQL. Geohash index on location for proximity queries. Elasticsearch for text search (restaurant name, cuisine type). Combine: "find Italian restaurants within 2 km" = Elasticsearch + geohash filter.
 6. **Persistence:** Driver trip history → Cassandra (partition by driver_id). Business data → PostgreSQL. Location history for analytics → Kafka → data warehouse.
 
+![Location-Based Service Architecture](../../assets/system_design_template_04_uber.png)
+
 ---
 
 ## Template 5: URL Shortener / ID Generation (Pastebin, TinyURL)
@@ -67,6 +75,8 @@
 3. **Redirect:** `GET /{short_code}` → Redis lookup (cache hit: return 301/302 redirect in <1ms) → Cache miss: PostgreSQL lookup → cache result → redirect. 301 (permanent, browser caches) vs 302 (temporary, all requests hit your server — lets you track clicks). Use 302 for analytics.
 4. **Analytics:** On each redirect, async push event to Kafka: {short_code, timestamp, user_agent, IP, referrer}. Stream processor aggregates click counts per URL. Store in Redis sorted set for real-time dashboard.
 5. **Scale:** 100:1 read/write ratio. Redis cache handles 95%+ of redirect traffic. Database only for cache misses and new URL creation.
+
+![URL Shortener Architecture](../../assets/system_design_template_05_url_shortener.png)
 
 ---
 
@@ -81,6 +91,8 @@
 5. **Tiered limits:** Free users: 100 req/min. Pro users: 1000 req/min. Enterprise: configurable. Store tier in user profile, load into Redis token bucket config.
 6. **Failure mode:** If Redis is unavailable: fail open (allow all requests) to maintain availability, OR fail closed (reject all) to protect backend. Decision depends on business priority. Fail open with local fallback counters is most common.
 
+![Rate Limiter Architecture](../../assets/system_design_template_06_rate_limiter.png)
+
 ---
 
 ## Template 7: Realtime Monitoring / Metrics System
@@ -92,6 +104,8 @@
 3. **Query:** Grafana queries time-series DB via its native query language (PromQL for Prometheus). Dashboards show rolling averages, percentiles, heatmaps.
 4. **Alerting:** Rule engine evaluates metric queries on schedule. If threshold breached for N consecutive periods → PagerDuty/Slack alert. Alert on anomaly (Z-score > 3) not just threshold (catches unknown-unknowns).
 5. **Schema design (Cassandra):** Partition key = (service_name, metric_name, date). Clustering key = timestamp. Allows efficient range scans: "give me CPU metric for service X on date Y" → single partition scan.
+
+![Monitoring System Architecture](../../assets/system_design_template_07_monitoring.png)
 
 ---
 
@@ -106,6 +120,8 @@
 5. **Payment:** Payment flow runs while seat is RESERVED. On payment success: `UPDATE status=SOLD` → Send confirmation email async (SQS). On payment failure or expiry: `UPDATE status=AVAILABLE` → seat re-enters pool.
 6. **Read scaling:** Availability queries (how many seats left?) served from Redis counter, not DB. `DECR seats_available:{event_id}` on reserve. `INCR` on expiry. Exact count only from DB when buying.
 
+![Booking System Architecture](../../assets/system_design_template_08_ticketmaster.png)
+
 ---
 
 ## Template 9: Autonomous Coding Agent (Devin / Cursor / GitHub Workspace)
@@ -119,6 +135,8 @@
 5. **Safety:** **Permission boundary**: Agent can edit files in the VM but cannot push to main branch without human approval (PR creation only). Network access restricted to package managers (pip/npm) and specific APIs.
 6. **Evaluation:** Success = "Did the new test case pass?". **LLM-as-a-Judge** reviews the diff for style/safety before notifying user.
 
+![AI Agent Architecture](../../assets/system_design_template_09_ai_agent.png)
+
 ---
 
 ## Template 10: Typeahead / Search Autocomplete
@@ -131,6 +149,8 @@
 4. **Freshness:** Rebuild Trie/Redis ZSETs nightly from aggregated logs. For trending (Twitter), use real-time stream: Kafka → Flink 5-min window counts → ZINCRBY per prefix. 2-tier: fast real-time + stable historical.
 5. **Scale:** Stateless API servers (horizontal scale). Redis cluster sharded by prefix. Cache suggestions at CDN edge for ultra-common prefixes like "a", "ap".
 6. **Key trade-offs to mention:** Freshness vs performance (daily rebuild = stale data but fast). Trie = faster lookup, harder to update dynamically. Redis ZSET = easier incremental updates, network hop required.
+
+![Typeahead Architecture](../../assets/system_design_template_10_typeahead.png)
 
 ---
 
@@ -146,6 +166,8 @@
 6. **Offline support:** Client queues operations locally while offline. On reconnect, sends all queued ops with the last known clientVersion. Server applies OT to merge correctly.
 7. **Key trade-offs to mention:** OT requires central server for op serialization (no decentralized writes). Snapshot frequency = balance between load time (more snapshots = faster) and storage cost.
 
+![Collaborative Editing Architecture](../../assets/system_design_template_11_google_docs.png)
+
 ---
 
 ## Template 12: Code Submission & Execution (LeetCode, HackerRank)
@@ -158,3 +180,5 @@
 4. **Result delivery:** Option A: Client polls `GET /submissions/{id}/result` every 1s → 202 until ready, then 200. Option B: WebSocket push — server sends result the moment it's ready (better UX). For contest leaderboards: publish to Kafka "results" topic → Leaderboard Service updates ranking.
 5. **Security (critical):** Full **sandbox isolation** — code cannot access the internet, cannot fork bomb, cannot read other users' data. Resource limits enforced at kernel level using Linux **cgroups** (CPU/memory) and **seccomp-bpf** (syscall filter). Each submission gets a fresh, ephemeral container — no shared state between runs.
 6. **Scaling:** Worker fleet auto-scales based on SQS queue depth (KEDA). Burst of submissions fills queue; workers scale from 10 → 500 in ~2 minutes. Each worker handles one submission at a time (CPU isolation).
+
+![Code Execution Architecture](../../assets/system_design_template_12_leetcode.png)
