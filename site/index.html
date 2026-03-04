@@ -1,0 +1,55 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System Design Playbook Navigator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Public Learning Repo</p>
+      <h1>System Design Playbook Navigator</h1>
+      <p class="lead">Browse all categories from the playbook, filter by domain, and jump directly to interview-ready docs.</p>
+      <div class="search-row">
+        <input id="searchInput" type="search" placeholder="Search topics (press / to focus)" aria-label="Search topics">
+      </div>
+      <div id="tagFilters" class="filters" role="toolbar" aria-label="Category filters"></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="stats" aria-label="Navigator stats">
+      <article class="stat-card">
+        <p class="stat-value" id="topicCount">0</p>
+        <p class="stat-label">Topics</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-value" id="categoryCount">0</p>
+        <p class="stat-label">Categories</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-value" id="visibleCount">0</p>
+        <p class="stat-label">Visible</p>
+      </article>
+    </section>
+
+    <section>
+      <div class="section-title-row">
+        <h2>Topics</h2>
+        <a class="repo-link" href="../README.md">Open repository README</a>
+      </div>
+      <div id="topicGrid" class="topic-grid"></div>
+      <p id="emptyState" class="empty-state" hidden>No topics match your filters.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Built from the System Design Playbook source and reorganized for public learning.</p>
+  </footer>
+
+  <script src="topics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
