@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design Playbook — Topics
-   37 sections across 10 categories
+   38 sections across 10 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 
@@ -628,6 +628,40 @@ window.TOPICS = [
   },
 
   /* ── REFERENCE ───────────────────────────────────────────────── */
+
+  {
+    id:         "leetcode-patterns",
+    title:      "LeetCode Question Patterns",
+    category:   "Reference",
+    icon:       "🧩",
+    difficulty: "intermediate",
+    summary:    "19 patterns with code templates covering every major LeetCode archetype: pattern chooser, arrays & hashing, two pointers, sliding window, stack, binary search, linked list, trees, heap, backtracking, tries, graphs, advanced graphs, DP (1D/2D/interval/bitmask), greedy, intervals, monotonic deque, segment tree / BIT, and bit manipulation — plus a full complexity cheat sheet.",
+    subtopics:  [
+      "Pattern 0 — The Pattern Chooser (use first, every time)",
+      "Pattern 1 — Arrays & Hashing (frequency map, prefix sum, sorting)",
+      "Pattern 2 — Two Pointers (shrink, slow/fast, in-place)",
+      "Pattern 3 — Sliding Window (variable, fixed, exactly-K trick)",
+      "Pattern 4 — Stack & Monotonic Stack (next greater, parentheses)",
+      "Pattern 5 — Binary Search (boundary, rotated arrays, answer space)",
+      "Pattern 6 — Linked List (reverse, cycle, merge, dummy head)",
+      "Pattern 7 — Trees (postorder tuple DFS, BFS level order, BST)",
+      "Pattern 8 — Heap / Priority Queue (top K, K-way merge, two heaps)",
+      "Pattern 9 — Backtracking (subsets, permutations, combination sum)",
+      "Pattern 10 — Tries (insert/search, autocomplete, Word Search II)",
+      "Pattern 11 — Graphs Unweighted (BFS, grid DFS, topo sort, bipartite)",
+      "Pattern 12 — Advanced Graphs (Dijkstra, 0-1 BFS, DSU, Bellman-Ford)",
+      "Pattern 13 — Dynamic Programming (1D, 2D, interval DP, bitmask DP)",
+      "Pattern 14 — Greedy (reachability, interval scheduling, heap greedy)",
+      "Pattern 15 — Intervals (merge, insert, sweep line)",
+      "Pattern 16 — Monotonic Deque (sliding window max/min, DP optimization)",
+      "Pattern 17 — Segment Tree & BIT (range queries with point updates)",
+      "Pattern 18 — Math & Bit Manipulation (GCD, mod, XOR, subset iteration)",
+      "Time & Space Complexity Cheat Sheet (all 19 patterns)",
+      "Pattern Combinations for Hard Problems",
+    ],
+    tags:  ["leetcode", "algorithms", "patterns", "dp", "graphs", "backtracking", "binary search", "heap", "sliding window", "trie", "union-find", "interview", "coding interview", "two pointers"],
+    path:  "../docs/reference/leetcode-patterns.md"
+  },
 
   {
     id:         "cheatsheet",
