@@ -26,6 +26,8 @@ Read the prompt and match the "shape":
 | "Range sum / range min-max with updates" | **Segment Tree / BIT** |
 | "Sliding window max/min" | **Monotonic Deque** |
 | Bit operations / XOR / subsets of bits | **Bit Manipulation** |
+| "Is palindrome / longest palindrome" | **Two Pointers** (expand or l/r shrink) |
+| "Longest consecutive sequence" (unsorted) | **Hash Set** (Arrays & Hashing, not Sliding Window) |
 
 > **Decision shortcuts:**
 > - Two indices over the **same** array → Two Pointers or Sliding Window
@@ -45,10 +47,13 @@ Read the prompt and match the "shape":
 ### Pattern A — Frequency / Index Map
 
 ```python
-from collections import defaultdict, Counter
+# Count occurrences
+cnt = {}
+for x in nums:
+    cnt[x] = cnt.get(x, 0) + 1
 
-cnt = Counter(nums)          # count occurrences
-pos = {}                     # first-index map
+# First-index map (earliest only — never overwrite)
+pos = {}
 for i, x in enumerate(nums):
     if x not in pos:
         pos[x] = i
@@ -125,6 +130,28 @@ def sortColors(nums):
 
 > Also called 3-pointer partition. Use whenever you need to partition an array into 3 groups in O(n) / O(1).
 
+### Pattern F — Longest Consecutive Sequence *(hash set, O(n))*
+
+**Recognize:** "longest consecutive sequence", "no sorting allowed", elements are integers.
+
+> Common misconception: this looks like sliding window but the array is **unsorted** — sliding window needs a sorted/ordered structure. Use a set for O(1) membership instead.
+
+```python
+def longestConsecutive(nums):
+    num_set = set(nums)
+    best = 0
+    for n in num_set:
+        if n - 1 not in num_set:        # only start from the beginning of a sequence
+            cur, length = n, 1
+            while cur + 1 in num_set:
+                cur += 1
+                length += 1
+            best = max(best, length)
+    return best
+```
+
+> The `if n - 1 not in num_set` guard ensures each sequence is traversed exactly once → O(n) total even though there's a nested loop.
+
 **Time/Space:** O(n) / O(n) — or O(n log n) if sorting is required
 
 ---
@@ -157,7 +184,35 @@ return write   # write = new length
 
 > **Pitfall:** Be explicit about what `write` means — it's the *next free slot*, so the final valid array is `nums[:write]`.
 
-### Pattern C — 3Sum (sort + fix one + inner two pointers)
+### Pattern C — Palindrome Check
+
+**Recognize:** "valid palindrome", "is string/number a palindrome", "check if reversed equals original"
+
+```python
+# Basic palindrome (exact match)
+def isPalindrome(s):
+    l, r = 0, len(s) - 1
+    while l < r:
+        if s[l] != s[r]:
+            return False
+        l += 1; r -= 1
+    return True
+
+# Valid palindrome — skip non-alphanumeric, ignore case (LC 125)
+def validPalindrome(s):
+    l, r = 0, len(s) - 1
+    while l < r:
+        while l < r and not s[l].isalnum(): l += 1
+        while l < r and not s[r].isalnum(): r -= 1
+        if s[l].lower() != s[r].lower():
+            return False
+        l += 1; r -= 1
+    return True
+```
+
+> The two-pointer palindrome check is O(n) / O(1). For "almost palindrome" (allow removing one char), try both `isPalindrome(s[l+1:r+1])` and `isPalindrome(s[l:r])` when a mismatch is found.
+
+### Pattern D — 3Sum (sort + fix one + inner two pointers)
 
 ```python
 def threeSum(nums):
@@ -177,7 +232,7 @@ def threeSum(nums):
     return res
 ```
 
-> Pattern generalizes to k-Sum: fix (k-2) outer pointers recursively, run two-pointer at the innermost level. Always sort first.
+> Generalizes to k-Sum: fix (k-2) outer pointers recursively, run two-pointer at the innermost level. Always sort first.
 
 **Time/Space:** O(n) / O(1)
 
@@ -190,13 +245,11 @@ def threeSum(nums):
 ### Pattern A — Variable Window (shrink while invalid)
 
 ```python
-from collections import defaultdict
-
 def longest_at_most_k_distinct(s, k):
-    cnt = defaultdict(int)
+    cnt = {}
     l = best = 0
     for r, ch in enumerate(s):
-        cnt[ch] += 1
+        cnt[ch] = cnt.get(ch, 0) + 1
         while len(cnt) > k:          # invalid: shrink left
             cnt[s[l]] -= 1
             if cnt[s[l]] == 0:
@@ -480,21 +533,22 @@ def diameterOfBinaryTree(root):
 ### Pattern B — BFS Level Order
 
 ```python
-from collections import deque
-
 def levelOrder(root):
     if not root: return []
-    q = deque([root]); res = []
-    while q:
+    current = [root]; res = []
+    while current:
         level = []
-        for _ in range(len(q)):    # snapshot current level size
-            n = q.popleft()
-            level.append(n.val)
-            if n.left:  q.append(n.left)
-            if n.right: q.append(n.right)
+        next_level = []
+        for node in current:
+            level.append(node.val)
+            if node.left:  next_level.append(node.left)
+            if node.right: next_level.append(node.right)
         res.append(level)
+        current = next_level
     return res
 ```
+
+> Two-list swap: `current` holds this level's nodes, `next_level` collects the next. Swap at the end of each level. No deque needed — naturally expresses "process level by level".
 
 ### Pattern C — BST Properties
 
@@ -754,12 +808,11 @@ Build a Trie from all words. DFS the grid, walk the Trie simultaneously. When `n
 ### Pattern A — BFS Shortest Path (unweighted)
 
 ```python
-from collections import deque
-
 def bfs_shortest(start, adj):
-    q = deque([start]); dist = {start: 0}
-    while q:
-        u = q.popleft()
+    q = [start]; dist = {start: 0}
+    i = 0
+    while i < len(q):
+        u = q[i]; i += 1
         for v in adj[u]:
             if v not in dist:
                 dist[v] = dist[u] + 1
@@ -767,19 +820,20 @@ def bfs_shortest(start, adj):
     return dist
 ```
 
+> Index-based BFS: advance a pointer `i` instead of popping from the front. Same O(V+E) complexity, no imports needed.
+
 ### Pattern B — Grid BFS/DFS
 
 ```python
-from collections import deque
-
 def numIslands(grid):
     if not grid: return 0
     rows, cols = len(grid), len(grid[0])
     visited = set(); count = 0
     def bfs(r, c):
-        q = deque([(r, c)]); visited.add((r, c))
-        while q:
-            row, col = q.popleft()
+        q = [(r, c)]; visited.add((r, c))
+        i = 0
+        while i < len(q):
+            row, col = q[i]; i += 1
             for dr, dc in [(1,0),(-1,0),(0,1),(0,-1)]:
                 nr, nc = row+dr, col+dc
                 if 0<=nr<rows and 0<=nc<cols and grid[nr][nc]=='1' and (nr,nc) not in visited:
@@ -794,21 +848,19 @@ def numIslands(grid):
 ### Pattern C — Topological Sort (Kahn's Algorithm)
 
 ```python
-from collections import deque
-
 def topoSort(n, edges):
     adj = [[] for _ in range(n)]
     indeg = [0] * n
     for u, v in edges:
         adj[u].append(v); indeg[v] += 1
-    q = deque(i for i in range(n) if indeg[i] == 0)
-    order = []
-    while q:
-        u = q.popleft(); order.append(u)
+    q = [i for i in range(n) if indeg[i] == 0]
+    i = 0
+    while i < len(q):
+        u = q[i]; i += 1
         for v in adj[u]:
             indeg[v] -= 1
             if indeg[v] == 0: q.append(v)
-    return order if len(order) == n else []  # [] = cycle detected
+    return q if len(q) == n else []          # [] = cycle detected
 ```
 
 ### Pattern D — Bipartite Check (2-coloring)
@@ -818,9 +870,10 @@ def isBipartite(graph):
     color = {}
     for start in range(len(graph)):
         if start in color: continue
-        q = deque([start]); color[start] = 0
-        while q:
-            u = q.popleft()
+        q = [start]; color[start] = 0
+        i = 0
+        while i < len(q):
+            u = q[i]; i += 1
             for v in graph[u]:
                 if v not in color:
                     color[v] = 1 - color[u]; q.append(v)
@@ -1444,7 +1497,9 @@ lowbit = n & (-n)
 | Arrays / Hashing | O(n) | O(n) | |
 | Two-Sum hash lookup | O(n) | O(n) | Single pass |
 | Dutch National Flag | O(n) | O(1) | 3-pointer in-place partition |
+| Longest Consecutive Seq | O(n) | O(n) | Hash set, start only at seq beginning |
 | Two Pointers (l/r) | O(n) | O(1) | Sorted array |
+| Palindrome check | O(n) | O(1) | l/r shrink, skip non-alnum for LC 125 |
 | 3Sum | O(n²) | O(1) | Sort + fix outer + inner two pointers |
 | Sliding Window | O(n) | O(k) | k = window constraint |
 | Monotonic Stack | O(n) | O(n) | Each element pushed+popped once |
