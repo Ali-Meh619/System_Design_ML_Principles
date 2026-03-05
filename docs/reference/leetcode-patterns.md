@@ -244,13 +244,31 @@ def threeSum(nums):
 
 ### Pattern A — Variable Window (shrink while invalid)
 
+**Example — Longest Substring Without Repeating Characters (LC 3):**
+
 ```python
-def longest_at_most_k_distinct(s, k):
+def lengthOfLongestSubstring(s):
+    seen = {}       # char → last seen index
+    l = best = 0
+    for r, ch in enumerate(s):
+        if ch in seen and seen[ch] >= l:
+            l = seen[ch] + 1    # jump left past the duplicate
+        seen[ch] = r
+        best = max(best, r - l + 1)
+    return best
+```
+
+> `seen[ch] >= l` is the guard — the previous occurrence must still be **inside** the current window to matter. Without it, a character seen before the window's left boundary would wrongly shrink the window.
+
+**General template (count-based shrink, works for "at most K distinct" etc.):**
+
+```python
+def variable_window(s, is_invalid):
     cnt = {}
     l = best = 0
     for r, ch in enumerate(s):
         cnt[ch] = cnt.get(ch, 0) + 1
-        while len(cnt) > k:          # invalid: shrink left
+        while is_invalid(cnt):          # shrink left until valid
             cnt[s[l]] -= 1
             if cnt[s[l]] == 0:
                 del cnt[s[l]]
