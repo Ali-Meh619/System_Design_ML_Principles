@@ -570,8 +570,41 @@ def levelOrder(root):
 
 ### Pattern C — BST Properties
 
-- In-order traversal → **sorted sequence** (use for validation, kth element)
-- Binary search on tree: walk left/right tracking the best candidate seen so far
+**Key insight:** in-order DFS (left → node → right) visits a valid BST in **strictly ascending order**. Collect values into a list and check that every element is greater than the previous.
+
+**Validate BST:**
+
+```python
+def isValidBST(root):
+    vals = []
+    def inorder(node):
+        if not node:
+            return
+        inorder(node.left)
+        vals.append(node.val)
+        inorder(node.right)
+    inorder(root)
+    return all(vals[i] < vals[i + 1] for i in range(len(vals) - 1))
+```
+
+> The list makes the logic obvious: a valid BST's in-order traversal must be strictly increasing. `<` not `<=` because duplicates are not allowed in a standard BST.
+
+**Kth Smallest in BST** — same in-order traversal, stop early:
+
+```python
+def kthSmallest(root, k):
+    vals = []
+    def inorder(node):
+        if not node or len(vals) == k:
+            return
+        inorder(node.left)
+        vals.append(node.val)
+        inorder(node.right)
+    inorder(root)
+    return vals[-1]
+```
+
+**Closest value** — binary search on the BST structure (no traversal needed):
 
 ```python
 def closestValue(root, target):
