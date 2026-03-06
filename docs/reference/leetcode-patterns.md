@@ -942,11 +942,14 @@ def hasCycle(n, adj):
     # 0 = unvisited (white), 1 = in current path (gray), 2 = done (black)
     state = [0] * n
     def dfs(u):
-        state[u] = 1                       # mark gray (in stack)
+        state[u] = 1                       # mark gray (entering)
         for v in adj[u]:
-            if state[v] == 1: return True  # back edge → cycle
-            if state[v] == 0 and dfs(v): return True
-        state[u] = 2                       # mark black (done)
+            if state[v] == 1:
+                return True                # back edge → cycle found
+            if state[v] == 0:
+                if dfs(v):
+                    return True            # cycle detected deeper
+        state[u] = 2                       # mark black (fully explored)
         return False
     return any(state[u] == 0 and dfs(u) for u in range(n))
 ```
