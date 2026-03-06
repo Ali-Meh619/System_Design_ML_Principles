@@ -822,7 +822,9 @@ class Trie:
     def insert(self, word):
         node = self.root
         for c in word:
-            node = node.ch.setdefault(c, TrieNode())
+            if c not in node.ch:
+                node.ch[c] = TrieNode()
+            node = node.ch[c]
         node.end = True
 
     def search(self, word):
