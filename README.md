@@ -8,16 +8,16 @@
 
 <br>
 
-[![Stars](https://img.shields.io/github/stars/Ali-Meh619/System_Design_Principles?style=for-the-badge&color=FFD700&logo=github)](https://github.com/Ali-Meh619/System_Design_Principles/stargazers)
-[![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_Principles/network/members)
+[![Stars](https://img.shields.io/github/stars/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=FFD700&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/stargazers)
+[![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/network/members)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Topics](https://img.shields.io/badge/Topics-42-purple?style=for-the-badge)](docs/)
-[![Interactive](https://img.shields.io/badge/Site-Live-success?style=for-the-badge&logo=github)](https://ali-meh619.github.io/System_Design_Principles/)
+[![Interactive](https://img.shields.io/badge/Site-Live-success?style=for-the-badge&logo=github)](https://ali-meh619.github.io/System_Design_ML_Principles/)
 
 <br>
 
-**[🌐 Live Interactive Site](https://ali-meh619.github.io/System_Design_Principles/)** &nbsp;·&nbsp;
+**[🌐 Live Interactive Site](https://ali-meh619.github.io/System_Design_ML_Principles/)** &nbsp;·&nbsp;
 **[📚 Browse All Topics](docs/)** &nbsp;·&nbsp;
 **[🎯 Start Here](docs/fundamentals/interview-framework.md)** &nbsp;·&nbsp;
 **[🤝 Contribute](CONTRIBUTING.md)**
@@ -162,7 +162,7 @@ Most system design resources are scattered blog posts or 400-page books. This re
 
 ## 🛤️ Learning Paths
 
-Pick a path based on your experience level, then use the **[interactive site](https://ali-meh619.github.io/System_Design_Principles/)** to track your progress.
+Pick a path based on your experience level, then use the **[interactive site](https://ali-meh619.github.io/System_Design_ML_Principles/)** to track your progress.
 
 ### 🌱 Beginner — Build your foundation (6 topics)
 
@@ -186,7 +186,7 @@ AI Agent System Design → Real-time Collaboration → Probabilistic DS → Stre
 
 ## ⌨️ Keyboard Shortcuts
 
-Open the [interactive site](https://ali-meh619.github.io/System_Design_Principles/) and press `?` to see all shortcuts:
+Open the [interactive site](https://ali-meh619.github.io/System_Design_ML_Principles/) and press `?` to see all shortcuts:
 
 | Key | Action |
 |-----|--------|
@@ -206,7 +206,7 @@ Open the [interactive site](https://ali-meh619.github.io/System_Design_Principle
 **Option A — Interactive site (recommended)**
 
 ```
-https://ali-meh619.github.io/System_Design_Principles/
+https://ali-meh619.github.io/System_Design_ML_Principles/
 ```
 
 No install. Works offline after first load. Progress saves to your browser.
@@ -214,8 +214,8 @@ No install. Works offline after first load. Progress saves to your browser.
 **Option B — Run locally**
 
 ```bash
-git clone https://github.com/Ali-Meh619/System_Design_Principles.git
-cd System_Design_Principles
+git clone https://github.com/Ali-Meh619/System_Design_ML_Principles.git
+cd System_Design_ML_Principles
 # Open site/index.html in your browser — no server needed
 ```
 
@@ -228,7 +228,7 @@ Navigate to [docs/](docs/) and click any topic. GitHub renders Markdown natively
 ## 📁 Repository Structure
 
 ```
-System_Design_Principles/
+System_Design_ML_Principles/
 ├── site/                       # Interactive web app (no build step)
 │   ├── index.html              # Main SPA — dark mode, quiz, bookmarks, inline reader
 │   ├── styles.css              # Full design system with dark/light mode
@@ -315,6 +315,6 @@ MIT © 2026. Free to use, share, and build on.
 
 **Built with ❤️ for engineers who take system design seriously.**
 
-[⭐ Star on GitHub](https://github.com/Ali-Meh619/System_Design_Principles) &nbsp;·&nbsp; [🌐 Open Interactive Site](https://ali-meh619.github.io/System_Design_Principles/) &nbsp;·&nbsp; [🐛 Report Issue](https://github.com/Ali-Meh619/System_Design_Principles/issues)
+[⭐ Star on GitHub](https://github.com/Ali-Meh619/System_Design_ML_Principles) &nbsp;·&nbsp; [🌐 Open Interactive Site](https://ali-meh619.github.io/System_Design_ML_Principles/) &nbsp;·&nbsp; [🐛 Report Issue](https://github.com/Ali-Meh619/System_Design_ML_Principles/issues)
 
 </div>

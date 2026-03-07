@@ -588,7 +588,7 @@
 
     /* GitHub raw link */
     const rawPath = topic.path.replace(/^\.\.\//, '');
-    elR.github.href = `https://github.com/Ali-Meh619/System_Design_Principles/blob/main/${rawPath}`;
+    elR.github.href = `https://github.com/Ali-Meh619/System_Design_ML_Principles/blob/main/${rawPath}`;
 
     /* Update action buttons */
     syncReaderButtons(topic.title);
@@ -645,7 +645,7 @@
           '<p style="font-size:2rem;margin:0 0 .75rem">&#x1F615;</p>' +
           '<p style="font-weight:600;color:var(--text);margin:0 0 .4rem">Could not load content</p>' +
           '<p style="font-size:.85rem;opacity:.7;margin:0 0 1.25rem">' + esc(err.message) + '</p>' +
-          '<a href="https://github.com/Ali-Meh619/System_Design_Principles/blob/main/' + esc(ghPath) + '"' +
+          '<a href="https://github.com/Ali-Meh619/System_Design_ML_Principles/blob/main/' + esc(ghPath) + '"' +
           ' target="_blank" rel="noopener noreferrer"' +
           ' style="color:var(--primary);text-decoration:underline">View on GitHub \u2192</a>' +
           '</div>';
