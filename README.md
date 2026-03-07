@@ -8,6 +8,14 @@
 
 <br>
 
+<div align="center">
+  <a href="https://ali-meh619.github.io/System_Design_ML_Principles/">
+    <img src="https://img.shields.io/badge/🚀_Click_Here_to_Open_the-Interactive_Website-0d9488?style=for-the-badge&logo=vercel" alt="Open Interactive Website" />
+  </a>
+</div>
+
+<br>
+
 [![Stars](https://img.shields.io/github/stars/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=FFD700&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/stargazers)
 [![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/network/members)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
@@ -17,7 +25,7 @@
 
 <br>
 
-**[🌐 Live Interactive Site](https://ali-meh619.github.io/System_Design_ML_Principles/)** &nbsp;·&nbsp;
+**[🌐 Open Interactive Site](https://ali-meh619.github.io/System_Design_ML_Principles/)** &nbsp;·&nbsp;
 **[📚 Browse All Topics](docs/)** &nbsp;·&nbsp;
 **[🎯 Start Here](docs/fundamentals/interview-framework.md)** &nbsp;·&nbsp;
 **[🤝 Contribute](CONTRIBUTING.md)**
@@ -201,15 +209,16 @@ Open the [interactive site](https://ali-meh619.github.io/System_Design_ML_Princi
 
 ---
 
+<br>
+
 ## 🚀 Quick Start
 
 **Option A — Interactive site (recommended)**
 
-```
-https://ali-meh619.github.io/System_Design_ML_Principles/
-```
+> **[Open the full Interactive Website here 🌐](https://ali-meh619.github.io/System_Design_ML_Principles/)**
 
 No install. Works offline after first load. Progress saves to your browser.
+Includes an inline reader, quiz/flashcard mode, dark mode, and bookmarks.
 
 **Option B — Run locally**
 
