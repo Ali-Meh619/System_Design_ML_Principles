@@ -1,6 +1,6 @@
 # System Design Playbook — Documentation
 
-> **37 in-depth topics** covering everything from interview frameworks to AI agent architectures. Each file is designed to be a complete reference — not a summary.
+> **39 in-depth topics** covering everything from interview frameworks to AI agent architectures. Each file is designed to be a complete reference — not a summary.
 
 ---
 
@@ -20,7 +20,7 @@
 
 ---
 
-## 📚 All 37 Topics
+## 📚 All 39 Topics
 
 ### 📐 Foundation
 - [Interview Framework — The Universal 4-Step Approach](fundamentals/interview-framework.md)
@@ -76,6 +76,8 @@
 ### 📋 Reference
 - [Common Scenarios & Cheat Sheets](reference/scenario-cheat-sheet.md)
 - [Reusable Design Templates (12 blueprints)](reference/reusable-design-templates.md)
+- [LeetCode Question Patterns](reference/leetcode-patterns.md)
+- [Low-Level System Design (LLD)](reference/low-level-design.md)
 
 ---
 
@@ -212,4 +214,4 @@ Missing a topic? Open an issue with the title "Topic Request: [topic name]".
 
 ---
 
-*Last updated: March 2026 | 37 topics across 9 categories*
+*Last updated: March 2026 | 39 topics across 10 categories*
