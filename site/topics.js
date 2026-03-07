@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design Playbook — Topics
-   38 sections across 10 categories
+   39 sections across 10 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 
@@ -637,6 +637,40 @@ window.TOPICS = [
   },
 
   /* ── REFERENCE ───────────────────────────────────────────────── */
+
+  {
+    id:         "low-level-design",
+    title:      "Low-Level System Design (LLD)",
+    category:   "Reference",
+    icon:       "🏗️",
+    difficulty: "intermediate",
+    summary:    "Object-oriented design for interviews: SOLID principles, 13 design patterns with code (Singleton, Factory, Builder, Observer, Strategy, State, Command, Decorator, Composite), 7 classic LLD questions fully implemented (LRU Cache, Parking Lot, Elevator, Rate Limiter, KV Store, Pub/Sub, ATM), concurrency patterns, and a design-pattern selector table.",
+    subtopics:  [
+      "LLD Interview Framework (6-step approach)",
+      "SOLID Principles — one rule + violation signal per principle",
+      "Singleton — thread-safe double-checked locking",
+      "Factory — decouple creation from usage",
+      "Builder — method chaining for complex objects",
+      "Decorator — add behaviour without subclassing",
+      "Composite — tree structures, uniform interface",
+      "Observer / EventBus — one-to-many notification",
+      "Strategy — swap algorithms at runtime",
+      "State — eliminate if/elif with state classes",
+      "Command — encapsulate requests, enable undo/redo",
+      "LRU Cache — HashMap + Doubly Linked List",
+      "Parking Lot — inheritance, Spot/Vehicle/Ticket",
+      "Elevator System — State + SCAN scheduling",
+      "Rate Limiter — Token Bucket with threading.Lock",
+      "In-Memory KV Store — lazy TTL expiry",
+      "Pub/Sub Message Broker — topic-based delivery",
+      "ATM — full State machine walkthrough",
+      "Concurrency patterns — Lock, RLock, Condition, Queue",
+      "Design Pattern Selector table",
+      "LLD Interview Cheat Sheet (12 questions mapped to patterns)",
+    ],
+    tags:  ["lld", "oop", "design patterns", "solid", "singleton", "factory", "observer", "strategy", "state", "lru cache", "parking lot", "elevator", "concurrency", "object oriented", "interview"],
+    path:  "../docs/reference/low-level-design.md"
+  },
 
   {
     id:         "leetcode-patterns",

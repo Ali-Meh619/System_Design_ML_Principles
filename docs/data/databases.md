@@ -41,6 +41,77 @@ The **SQL vs NoSQL** debate is really a debate about **structure vs scale**. SQL
 
 ---
 
+## Replication: Master-Slave & Master-Master
+
+Replication copies data from one database node to others for **fault tolerance**, **read scaling**, and **geographic distribution**. Understanding this is essential for any system design involving databases.
+
+### Master-Slave (Primary-Replica)
+
+```
+Writes ──► [ Primary / Master ]
+                │  replication
+         ┌──────┴──────┐
+         ▼             ▼
+   [ Replica 1 ]  [ Replica 2 ]  ◄── Reads
+```
+
+- **Primary** accepts all writes. **Replicas** are read-only copies.
+- Application routes `SELECT` → replica, `INSERT/UPDATE/DELETE` → primary.
+- If primary dies, a replica is **promoted** (manual or automatic failover via tools like Patroni for Postgres, MHA for MySQL).
+
+| Property | Detail |
+|---|---|
+| Read scaling | Add replicas to distribute read load |
+| Write scaling | Does **not** scale writes — all writes still go to one node |
+| Failover | ~30s–2min automatic (with orchestrator) or manual |
+| Data loss on crash | Up to replication lag (0 with sync, seconds with async) |
+
+### Synchronous vs Asynchronous Replication
+
+| Mode | How it works | Trade-off |
+|---|---|---|
+| **Synchronous** | Primary waits for ≥1 replica to confirm write before ACK-ing client | Zero data loss on failover. Higher write latency (+network RTT). |
+| **Asynchronous** | Primary ACKs client immediately; replica catches up in background | Low write latency. **Replication lag** means replica may be seconds behind. Data loss possible if primary crashes before replica syncs. |
+| **Semi-synchronous** | Wait for at least one replica (not all). MySQL default. | Balance of latency and durability. |
+
+> **Replication lag** is the delay between a write reaching the primary and appearing on replicas. Typical: 10–100 ms on LAN, seconds on WAN. Problematic for "read-your-own-writes" consistency — a user writes then immediately reads and may hit a stale replica.
+
+**Read-your-own-writes fix:** route reads for the same user to the primary for ~1–2s after a write, or always route the writing user's reads to primary.
+
+### Master-Master (Multi-Primary)
+
+Both nodes accept writes and replicate to each other. Enables writes from multiple regions.
+
+```
+[ Primary A ] ◄──── bidirectional replication ────► [ Primary B ]
+  (us-east)                                            (eu-west)
+```
+
+**Problem:** Concurrent writes to the same row on both nodes → **write conflict**. Conflict resolution strategies:
+- **Last-write-wins (LWW):** timestamp decides winner. Risk of data loss.
+- **Application-level merge:** custom logic (used in CRDTs, Google Docs).
+- **Avoid conflicts:** route each user to one primary (geo-pinning). Simplest.
+
+> Multi-master is complex to operate correctly. Prefer single-primary with read replicas unless you truly need multi-region writes.
+
+### Replication in Practice
+
+| System | Default mode | Notes |
+|---|---|---|
+| PostgreSQL | Async streaming replication | Patroni for automatic failover; synchronous standby optional |
+| MySQL | Async by default | Semi-sync available; Group Replication for multi-master |
+| AWS Aurora | 6-way sync across AZs, async cross-region | Quorum writes (4/6 nodes), < 10 ms replica lag |
+| Cassandra | Peer-to-peer (no master) | Replication factor N; reads/writes succeed with quorum (N/2+1) |
+| MongoDB | Replica Set (1 primary, N secondaries) | Automatic election on primary failure |
+
+### Interview Talking Points
+
+- "I'd use a primary with 2 async replicas for reads. For the checkout flow, I'd route writes and immediate post-write reads to primary to avoid reading stale replica data."
+- "Aurora uses 6-copy quorum writes across AZs — a node failure doesn't affect write availability and replica lag is under 10 ms."
+- "If we need multi-region writes, I'd use CockroachDB or Spanner which handle conflict resolution at the database layer rather than rolling our own master-master setup."
+
+---
+
 ## Type 2: Key-Value Stores
 
 **Key-value stores** are the simplest NoSQL databases. You store and retrieve data by a single unique key — like a giant dictionary. There are no tables, no schemas, no queries. Just: "store this value under this key" and "give me the value for this key." This extreme simplicity is exactly what makes them so fast and scalable.
