@@ -1,4 +1,4 @@
-/* System Design Playbook — Interactive Navigator */
+/* System Design & ML Playbook — Interactive Navigator */
 (function () {
   'use strict';
 

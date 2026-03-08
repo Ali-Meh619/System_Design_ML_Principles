@@ -109,6 +109,49 @@ Classify all data to apply appropriate controls:
 
 ---
 
+## Recommended Default
+
+For most interview answers, a solid privacy default is:
+
+1. Store raw PII only in a dedicated, tightly controlled service
+2. Use opaque internal IDs everywhere else
+3. Encrypt in transit and at rest, then add application-level encryption for the most sensitive fields
+4. Design deletion and export flows from day one
+5. Keep data residency explicit by region, not as an afterthought
+
+This gives you a practical story for GDPR/CCPA without overengineering.
+
+---
+
+## Failure Modes
+
+| Failure mode | What breaks | Mitigation |
+|--------------|------------|-----------|
+| PII duplicated across services | Deletion becomes impossible | Central PII vault + tokenization |
+| Logs contain raw user data | Silent privacy leak | Logging redaction and allowlists |
+| Backups ignored in deletion flow | "Deleted" data still recoverable | Crypto-shredding or backup purge policy |
+| Global replication violates residency | Regulatory exposure | Region pinning + residency-aware routing |
+| Consent not versioned | Cannot prove lawful basis | Consent ledger with timestamp and policy version |
+
+---
+
+## Metrics
+
+- Percentage of services storing raw PII
+- GDPR deletion request completion time
+- Data export request completion time
+- Number of log redaction violations
+- Cross-region data transfer violations
+- Encryption coverage by storage system
+
+---
+
+## Interview Answer Sketch
+
+I would isolate raw PII in a dedicated vault service and let the rest of the platform operate on opaque user IDs. Data is encrypted in transit and at rest, with application-level encryption for the most sensitive fields. For GDPR deletion, I prefer tokenization and crypto-shredding so deleting the key or mapping makes residual copies unusable. For residency, I would pin regulated user data to approved regions and prevent accidental cross-region replication. The key failure modes are duplicated PII, unredacted logs, and incomplete deletion workflows, so I would measure deletion latency, redaction violations, and encryption coverage continuously.
+
+---
+
 ## Interview Talking Points
 
 - "PII is stored only in a dedicated PII Vault service. All other services only see the user_id. On GDPR deletion request, we delete from the vault — crypto-shredding makes all other copies meaningless."

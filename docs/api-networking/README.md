@@ -24,7 +24,10 @@ These aren't advanced topics — they're expected knowledge for mid-level and se
 | 2 | [Load Balancing & Networking](load-balancing.md) | 🟡 Mid | L4 vs L7, algorithms, health checks, global routing |
 | 3 | [Rate Limiting In Depth](rate-limiting.md) | 🟡 Mid | All 5 algorithms, distributed rate limiting, full system design |
 | 4 | [Real-time Communication](realtime-communication.md) | 🟡 Mid | Polling vs SSE vs WebSocket, scaling WebSockets |
-| 5 | [Storage & CDN](storage-and-cdn.md) | 🟢 Beginner | Object/block/file storage, CDN architecture |
+
+---
+
+> Related reading: [Storage & CDN](../data/storage-and-cdn.md) lives under **Data Storage** because the main design decision is storage architecture first, with CDN strategy layered on top.
 
 ---
 

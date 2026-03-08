@@ -128,6 +128,103 @@ LLM answers with grounded information
 
 ---
 
+## Planning vs Reactive Execution
+
+One of the most important agent design decisions is whether the agent should plan a full workflow up front or react step by step.
+
+| Mode | Best for | Risk |
+|------|----------|------|
+| **Reactive (ReAct)** | Debugging, exploration, search-heavy work | Can loop or thrash if not budget-limited |
+| **Plan-first** | Multi-step tasks with stable dependencies | Plan may become stale after first tool result |
+| **Hybrid** | Most production agents | More orchestration complexity |
+
+### Recommended default
+
+Use a **hybrid**:
+
+1. make a short plan
+2. execute one step at a time
+3. re-plan after important observations
+
+This is much more robust than either pure planning or pure reaction alone.
+
+---
+
+## Retrieval Architecture Choices
+
+Agent quality depends heavily on how context is fetched.
+
+| Retrieval pattern | Best for | Trade-off |
+|-------------------|----------|-----------|
+| **Keyword search** | Code symbols, exact identifiers, logs | Misses semantic matches |
+| **Dense retrieval (vector search)** | Natural-language knowledge lookup | Can return plausible but irrelevant chunks |
+| **Hybrid retrieval** | Mixed corpora, enterprise search | More moving parts, but best default |
+| **Hierarchical retrieval** | Large documents / codebases | Better precision, extra orchestration |
+
+### Good production pattern
+
+- Start with hybrid retrieval
+- Re-rank top results before sending to the LLM
+- Cap context aggressively rather than dumping everything into the prompt
+
+This reduces both hallucination and long-context dilution.
+
+---
+
+## Tool Reliability, Retries & Idempotency
+
+Agents fail more often at the tool boundary than in raw text generation.
+
+| Failure | Example | Mitigation |
+|---------|---------|-----------|
+| Timeout | Search API too slow | Retry with deadline, fallback tool |
+| Invalid arguments | Malformed JSON tool call | Schema validation + repair loop |
+| Duplicate action | Agent retries "send email" twice | Idempotency key / action UUID |
+| Partial success | File created but DB not updated | Compensating action or workflow checkpoint |
+
+### Practical rules
+
+- Treat tools like unreliable distributed systems
+- Separate **read tools** from **write tools**
+- Require approval for destructive or expensive actions
+- Log every tool call with arguments, result, and latency
+
+---
+
+## Memory Pruning & Context Compression
+
+Unbounded memory is a trap. Agents need selective memory, not infinite memory.
+
+### Common strategies
+
+- **Sliding window** for most recent conversational turns
+- **Summarization** for older turns
+- **Episodic memory** for key decisions and durable facts
+- **Tool trace compaction** so intermediate noise does not dominate the prompt
+
+If you do not prune memory, the agent gets slower, more expensive, and less accurate.
+
+---
+
+## Budget, Cost & Latency Control
+
+Production agents need hard limits:
+
+| Budget | Example guardrail |
+|--------|-------------------|
+| **Step budget** | Max 12 tool/LLM turns |
+| **Token budget** | Max 30K prompt + completion tokens |
+| **Time budget** | Max 20 seconds wall-clock |
+| **Spend budget** | Cap expensive model usage per request |
+
+### Common optimization pattern
+
+- cheap model for classification / routing
+- stronger model for planning or final synthesis
+- tool calls for deterministic tasks like code execution, arithmetic, or search
+
+---
+
 ## LLM Inference Infrastructure
 
 | Component | Purpose | Technology |
@@ -176,6 +273,54 @@ Without protection: Agent forwards all emails!
 2. **Privilege separation:** Agent's "read" context and "write" instructions use separate models/prompts
 3. **Human-in-the-loop:** Require approval for any write operation
 4. **Constrained output format:** Force LLM to output only valid JSON tool calls, not free text
+
+---
+
+## Recommended Default Architecture
+
+For most interview settings, I would recommend:
+
+1. **Hybrid planner/reactor** loop
+2. **Hybrid retrieval + re-ranking**
+3. **Read tools by default, write tools behind approval**
+4. **Checkpointed execution** for long tasks
+5. **Memory compaction** via sliding window + summaries + episodic store
+6. **Hard budgets** on steps, tokens, time, and cost
+7. **Trace logging + evaluation harness** before shipping
+
+This is a much stronger answer than "just call an LLM with tools."
+
+---
+
+## Failure Modes
+
+| Failure mode | What happens | Mitigation |
+|--------------|--------------|-----------|
+| Tool hallucination | Agent invents nonexistent tool or arguments | Strict schema validation + tool registry |
+| Infinite loop / thrashing | Agent keeps retrying weak actions | Max steps + critic / replanning trigger |
+| Retrieval miss | Agent answers from bad memory | Hybrid retrieval + fallback search + abstain path |
+| Prompt injection | Malicious content hijacks behavior | Sandboxing, privilege separation, approval gates |
+| Context bloat | Agent gets expensive and inconsistent | Summarization, pruning, retrieval caps |
+| Duplicate side effects | Same action executed twice | Idempotency keys and action ledger |
+
+---
+
+## Metrics
+
+- Task success rate
+- Tool-call success rate
+- Mean steps per task
+- Human-approval rate for write actions
+- Timeout / abandonment rate
+- Cost per successful task
+- Hallucinated tool-call rate
+- Retrieval relevance score / judge score
+
+---
+
+## Interview Answer Sketch
+
+I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, retrieval, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is hybrid search plus re-ranking, and tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, tool reliability, and hallucinated action rate on an evaluation set.
 
 ---
 

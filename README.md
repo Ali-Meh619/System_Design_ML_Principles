@@ -4,7 +4,7 @@
 
 # ⚡ System Design & Machine Learning Playbook
 
-### The most comprehensive, interactive system design and ML reference — built for engineers cracking technical interviews.
+### An interactive reference guide for engineers preparing for System Design and ML interviews.
 
 <br>
 
@@ -20,7 +20,7 @@
 [![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/network/members)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Topics](https://img.shields.io/badge/Topics-41-purple?style=for-the-badge)](docs/)
+[![Topics](https://img.shields.io/badge/Topics-43-purple?style=for-the-badge)](docs/)
 [![Interactive](https://img.shields.io/badge/Site-Live-success?style=for-the-badge&logo=github)](https://ali-meh619.github.io/System_Design_ML_Principles/)
 
 <br>
@@ -36,17 +36,27 @@
 
 ---
 
-## ✨ What makes this different?
+## ✨ How To Use This Repo
 
-Most system design resources are scattered blog posts or 400-page books. This repo gives you **everything in one place** — structured, searchable, and interactive.
+Most interview resources are either too scattered or too theoretical. This repo is organized around three practical tracks:
+
+| Track | Best for | Start here |
+|-------|----------|------------|
+| **Core System Design** | Distributed systems, APIs, storage, scaling | [docs/](docs/) |
+| **AI & Machine Learning** | ML system design, agents, classic ML, deep learning, LLMs | [docs/machine-learning/README.md](docs/machine-learning/README.md) |
+| **Reference & Practice Appendix** | Templates, cheat sheets, LeetCode patterns, LLD | [docs/reference/README.md](docs/reference/README.md) |
+
+Use the interactive site when you want navigation, quiz mode, and progress tracking. Use the Markdown docs when you want dense references you can skim before an interview.
+
+## 🚀 What Makes It Useful
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **41 interview-ready topics** | Every domain: distributed systems, machine learning, databases, security, and more |
+| 🎯 **43 interview-ready topics** | Core system design, AI/ML, security, and interview reference material |
 | 🌙 **Dark / Light mode** | Persisted preference, instant toggle with `d` |
 | ✅ **Progress tracking** | Mark topics as read. Your progress saves locally. |
 | 🔖 **Bookmarks** | Save topics to revisit. Accessible from any page. |
-| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 41 topics |
+| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 43 topics |
 | 📖 **Inline reader** | Read every topic without leaving the page — with prev/next navigation |
 | ⌨️ **Keyboard-first** | `/` search, `q` quiz, `b` bookmarks, `?` shortcuts |
 | 📊 **Visual progress bar** | See your overall completion at a glance |
@@ -57,7 +67,7 @@ Most system design resources are scattered blog posts or 400-page books. This re
 
 ---
 
-## 🗂️ Topic Coverage (41 Topics)
+## 🗂️ Topic Coverage (43 Topics)
 
 <details>
 <summary><strong>🟠 Foundation (4)</strong></summary>
@@ -124,18 +134,20 @@ Most system design resources are scattered blog posts or 400-page books. This re
 </details>
 
 <details>
-<summary><strong>🔴 Security (2)</strong></summary>
+<summary><strong>🔴 Security (4)</strong></summary>
 
 - 🔐 [Security & Authentication](docs/security/security-and-authentication.md) — Sessions vs JWT, OAuth 2.0 flow, API security checklist
+- 🪪 [Authorization, SSO & MFA](docs/security/authorization-sso-mfa.md) — RBAC/ABAC/ReBAC, OIDC vs SAML, step-up authentication, passkeys
 - 🛡️ [Privacy & Data Compliance](docs/security/privacy-and-compliance.md) — PII handling, encryption strategies, GDPR/CCPA, data residency
+- 🔑 [Secrets Management & Threat Modeling](docs/security/secrets-management-threat-modeling.md) — secret rotation, API keys, KMS/HSM, STRIDE, attack paths
 
 </details>
 
 <details>
 <summary><strong>🩷 AI & Machine Learning (5)</strong></summary>
 
-- 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — 5-layer ML pipeline, feature store, recommendation systems, model serving
-- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — Planner/tool/memory anatomy, multi-agent patterns, safety, LLM-as-a-Judge
+- 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — feature store, recommendation systems, rollout strategy, drift, serving latency, rollback
+- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — planner/reactor loops, retrieval, tool reliability, memory, budgets, safety
 - 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, bagging vs boosting, data leakage, XGBoost, SVM, PCA, class imbalance
 - 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, Adam/AdamW, BatchNorm, CNN (ResNet), LSTM, full Transformer deep-dive
 - 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Transformers, RAG, LoRA/QLoRA, RLHF/DPO, decoding strategies, KV cache, CoT, hallucinations
@@ -175,13 +187,13 @@ Interview Framework → Numbers to Know → Database Selection → Caching Deep 
 ### 🚀 Mid-Level — Master distributed systems (7 topics)
 
 ```
-Distributed Fundamentals → Resilience Patterns → Observability → High Availability → Microservices → Notifications → Message Queues
+Distributed Fundamentals → Resilience Patterns → Observability → High Availability → Microservices → Notifications → Authorization / MFA
 ```
 
 ### 🏆 Advanced — Push beyond the standard interview (7 topics)
 
 ```
-AI Agent System Design → Real-time Collaboration → Probabilistic DS → Stream Processing → Distributed Locking → ML System Design → DB Internals
+AI Agent System Design → ML System Design → Secrets / Threat Modeling → Real-time Collaboration → Probabilistic DS → Stream Processing → DB Internals
 ```
 
 ---
@@ -237,25 +249,25 @@ System_Design_ML_Principles/
 │   ├── styles.css              # Full design system with dark/light mode
 │   ├── app.js                  # All interactive features
 │   └── topics.js               # Topic registry with icons, difficulty, tags, paths
-├── docs/                       # 41 topic documents
-│   ├── fundamentals/           # Interview framework, estimation, I/O, networking
-│   ├── architecture/           # APIs, load balancing, rate limiting, realtime, CDN
+├── docs/                       # 43 topic documents
+│   ├── foundation/             # Interview framework, estimation, I/O, networking
+│   ├── api-networking/         # APIs, load balancing, rate limiting, realtime
 │   ├── data/                   # Databases, caching, queues, internals
 │   ├── distributed/            # CAP, consistency, microservices, resilience, patterns
 │   ├── search/                 # Full-text search, typeahead, geo, stream processing
 │   ├── scale/                  # Observability, HA, ID gen, pagination, notifications
-│   ├── security/               # Auth, privacy, compliance
-│   ├── advanced/               # ML systems, AI agents, collaboration, webhooks
-│   ├── machine-learning/       # Classic ML, Deep Learning, LLM interview questions
-│   └── reference/              # Design templates, scenario cheat sheet, LeetCode, LLD
+│   ├── security/               # Auth, AuthZ, privacy, secrets, threat modeling
+│   ├── machine-learning/       # ML systems, agents, Classic ML, DL, LLMs
+│   ├── specialized/            # Collaboration and webhook-heavy systems
+│   └── reference/              # Templates, cheat sheets, LeetCode, LLD
 └── assets/                     # Architecture diagram images
 ```
 
 ---
 
-## 📖 Doc Format
+## 📖 Recommended Topic Structure
 
-Every topic document follows a consistent structure optimized for interview prep:
+The strongest docs in this repo use a consistent interview-prep structure. Not every legacy page is identical yet, but new and upgraded docs aim to follow this pattern:
 
 ```markdown
 ## Problem
@@ -284,7 +296,7 @@ The concise 2-minute answer you'd give under time pressure.
 Contributions make this better for everyone:
 
 1. **Fork** the repo and create a branch: `git checkout -b feat/your-topic`
-2. **Follow the doc format** above — every topic needs trade-offs and failure modes
+2. **Follow the recommended topic structure** above — especially defaults, trade-offs, failure modes, and metrics
 3. **Add the topic** to `site/topics.js` with an icon, difficulty, and tags
 4. **Open a PR** using the provided template
 

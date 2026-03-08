@@ -10,7 +10,7 @@
 |---|-------|----------------|
 | 1 | [Common Scenarios & Solutions](scenario-cheat-sheet.md) | 13 pattern cheat sheets for any problem type |
 | 2 | [Reusable Design Templates](reusable-design-templates.md) | 12 complete system blueprints |
-| 3 | [LeetCode Question Patterns](leetcode-patterns.md) | 19 coding patterns + complexity cheat sheet |
+| 3 | [LeetCode Question Patterns](leetcode-patterns.md) | 21 coding patterns + complexity cheat sheet |
 | 4 | [Low-Level System Design (LLD)](low-level-design.md) | SOLID, 10 patterns, 11 full LLD implementations |
 
 ---

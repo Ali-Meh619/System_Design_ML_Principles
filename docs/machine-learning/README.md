@@ -1,6 +1,6 @@
 # 🪩 Machine Learning Interview Prep
 
-> Comprehensive ML interview coverage — from classic algorithms and deep learning foundations to modern LLMs and GenAI. These are now a core part of engineering interviews at AI-forward companies.
+> Interview-focused AI/ML coverage split across two tracks: production ML system design and modern model fundamentals. Use the system-design docs when you need architecture trade-offs, and the theory docs when you need concepts, algorithms, and model behavior.
 
 ---
 
@@ -14,7 +14,7 @@
 | 4 | [Deep Learning](deep-learning.md) | 🟡 Intermediate | Weight init, backprop, Adam, BatchNorm, CNNs, LSTMs, Transformers |
 | 5 | [LLM Interview Questions](llm-interviews.md) | 🔴 Advanced | Transformer architecture, RAG, LoRA, RLHF/DPO, decoding, KV cache, CoT |
 
-*(These sections are fully completed with interview-ready content.)*
+*These sections are actively maintained and optimized for interview prep rather than textbook completeness.*
 
 ---
 
@@ -26,6 +26,9 @@ New to ML interviews:
 
 System Design focus:
   Machine Learning in System Design → AI Agent System Design
+
+Theory / modeling focus:
+  Classic Machine Learning → Deep Learning → LLM Interview Questions
 ```
 
 ---

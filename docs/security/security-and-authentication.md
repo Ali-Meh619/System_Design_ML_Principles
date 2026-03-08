@@ -135,6 +135,49 @@ bcrypt.checkpw(password, hashed)  # Returns True/False
 
 ---
 
+## Recommended Default
+
+For most product interviews, a strong default answer is:
+
+1. **User auth:** OIDC / OAuth 2.0 Authorization Code + PKCE
+2. **Session model:** short-lived access token or server session + refresh token
+3. **Gateway enforcement:** authentication, TLS termination, rate limiting, audit hooks
+4. **Authorization:** RBAC for coarse permissions, ownership check for resource access
+5. **Secrets:** managed in KMS / Secrets Manager, never embedded in code
+
+This is secure, realistic, and easy to justify.
+
+---
+
+## Failure Modes
+
+| Failure mode | What breaks | Mitigation |
+|--------------|------------|-----------|
+| Long-lived JWTs | Revocation is delayed | Short TTL + refresh token rotation |
+| Tokens in localStorage | XSS can steal tokens | Use HttpOnly cookies or secure storage patterns |
+| Missing auth at one endpoint | Unauthorized access path | Central auth middleware + deny-by-default routing |
+| Missing ownership check | User reads another user's data | Always validate resource owner / tenant |
+| Secrets in env files or code | Blast radius after leak | Vault / Secrets Manager + rotation |
+
+---
+
+## Metrics
+
+- Login success rate
+- Refresh token failure rate
+- Unauthorized request rate
+- Rate-limited request volume
+- Time to revoke compromised credentials
+- Password reset abuse attempts
+
+---
+
+## Interview Answer Sketch
+
+I would use OIDC Authorization Code + PKCE for user login, issue short-lived access tokens with refresh tokens, and enforce authentication at the gateway before requests reach services. Authorization is separate from authentication: after validating identity, the backend checks role plus ownership or tenant boundaries. All endpoints use TLS, secrets live in a managed secret store, and every sensitive action is logged for audit. The main failure modes are stale JWT permissions, missing resource checks, and leaked credentials, so I would keep tokens short-lived, centralize authorization checks, and automate secret rotation.
+
+---
+
 ## Interview Talking Points
 
 - "Authentication: JWT tokens with 15-minute expiry + 7-day refresh tokens. The API Gateway validates the token signature — no database lookup on every request."

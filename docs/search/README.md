@@ -11,7 +11,7 @@
 | 1 | [Search & Typeahead Systems](search-and-typeahead.md) | 🟡 Mid | Inverted index, autocomplete, relevance ranking |
 | 2 | [Stream Processing & Top-K](stream-processing.md) | 🔴 Advanced | Count-Min Sketch, Lambda/Kappa, windowing |
 | 3 | [Geo & Location Systems](geo-systems.md) | 🔴 Advanced | Geohash, quadtree, Uber driver matching |
-| 4 | [Probabilistic Data Structures](../search/probabilistic-data-structures.md) | 🔴 Advanced | Bloom filter, HyperLogLog, Count-Min Sketch — approximation at scale |
+| 4 | [Probabilistic Data Structures](probabilistic-data-structures.md) | 🔴 Advanced | Bloom filter, HyperLogLog, Count-Min Sketch — approximation at scale |
 
 ---
 

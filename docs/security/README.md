@@ -1,6 +1,6 @@
 # 🔐 Security
 
-> Security questions come up in every senior-level interview and most staff-level designs. Authentication architecture, authorization models, encryption strategy, and compliance — these are expected knowledge, not bonus points.
+> Security is not a bonus section in senior interviews. It is the layer that turns a "working" design into a production-ready design. This category focuses on the security decisions interviewers actually expect you to explain under pressure.
 
 ---
 
@@ -9,118 +9,70 @@
 | # | Topic | Difficulty | What You'll Learn |
 |---|-------|-----------|------------------|
 | 1 | [Security & Authentication](security-and-authentication.md) | 🟡 Mid | Sessions vs JWT, OAuth 2.0, API security checklist |
-| 2 | [Privacy & Data Compliance](privacy-and-compliance.md) | 🟡 Mid | PII handling, GDPR, encryption strategies |
+| 2 | [Authorization, SSO & MFA](authorization-sso-mfa.md) | 🟡 Mid | RBAC/ABAC/ReBAC, OIDC vs SAML, step-up auth |
+| 3 | [Privacy & Data Compliance](privacy-and-compliance.md) | 🟡 Mid | PII handling, GDPR/CCPA, encryption strategy, residency |
+| 4 | [Secrets Management & Threat Modeling](secrets-management-threat-modeling.md) | 🔴 Advanced | Secrets lifecycle, KMS/HSM, API keys, STRIDE |
 
 ---
 
-## Authentication vs Authorization
+## Why This Category Matters
 
-These are often confused. Get them right in interviews:
+In many interviews, the first 80% of the design is straightforward. The remaining 20% is where seniority shows:
 
-| Concept | Question it answers | Example |
-|---------|-------------------|---------|
-| **Authentication (AuthN)** | Who are you? | Login with username + password |
-| **Authorization (AuthZ)** | What can you do? | User can read but not delete |
+- How do you authenticate users and services?
+- How do you authorize access without leaking cross-tenant data?
+- How do you protect secrets, signing keys, and API credentials?
+- How do you explain privacy/compliance without hand-waving?
+- What attack paths would you prioritize defending first?
 
----
-
-## Session vs JWT: Decision Guide
-
-| | Sessions | JWT |
-|--|---------|-----|
-| **State** | Server-side (stateful) | Client-side (stateless) |
-| **Storage** | Redis / DB session store | Client holds the token |
-| **Revocation** | Instant (delete from store) | Hard (must blacklist or short TTL) |
-| **Scale** | Needs sticky sessions or shared store | Scales easily (no shared state) |
-| **Size** | Small session ID | Larger token payload |
-| **Best for** | Web apps, admin panels | APIs, microservices |
-
-**JWT security rules:**
-1. Short access token TTL (15 minutes)
-2. Longer refresh token TTL (7–30 days), stored as HttpOnly cookie
-3. Always use HTTPS (tokens in transit must be encrypted)
-4. Never store JWTs in `localStorage` (XSS vulnerable) — use `HttpOnly` cookie
+If you can answer those clearly, your design sounds production-ready instead of academic.
 
 ---
 
-## OAuth 2.0 Flows
+## What To Study First
 
-| Flow | Use case | Security level |
-|------|---------|---------------|
-| **Authorization Code + PKCE** | Web apps, mobile apps | ✅ Highest — recommended |
-| **Client Credentials** | Server-to-server (no user) | ✅ High |
-| **Device Code** | Smart TV, CLI tools | ✅ Good |
-| ~~Implicit~~ | ~~Browser apps~~ | ❌ Deprecated |
-| ~~Password~~ | ~~Legacy~~ | ❌ Never use |
+```text
+General backend / product interviews:
+  Security & Authentication -> Authorization, SSO & MFA
 
-**Authorization Code Flow:**
-```
-User → [Your App] → "Sign in with Google"
-→ [Google Auth Server] → User logs in
-→ Redirect to your app with auth code
-→ [Your backend] exchanges code for tokens (server-side, never exposed)
-→ Access token (short-lived) + Refresh token (long-lived)
+B2B / enterprise interviews:
+  Authorization, SSO & MFA -> Secrets Management & Threat Modeling
+
+Regulated / privacy-heavy systems:
+  Privacy & Data Compliance -> Secrets Management & Threat Modeling
 ```
 
 ---
 
-## API Security Checklist
+## Security Quick Map
 
-Copy this into every design:
-
-- [ ] **TLS everywhere** — HTTPS with TLS 1.2+ minimum, 1.3 preferred
-- [ ] **Authentication** — Every endpoint requires auth (except public ones)
-- [ ] **Rate limiting** — Per user, per IP, per endpoint
-- [ ] **Input validation** — Whitelist, not blacklist; validate at API boundary
-- [ ] **RBAC/ABAC** — Principle of least privilege for all service accounts
-- [ ] **Secrets management** — Never in code; use AWS Secrets Manager / Vault
-- [ ] **Audit logging** — Log all authenticated actions with user_id + timestamp
-- [ ] **CORS** — Restrict to known origins
-- [ ] **SQL injection prevention** — Parameterized queries only
-- [ ] **SSRF protection** — Validate and restrict outbound URLs
+| Interview question | Best doc to start with |
+|--------------------|------------------------|
+| "Sessions or JWT?" | [Security & Authentication](security-and-authentication.md) |
+| "How do enterprise customers log in with Okta?" | [Authorization, SSO & MFA](authorization-sso-mfa.md) |
+| "How do you prevent account takeover?" | [Authorization, SSO & MFA](authorization-sso-mfa.md) |
+| "Where do API keys and DB passwords live?" | [Secrets Management & Threat Modeling](secrets-management-threat-modeling.md) |
+| "What if a user asks for GDPR deletion?" | [Privacy & Data Compliance](privacy-and-compliance.md) |
+| "What are the biggest attack paths here?" | [Secrets Management & Threat Modeling](secrets-management-threat-modeling.md) |
 
 ---
 
-## Encryption Strategy
+## Security Defaults Worth Saying Out Loud
 
-| Data State | Encryption Method |
-|-----------|------------------|
-| **In transit** | TLS 1.2/1.3 (HTTPS, TLS for DB connections) |
-| **At rest (disk)** | AES-256 encryption (AWS S3 SSE, EBS encryption) |
-| **At rest (field-level)** | Application-level encryption for PII columns |
-| **Passwords** | bcrypt / Argon2 (NEVER MD5, SHA1) |
-| **PII masking** | Tokenization (replace with reference token) |
+- **TLS everywhere**, including service-to-service traffic where feasible
+- **Short-lived credentials** over long-lived static secrets
+- **Least privilege** for both humans and services
+- **Audit logs** for auth, admin actions, and sensitive writes
+- **Step-up authentication** for high-risk actions
+- **Tenant-bound authorization checks** on every sensitive request
 
----
-
-## GDPR/CCPA Key Requirements
-
-| Requirement | What it means technically |
-|-------------|--------------------------|
-| **Right to erasure** | Must delete all user data within 30 days of request |
-| **Data portability** | Must export all user data in machine-readable format |
-| **Consent** | Must record explicit consent with timestamp |
-| **Data minimization** | Only collect data you actually need |
-| **Breach notification** | Must notify within 72 hours (GDPR) |
-
-**Right to erasure architecture:**
-```
-user_id: u123 appears in:
-  - users table → DELETE row
-  - posts table → Anonymize author_id
-  - logs/analytics → Remove or anonymize
-  - backups → Schedule purge on rotation
-  - 3rd-party services → Delete via their APIs
-```
+These make your answer sound much stronger even before you dive into details.
 
 ---
 
 ## Practice Questions
 
-1. Design the authentication system for a banking app. The app needs both mobile (React Native) and web (React) clients. Requirements: MFA, session management, automatic logout after 15 minutes of inactivity.
-
-2. Your API is accessed by 3rd-party developers. Design the API key management system: key creation, rotation, scoping, and revocation.
-
-3. A user requests erasure under GDPR. Their data exists in: PostgreSQL, a Redis cache, Elasticsearch, Kafka event log, and S3 backups. Describe the deletion process for each.
-
-4. What's the difference between symmetric and asymmetric encryption? When would you use each in a distributed system?
+1. Design authentication and authorization for a banking app that supports web and mobile clients with MFA.
+2. Design SSO for a B2B SaaS product whose customers use Okta, Azure AD, and Google Workspace.
+3. Your platform exposes APIs to third-party developers. Design API key creation, scoping, rotation, and revocation.
+4. A user requests deletion under GDPR, but their data exists in PostgreSQL, Kafka, backups, and analytics logs. Walk through the deletion strategy.

@@ -127,6 +127,139 @@ Analysis (after N days, N users):
 
 ---
 
+## Offline vs Online Evaluation
+
+ML systems fail when teams optimize only for offline benchmark scores.
+
+| Evaluation type | What it answers | Examples |
+|-----------------|-----------------|----------|
+| **Offline** | "Is the model better on historical labeled data?" | AUC, precision/recall, NDCG, RMSE |
+| **Online** | "Does this improve user or business outcomes in production?" | CTR, conversion, retention, fraud caught, false decline rate |
+
+### Rule of thumb
+
+- Offline metrics decide **whether a model is worth testing**
+- Online metrics decide **whether a model is worth shipping**
+
+You need both. A better offline ranker can still hurt long-term engagement if it over-optimizes clickbait or ignores diversity.
+
+---
+
+## Feature Freshness & Training-Serving Skew
+
+Two of the most important operational failure modes in ML systems are:
+
+1. **Feature freshness issues**: serving uses stale features, such as "last transaction count" from 3 hours ago in fraud detection
+2. **Training-serving skew**: training and serving compute the same feature differently
+
+### Practical patterns
+
+- Use an online feature store or low-latency cache for hot features
+- Store feature timestamps and reject obviously stale values
+- Version feature definitions and reuse the same transformation logic across batch and online paths
+- Build point-in-time correct training data so future information never leaks backwards
+
+---
+
+## Deployment & Rollout Strategy
+
+Never replace a production model in one step unless the blast radius is tiny.
+
+| Strategy | What it does | Best for |
+|----------|---------------|----------|
+| **Shadow deployment** | New model receives live traffic but does not affect decisions | Validating latency, stability, prediction drift |
+| **Canary** | Send a small percentage of traffic to new model | Safer rollout to real users |
+| **Champion-Challenger** | Current model remains primary while challenger is compared continuously | Recommendation, ranking, fraud |
+| **Blue-Green** | Switch full traffic between two environments | Simpler infra cutovers |
+
+### Rollback rule
+
+Rollback must be a product decision, not a debugging project:
+
+- keep previous model artifact and serving config ready
+- define guardrail metrics ahead of time
+- auto-disable if latency, error rate, or business KPIs cross thresholds
+
+---
+
+## Monitoring, Drift & Retraining
+
+Production ML is a monitoring problem as much as a modeling problem.
+
+| Signal | What it means | Example response |
+|--------|----------------|------------------|
+| **Feature drift** | Input distribution changed | Recompute statistics, inspect upstream data |
+| **Prediction drift** | Score distribution shifted | Check calibration, serving bugs, market change |
+| **Label drift / concept drift** | Relationship between inputs and labels changed | Retrain, update features, revisit business logic |
+| **Serving latency spike** | System too slow for SLA | Reduce feature calls, batch, fallback model |
+| **Fallback rate increase** | Primary model or feature pipeline unhealthy | Investigate dependencies, degrade gracefully |
+
+### Retraining triggers
+
+- scheduled retraining (daily / weekly)
+- threshold-based retraining on drift
+- data volume milestone
+- post-incident retraining after feature bug or bad labels
+
+---
+
+## Latency, Cost & Quality Trade-offs
+
+The best model on paper is often the wrong production choice.
+
+| Choice | Quality | Latency | Cost | Typical use |
+|--------|---------|---------|------|-------------|
+| **Heavier ranker** | Higher | Worse | Higher | Final ranking on a small candidate set |
+| **Two-stage retrieval + rank** | High | Good | Medium | Recommendation, search, ads |
+| **Rule-based fallback** | Lower | Best | Lowest | Degraded mode, cold start, incident response |
+| **Batch scoring** | Medium | Excellent at request time | Low | Email recommendations, periodic risk scoring |
+
+In interviews, explicitly say where you trade model quality for p95 latency or infrastructure cost.
+
+---
+
+## Recommended Default Architecture
+
+For most ML system-design interviews:
+
+1. **Offline training pipeline** with event logs, feature generation, model registry
+2. **Feature store** with offline and online views
+3. **Two-stage serving** when candidate space is large: retrieve first, rank second
+4. **Champion-challenger or canary rollout**
+5. **Fallback path** when model, features, or vector search are unavailable
+6. **Monitoring** for data drift, model quality, latency, and business metrics
+
+This default is practical, production-friendly, and easy to defend.
+
+---
+
+## Failure Modes
+
+| Failure mode | What breaks | Mitigation |
+|--------------|------------|-----------|
+| Offline metric looks great, online KPI drops | Objective mismatch | Add guardrail metrics and online experiments |
+| Feature store stale or unavailable | Bad predictions or timeout | TTLs, fallbacks, cached defaults |
+| New model too slow | Misses serving SLA | Smaller model, two-stage pipeline, batching |
+| Distribution shift after launch | Model confidence becomes meaningless | Drift monitors + rollback |
+| Cold start | New users/items have no history | Popularity + content-based fallback |
+
+---
+
+## Metrics That Decide Ship / No-Ship
+
+- Offline: AUC, precision/recall, NDCG, calibration error
+- Online: CTR, conversion, retention, fraud catch rate, false positive rate
+- System: p95 latency, timeout rate, fallback rate, feature freshness lag
+- Operations: drift alerts, retraining frequency, model rollback count
+
+---
+
+## Interview Answer Sketch
+
+I would separate the system into offline training and online serving. Offline, events flow into the feature pipeline, feature store, training jobs, and model registry. Online, the serving path retrieves fresh features from the online store, uses a two-stage pipeline if the candidate set is large, and returns predictions within a strict latency budget. I would ship new models through canary or champion-challenger rollout, measure both offline quality and online business metrics, and keep a rule-based or previous-model fallback for incidents. The hardest real-world issues are not training the model, but handling feature freshness, training-serving skew, drift, and safe rollback.
+
+---
+
 ## Interview Talking Points
 
 - "Two-stage pipeline: candidate generation (embedding similarity via FAISS, millions→500 candidates) + ranking (full feature model, 500→20 ranked recommendations). This pattern is used by YouTube, TikTok, Spotify."

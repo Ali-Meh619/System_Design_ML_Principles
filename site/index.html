@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="41 curated system design and machine learning topics with interactive progress tracking, inline reader, quiz/flashcard mode, dark mode, and keyboard-first navigation. Built for engineers cracking technical interviews.">
-  <meta property="og:title" content="System Design & ML Playbook — Interactive Navigator">
-  <meta property="og:description" content="The most comprehensive, interactive system design and ML reference for engineering interviews. 41 topics, inline reader, progress tracking, quiz mode, and more.">
+  <meta name="description" content="43 curated system design and machine learning topics with interactive progress tracking, inline reader, quiz/flashcard mode, dark mode, and keyboard-first navigation. Built for engineers cracking technical interviews.">
+  <meta property="og:title" content="System Design & ML Playbook - Interactive Navigator">
+  <meta property="og:description" content="The most comprehensive, interactive system design and ML reference for engineering interviews. 43 topics, inline reader, progress tracking, quiz mode, and more.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="System Design & ML Playbook">
-  <meta name="twitter:description" content="41 curated topics � Inline reader · Progress tracking · Quiz mode · Dark mode · Free forever">
-  <title>System Design & ML Playbook — Interactive Navigator</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📐</text></svg>">
+  <meta name="twitter:description" content="43 curated topics - Inline reader - Progress tracking - Quiz mode - Dark mode - Free forever">
+  <title>System Design & ML Playbook - Interactive Navigator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>??</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -21,10 +21,10 @@
 </head>
 <body>
 
-  <!-- ══ NAVIGATION ══ -->
+  <!-- ?? NAVIGATION ?? -->
   <nav class="topnav" role="navigation" aria-label="Main navigation">
     <div class="topnav-inner">
-      <a href="#" class="brand" aria-label="System Design Playbook home">
+      <a href="#" class="brand" aria-label="System Design & ML Playbook home">
         <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -83,21 +83,21 @@
     </div>
   </nav>
 
-  <!-- ══ HERO ══ -->
+  <!-- ?? HERO ?? -->
   <header class="hero" role="banner">
     <canvas class="hero-canvas" id="particleCanvas" aria-hidden="true"></canvas>
     <div class="hero-inner">
       <div class="hero-badge">
         <span class="badge-pulse" aria-hidden="true"></span>
-        Interview-Ready System Design
+        Interview-Ready System Design & ML
       </div>
       <h1 class="hero-title">
         Master System Design & ML<br>
         <span class="hero-highlight">for any interview</span>
       </h1>
       <p class="hero-lead">
-        41 curated topics across 10 categories. Build intuition for distributed systems,
-        databases, caching, ML systems, and more — with inline reader, progress tracking, and built-in quiz mode.
+        43 curated topics across 10 categories. Build intuition for distributed systems,
+        databases, caching, ML systems, and more ? with inline reader, progress tracking, and built-in quiz mode.
       </p>
       <div class="hero-search">
         <div class="search-wrapper">
@@ -108,7 +108,7 @@
           <input
             id="searchInput"
             type="search"
-            placeholder="Search topics… (press / to focus)"
+            placeholder="Search topics? (press / to focus)"
             aria-label="Search topics"
             autocomplete="off"
             spellcheck="false"
@@ -120,28 +120,28 @@
     </div>
   </header>
 
-  <!-- ══ MAIN ══ -->
+  <!-- ?? MAIN ?? -->
   <main class="container" id="main-content">
 
     <!-- Stats -->
     <section class="stats" aria-label="Study statistics">
       <div class="stat-card">
-        <div class="stat-icon" aria-hidden="true">📚</div>
+        <div class="stat-icon" aria-hidden="true">??</div>
         <p class="stat-value" id="topicCount">0</p>
         <p class="stat-label">Topics</p>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" aria-hidden="true">🗂️</div>
+        <div class="stat-icon" aria-hidden="true">???</div>
         <p class="stat-value" id="categoryCount">0</p>
         <p class="stat-label">Categories</p>
       </div>
       <div class="stat-card stat-card--clickable" id="progressStatCard" tabindex="0" role="button" title="Your completion progress">
-        <div class="stat-icon" aria-hidden="true">✅</div>
+        <div class="stat-icon" aria-hidden="true">?</div>
         <p class="stat-value" id="readCount">0</p>
         <p class="stat-label">Completed</p>
       </div>
       <div class="stat-card stat-card--clickable" id="bookmarkStatCard" tabindex="0" role="button" title="Open bookmarks">
-        <div class="stat-icon" aria-hidden="true">🔖</div>
+        <div class="stat-icon" aria-hidden="true">??</div>
         <p class="stat-value" id="bookmarkCount">0</p>
         <p class="stat-label">Bookmarked</p>
       </div>
@@ -171,31 +171,31 @@
       <div class="section-header">
         <h2 class="section-title">Learning Paths</h2>
         <button class="btn-clear-path" id="clearPath" hidden aria-label="Clear learning path filter">
-          Clear path ✕
+          Clear path ?
         </button>
       </div>
       <div class="paths-grid">
         <button class="path-card" data-path="beginner" aria-pressed="false">
-          <div class="path-emoji" aria-hidden="true">🌱</div>
+          <div class="path-emoji" aria-hidden="true">??</div>
           <div class="path-info">
             <h3>Beginner</h3>
-            <p>Framework · Numbers · Databases · Caching · API Design · Rate Limiting</p>
+            <p>Framework ? Numbers ? Databases ? Caching ? API Design ? Rate Limiting</p>
           </div>
           <span class="path-count">6 topics</span>
         </button>
         <button class="path-card" data-path="mid" aria-pressed="false">
-          <div class="path-emoji" aria-hidden="true">🚀</div>
+          <div class="path-emoji" aria-hidden="true">??</div>
           <div class="path-info">
             <h3>Mid-Level</h3>
-            <p>Distributed · Resilience · Observability · HA Scaling · Notifications · Kafka</p>
+            <p>Distributed ? Resilience ? Observability ? HA Scaling ? Notifications ? Kafka</p>
           </div>
           <span class="path-count">7 topics</span>
         </button>
         <button class="path-card" data-path="advanced" aria-pressed="false">
-          <div class="path-emoji" aria-hidden="true">🏆</div>
+          <div class="path-emoji" aria-hidden="true">??</div>
           <div class="path-info">
             <h3>Advanced</h3>
-            <p>AI Agents · ML Systems · Collaboration · Probabilistic · Stream · DB Internals</p>
+            <p>AI Agents ? ML Systems ? Collaboration ? Probabilistic ? Stream ? DB Internals</p>
           </div>
           <span class="path-count">7 topics</span>
         </button>
@@ -234,7 +234,7 @@
 
   </main>
 
-  <!-- ══ BOOKMARKS SIDEBAR ══ -->
+  <!-- ?? BOOKMARKS SIDEBAR ?? -->
   <aside class="sidebar" id="bookmarkSidebar" aria-label="Bookmarks" hidden>
     <div class="sidebar-header">
       <h3>Bookmarks</h3>
@@ -248,12 +248,12 @@
     <div id="bookmarkList" class="bookmark-list" aria-label="Bookmarked topics"></div>
     <p id="emptyBookmarks" class="sidebar-empty">
       No bookmarks yet.<br>
-      Click 🔖 on any topic card to save it here.
+      Click ?? on any topic card to save it here.
     </p>
   </aside>
   <div class="sidebar-backdrop" id="sidebarBackdrop" hidden aria-hidden="true"></div>
 
-  <!-- ══ COMPLETED SIDEBAR ══ -->
+  <!-- ?? COMPLETED SIDEBAR ?? -->
   <aside class="completed-sidebar" id="completedSidebar" aria-label="Completed topics" hidden>
     <div class="sidebar-header">
       <h3>Completed Topics</h3>
@@ -267,22 +267,22 @@
     <div id="completedList" class="completed-list" aria-label="Completed topics list"></div>
     <p id="emptyCompleted" class="completed-empty">
       No topics completed yet.<br>
-      Click ○ on any topic card to mark it as read.
+      Click ? on any topic card to mark it as read.
     </p>
     <div class="completed-footer">
-      <span class="completed-footer-text" id="completedFooterText">0 of 41 completed</span>
+      <span class="completed-footer-text" id="completedFooterText">0 of 43 completed</span>
       <span class="completed-footer-pct" id="completedFooterPct">0%</span>
     </div>
   </aside>
   <div class="sidebar-backdrop" id="completedBackdrop" hidden aria-hidden="true"></div>
 
-  <!-- ══ QUIZ OVERLAY ══ -->
+  <!-- ?? QUIZ OVERLAY ?? -->
   <div class="quiz-overlay" id="quizOverlay" role="dialog" aria-modal="true" aria-label="Quiz mode" hidden>
     <div class="quiz-card" id="quizCard">
       <div class="quiz-header">
         <div class="quiz-meta">
           <span class="quiz-label">Quiz Mode</span>
-          <span class="quiz-pos" id="quizProgress">1 / 41</span>
+          <span class="quiz-pos" id="quizProgress">1 / 43</span>
         </div>
         <button class="btn-icon" id="closeQuiz" aria-label="Close quiz">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -300,7 +300,7 @@
           <div class="quiz-divider"><span>Summary</span></div>
           <p class="quiz-answer" id="quizAnswer"></p>
           <a class="quiz-link" id="quizOpenLink" href="#" target="_blank" rel="noopener noreferrer">
-            Open full topic →
+            Open full topic ?
           </a>
         </div>
 
@@ -310,15 +310,15 @@
       </div>
 
       <div class="quiz-footer">
-        <button class="btn-quiz btn-quiz--ghost" id="quizPrev" aria-label="Previous card">← Prev</button>
+        <button class="btn-quiz btn-quiz--ghost" id="quizPrev" aria-label="Previous card">? Prev</button>
         <div class="quiz-dots" id="quizDots" aria-hidden="true"></div>
         <button class="btn-quiz btn-quiz--primary" id="quizReveal" aria-label="Reveal answer">Reveal Answer</button>
-        <button class="btn-quiz btn-quiz--ghost" id="quizNext" aria-label="Next card" hidden>Next →</button>
+        <button class="btn-quiz btn-quiz--ghost" id="quizNext" aria-label="Next card" hidden>Next ?</button>
       </div>
     </div>
   </div>
 
-  <!-- ══ SHORTCUTS MODAL ══ -->
+  <!-- ?? SHORTCUTS MODAL ?? -->
   <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" hidden>
     <div class="modal">
       <div class="modal-header">
@@ -338,13 +338,13 @@
         <div class="shortcut-row"><kbd>q</kbd><span>Start quiz mode</span></div>
         <div class="shortcut-row"><kbd>?</kbd><span>Show this dialog</span></div>
         <div class="shortcut-row"><kbd>Space</kbd><span>Reveal quiz answer</span></div>
-        <div class="shortcut-row"><kbd>→</kbd><span>Next quiz/topic</span></div>
-        <div class="shortcut-row"><kbd>←</kbd><span>Prev quiz/topic</span></div>
+        <div class="shortcut-row"><kbd>?</kbd><span>Next quiz/topic</span></div>
+        <div class="shortcut-row"><kbd>?</kbd><span>Prev quiz/topic</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ══ READER PANEL ══ -->
+  <!-- ?? READER PANEL ?? -->
   <div class="reader-overlay" id="readerOverlay" role="dialog" aria-modal="true" aria-label="Topic reader" hidden>
     <div class="reader-panel" id="readerPanel">
       <div class="reader-header">
@@ -356,8 +356,8 @@
           </div>
         </div>
         <div class="reader-header-actions">
-          <button class="btn-icon reader-action-btn" id="readerBookmark" title="Bookmark" aria-label="Bookmark this topic">🔖</button>
-          <button class="btn-icon reader-action-btn" id="readerRead" title="Mark as read" aria-label="Mark as read">○</button>
+          <button class="btn-icon reader-action-btn" id="readerBookmark" title="Bookmark" aria-label="Bookmark this topic">??</button>
+          <button class="btn-icon reader-action-btn" id="readerRead" title="Mark as read" aria-label="Mark as read">?</button>
           <a class="btn-icon reader-action-btn" id="readerGithub" href="#" target="_blank" rel="noopener noreferrer" title="View on GitHub" aria-label="View raw on GitHub">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
@@ -374,36 +374,36 @@
       <div class="reader-body">
         <div class="reader-loading" id="readerLoading" aria-live="polite" hidden>
           <div class="reader-spinner"></div>
-          <p>Loading content…</p>
+          <p>Loading content?</p>
         </div>
         <div class="reader-content" id="readerContent"></div>
       </div>
       <div class="reader-footer">
-        <button class="btn-quiz btn-quiz--ghost" id="readerPrev" aria-label="Previous topic">← Prev topic</button>
+        <button class="btn-quiz btn-quiz--ghost" id="readerPrev" aria-label="Previous topic">? Prev topic</button>
         <button class="btn-quiz btn-quiz--primary" id="readerMarkRead" aria-label="Mark as read">Mark as Read</button>
-        <button class="btn-quiz btn-quiz--ghost" id="readerNext" aria-label="Next topic">Next topic →</button>
+        <button class="btn-quiz btn-quiz--ghost" id="readerNext" aria-label="Next topic">Next topic ?</button>
       </div>
     </div>
   </div>
 
-  <!-- ══ BACK TO TOP ══ -->
+  <!-- ?? BACK TO TOP ?? -->
   <button class="back-to-top" id="backToTop" aria-label="Back to top" title="Back to top">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"/>
     </svg>
   </button>
 
-  <!-- ══ TOAST ══ -->
+  <!-- ?? TOAST ?? -->
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-  <!-- ══ FOOTER ══ -->
+  <!-- ?? FOOTER ?? -->
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">
       <div class="footer-brand">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        System Design Playbook
+        System Design & ML Playbook
       </div>
       <nav class="footer-links" aria-label="Footer links">
         <a href="https://github.com/Ali-Meh619/System_Design_ML_Principles" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -412,8 +412,8 @@
         <a href="https://github.com/Ali-Meh619/System_Design_ML_Principles/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
       </nav>
       <p class="footer-sub">
-        Built for engineers cracking system design interviews.
-        ⭐ Star it if it helps you!
+        Built for engineers cracking system design and ML interviews.
+        ? Star it if it helps you!
       </p>
     </div>
   </footer>

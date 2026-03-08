@@ -22,7 +22,7 @@ In every system design interview, the database and caching choices are where you
 | 1 | [Database Selection Guide](databases.md) | 🟢 Beginner | SQL vs NoSQL, all 7 database types compared |
 | 2 | [Caching Deep Dive](caching.md) | 🟡 Mid | 5 cache layers, read/write patterns, invalidation |
 | 3 | [Message Queues & Event Streaming](message-queues.md) | 🟡 Mid | Kafka internals, delivery guarantees, DLQ |
-| 4 | [Storage & CDN](../api-networking/storage-and-cdn.md) | 🟢 Beginner | Object/block/file storage, CDN pull vs push |
+| 4 | [Storage & CDN](storage-and-cdn.md) | 🟢 Beginner | Object/block/file storage, CDN pull vs push |
 | 5 | [Database Internals](database-internals.md) | 🔴 Advanced | B-tree vs LSM, indexes, replication, ACID, sharding |
 
 ---

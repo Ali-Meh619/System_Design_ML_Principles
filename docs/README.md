@@ -1,6 +1,6 @@
 # System Design & Machine Learning Playbook — Documentation
 
-> **41 in-depth topics** covering everything from interview frameworks to AI agent architectures and Machine Learning concepts. Each file is designed to be a complete reference — not a summary.
+> **43 in-depth topics** covering everything from interview frameworks to AI agent architectures and Machine Learning concepts. The goal is interview usefulness first: clear defaults, trade-offs, failure modes, and memorable answer patterns.
 
 ---
 
@@ -14,14 +14,14 @@
 | [🌐 Distributed Systems](distributed/README.md) | 5 | 🟡–🔴 | CAP, consistency, patterns, microservices, resilience |
 | [🔍 Search & Analytics](search/README.md) | 4 | 🟡–🔴 | Inverted index, typeahead, stream processing, geo, probabilistic DS |
 | [📈 Scale & Reliability](scale/README.md) | 6 | 🟡–🔴 | Observability, HA, IDs, pagination, notifications, advanced data patterns |
-| [🔐 Security](security/README.md) | 2 | 🟡 | Auth, OAuth 2.0, encryption, GDPR |
+| [🔐 Security](security/README.md) | 4 | 🟡–🔴 | Auth, AuthZ/SSO/MFA, privacy, secrets, threat modeling |
 | [🩷 AI & Machine Learning](machine-learning/README.md) | 5 | 🟡–🔴 | ML systems, AI agents, Classic ML, Deep Learning, LLMs |
 | [🩵 Specialized Systems](specialized/README.md) | 2 | 🟡–🔴 | Real-time collaboration (OT/CRDT), Webhooks |
 | [📋 Reference](reference/README.md) | 4 | 🟢–🟡 | Cheat sheets, design templates, LeetCode patterns, LLD |
 
 ---
 
-## 📚 All 41 Topics
+## 📚 All 43 Topics
 
 ### 📐 Foundation
 - [Interview Framework — The Universal 4-Step Approach](foundation/interview-framework.md)
@@ -39,7 +39,7 @@
 ### 🔌 API & Networking
 - [API Design & API Gateway](api-networking/api-design.md)
 - [Load Balancing & Networking](api-networking/load-balancing.md)
-- [Rate Limiting In Depth](api-networking/rate-limiting.md) ⭐ New
+- [Rate Limiting In Depth](api-networking/rate-limiting.md)
 - [Real-time Communication](api-networking/realtime-communication.md)
 
 ### 🌐 Distributed Systems
@@ -61,11 +61,13 @@
 - [Unique ID Generation](scale/id-generation.md)
 - [API Pagination](scale/pagination.md)
 - [Advanced Data Patterns](scale/advanced-data-patterns.md)
-- [Notification System Design](scale/notification-system.md) ⭐ New
+- [Notification System Design](scale/notification-system.md)
 
 ### 🔐 Security
 - [Security & Authentication](security/security-and-authentication.md)
+- [Authorization, SSO & MFA](security/authorization-sso-mfa.md)
 - [Privacy & Data Compliance](security/privacy-and-compliance.md)
+- [Secrets Management & Threat Modeling](security/secrets-management-threat-modeling.md)
 
 ### 🩷 AI & Machine Learning
 - [Machine Learning in System Design](machine-learning/ml-in-system-design.md)
@@ -120,10 +122,11 @@ Week 2:
 5. Geo Systems
 6. Advanced Data Patterns (CQRS, Event Sourcing)
 7. ID Generation + Pagination
-8. Privacy & Compliance
-9. Rate Limiting In Depth
-10. Notification System Design
-11. Reusable Design Templates (all 12 blueprints)
+8. Authorization, SSO & MFA
+9. Privacy & Compliance + Secrets Management
+10. Rate Limiting In Depth
+11. Notification System Design
+12. Reusable Design Templates (all 12 blueprints)
 ```
 
 ### Path 3: Staff/Principal Level
@@ -133,10 +136,11 @@ Week 2:
 2. ML in System Design + AI Agent System Design
 3. Classic Machine Learning + Deep Learning
 4. LLM Interview Questions (RAG, fine-tuning, inference)
-5. Probabilistic Data Structures
-6. Real-time Collaboration (CRDT vs OT)
-7. Webhooks at Scale
-8. LeetCode Question Patterns + Low-Level System Design
+5. Secrets Management & Threat Modeling
+6. Probabilistic Data Structures
+7. Real-time Collaboration (CRDT vs OT)
+8. Webhooks at Scale
+9. LeetCode Question Patterns + Low-Level System Design
 ```
 
 ---
@@ -204,7 +208,7 @@ Week 2:
 
 ## 📖 How to Use These Docs
 
-1. **Use the interactive site** — [System Design Playbook](../site/index.html) — for navigation, progress tracking, and quiz mode
+1. **Use the interactive site** — [System Design & ML Playbook](../site/index.html) — for navigation, progress tracking, and quiz mode
 2. **Category READMEs** — Start each category by reading its README for the overview and learning sequence
 3. **Deep-dive files** — Each `.md` file contains the full reference for that topic, including tables, code examples, and trade-off comparisons
 4. **Cheat sheets** — For final review, use [Common Scenarios](reference/scenario-cheat-sheet.md) and [Design Templates](reference/reusable-design-templates.md)
@@ -219,4 +223,4 @@ Missing a topic? Open an issue with the title "Topic Request: [topic name]".
 
 ---
 
-*Last updated: March 2026 | 41 topics across 10 categories*
+*Last updated: March 2026 | 43 topics across 10 categories*

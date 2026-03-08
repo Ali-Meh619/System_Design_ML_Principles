@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design & ML Playbook — Topics
-   41 sections across 10 categories
+   43 sections across 10 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 
@@ -505,14 +505,32 @@ window.TOPICS = [
     category:   "Security",
     icon:       "🔐",
     difficulty: "mid",
-    summary:    "Session-based vs JWT auth, OAuth 2.0 authorization code flow, and the full API security checklist.",
+    summary:    "Session-based vs JWT auth, OAuth 2.0 authorization code flow, gateway enforcement, and the core API security checklist.",
     subtopics:  [
       "Authentication: Sessions vs JWT",
       "OAuth 2.0 — Authorization Code Flow",
       "API Security Checklist (TLS, RBAC, rate limiting, secrets)",
+      "Recommended Default + Failure Modes",
     ],
     tags:  ["jwt", "oauth", "oidc", "rbac", "abac", "session", "tls", "api key", "mfa", "refresh token"],
     path:  "../docs/security/security-and-authentication.md"
+  },
+
+  {
+    id:         "authz-sso-mfa",
+    title:      "Authorization, SSO & MFA",
+    category:   "Security",
+    icon:       "🪪",
+    difficulty: "mid",
+    summary:    "RBAC vs ABAC vs ReBAC, enterprise SSO with OIDC/SAML, MFA choices, and step-up authentication for high-risk actions.",
+    subtopics:  [
+      "Authorization Models — RBAC, ABAC, ReBAC",
+      "SSO Architecture — OIDC vs SAML",
+      "MFA Choices — TOTP, passkeys, push, SMS",
+      "Recommended Default + Failure Modes",
+    ],
+    tags:  ["authz", "rbac", "abac", "rebac", "sso", "oidc", "saml", "mfa", "passkeys", "okta", "entra", "step-up auth"],
+    path:  "../docs/security/authorization-sso-mfa.md"
   },
 
   {
@@ -530,6 +548,23 @@ window.TOPICS = [
     ],
     tags:  ["gdpr", "ccpa", "pii", "data residency", "encryption", "tokenization", "right to erasure", "audit log"],
     path:  "../docs/security/privacy-and-compliance.md"
+  },
+
+  {
+    id:         "secrets-threat-modeling",
+    title:      "Secrets Management & Threat Modeling",
+    category:   "Security",
+    icon:       "🔑",
+    difficulty: "advanced",
+    summary:    "Secret storage and rotation, API key architecture, KMS/HSM usage, envelope encryption, and STRIDE-based threat modeling.",
+    subtopics:  [
+      "Secret Storage — Vault, Secrets Manager, workload identity",
+      "API Keys — generation, scoping, rotation, revocation",
+      "Envelope Encryption — DEK + KMS",
+      "Threat Modeling — assets, trust boundaries, STRIDE",
+    ],
+    tags:  ["secrets", "kms", "hsm", "vault", "api keys", "rotation", "threat modeling", "stride", "envelope encryption", "blast radius"],
+    path:  "../docs/security/secrets-management-threat-modeling.md"
   },
 
   /* ── AI & MACHINE LEARNING ──────────────────────────────────── */
@@ -557,12 +592,14 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🤖",
     difficulty: "advanced",
-    summary:    "The full ML system architecture: data pipeline, feature store, recommendation systems, and model serving infrastructure.",
+    summary:    "Production ML system design: feature stores, recommendation pipelines, rollout strategy, drift monitoring, rollback, and latency-cost-quality trade-offs.",
     subtopics:  [
       "The ML System Architecture (5 layers)",
       "Feature Store — The Most Important ML Infrastructure",
       "Recommendation System Architecture",
-      "Model Serving Infrastructure (online, batch, fallback)",
+      "Offline vs Online Evaluation",
+      "Deployment & Rollout Strategy",
+      "Monitoring, Drift & Retraining",
     ],
     tags:  ["machine learning", "feature store", "model serving", "training", "mlops", "drift", "recommendation", "embeddings"],
     path:  "../docs/machine-learning/ml-in-system-design.md"
@@ -574,13 +611,14 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
-    summary:    "Agent anatomy, ReAct pattern, cognitive architectures, memory, LangGraph, AutoGen, MCP, and LLM-as-a-Judge evaluation.",
+    summary:    "Agent anatomy, planner-vs-reactor trade-offs, retrieval, tool reliability, memory compaction, LangGraph, AutoGen, MCP, and evaluation.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
       "Cognitive Architectures (ReAct, CoT, Reflection)",
       "Multi-Agent Patterns (Orchestrator-Worker, Planner-Critic)",
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
-      "Tool Use & Safety Patterns",
+      "Tool Reliability, Retries & Idempotency",
+      "Memory Pruning & Cost Control",
       "Evaluation (LLM-as-a-Judge)",
     ],
     tags:  ["llm", "agent", "rag", "tool use", "memory", "guardrails", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "chain-of-thought"],
@@ -779,7 +817,7 @@ window.TOPICS = [
     category:   "Reference",
     icon:       "🧩",
     difficulty: "intermediate",
-    summary:    "19 patterns with code templates covering every major LeetCode archetype: pattern chooser, arrays & hashing (two-sum, Dutch flag), two pointers (3Sum), sliding window, stack, binary search (left/right bound, peak), linked list (Nth from end, Floyd's), trees (LCA, path DFS), heap, backtracking (grid search), tries, graphs (cycle detection), advanced graphs, DP (state machine, palindrome, knapsack, bitmask), greedy, intervals, monotonic deque, segment tree / BIT, combinatorics — plus a full complexity cheat sheet.",
+    summary:    "21 patterns with code templates covering every major LeetCode archetype: arrays & hashing, two pointers, sliding window, stack, binary search, linked list, trees, graphs, DP, greedy, intervals, segment tree / BIT, and more — plus a full complexity cheat sheet.",
     subtopics:  [
       "Pattern 0 — The Pattern Chooser (use first, every time)",
       "Pattern 1 — Arrays & Hashing (frequency map, prefix sum, two-sum hash, Dutch flag)",
