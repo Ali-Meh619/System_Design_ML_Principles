@@ -1,6 +1,6 @@
 # System Design & Machine Learning Playbook — Documentation
 
-> **42 in-depth topics** covering everything from interview frameworks to AI agent architectures and Machine Learning concepts. Each file is designed to be a complete reference — not a summary.
+> **40 in-depth topics** covering everything from interview frameworks to AI agent architectures and Machine Learning concepts. Each file is designed to be a complete reference — not a summary.
 
 ---
 
@@ -12,16 +12,15 @@
 | [🗄️ Data Storage](data/README.md) | 5 | 🟢–🔴 | Databases, caching, queues, CDN, internals |
 | [🔌 API & Networking](architecture/README.md) | 5 | 🟢–🟡 | REST/gRPC/GraphQL, load balancing, rate limiting, WebSocket |
 | [🌐 Distributed Systems](distributed/README.md) | 5 | 🟡–🔴 | CAP, consistency, patterns, microservices, resilience |
-| [🔍 Search & Analytics](search/README.md) | 3 | 🟡–🔴 | Inverted index, typeahead, stream processing, geo |
+| [🔍 Search & Analytics](search/README.md) | 4 | 🟡–🔴 | Inverted index, typeahead, stream processing, geo, probabilistic DS |
 | [📈 Scale & Reliability](scale/README.md) | 6 | 🟡–🔴 | Observability, HA, IDs, pagination, notifications |
 | [🔐 Security](security/README.md) | 2 | 🟡 | Auth, OAuth 2.0, encryption, GDPR |
-| [🧠 AI & Advanced](advanced/README.md) | 5 | 🔴 | ML systems, AI agents, probabilistic structures |
-| [🪩 Machine Learning](machine-learning/README.md) | 3 | 🟡-🔴 | Classic ML, Deep Learning, LLM interview questions |
-| [📋 Reference](reference/README.md) | 2 | 🟢 | Cheat sheets, design templates |
+| [🩷 AI & Machine Learning](advanced/README.md) | 5 | 🟡–🔴 | ML systems, AI agents, Classic ML, Deep Learning, LLMs |
+| [📋 Reference](reference/README.md) | 4 | 🟢–🟡 | Cheat sheets, design templates, LeetCode patterns, LLD |
 
 ---
 
-## 📚 All 42 Topics
+## 📚 All 40 Topics
 
 ### 📐 Foundation
 - [Interview Framework — The Universal 4-Step Approach](fundamentals/interview-framework.md)
@@ -53,6 +52,7 @@
 - [Search & Typeahead Systems](search/search-and-typeahead.md)
 - [Stream Processing & Top-K Systems](search/stream-processing.md)
 - [Geo & Location Systems](search/geo-systems.md)
+- [Probabilistic Data Structures](advanced/probabilistic-data-structures.md)
 
 ### 📈 Scale & Reliability
 - [Observability & Monitoring](scale/observability.md)
@@ -66,18 +66,16 @@
 - [Security & Authentication](security/security-and-authentication.md)
 - [Privacy & Data Compliance](security/privacy-and-compliance.md)
 
-### 🧠 AI & Advanced Topics
+### 🩷 AI & Machine Learning
 - [Machine Learning in System Design](advanced/ml-in-system-design.md)
 - [AI Agent System Design](advanced/ai-agent-system-design.md)
-- [Probabilistic Data Structures](advanced/probabilistic-data-structures.md)
+- [Classic Machine Learning](machine-learning/classic-ml.md)
+- [Deep Learning](machine-learning/deep-learning.md)
+- [LLM Interview Questions](machine-learning/llm-interviews.md)
+
+### 🩵 Specialized Systems
 - [Real-time Collaboration (Google Docs)](advanced/collaboration-editing.md)
 - [Webhooks System Design](advanced/webhooks.md)
-- [Mobile System Design](advanced/mobile-system-design.md)
-
-### 🪩 Machine Learning
-- [Classic Machine Learning](machine-learning/classic-ml.md) ⭐ New
-- [Deep Learning](machine-learning/deep-learning.md) ⭐ New
-- [LLM Interview Questions](machine-learning/llm-interviews.md) ⭐ New
 
 ### 📋 Reference
 - [Common Scenarios & Cheat Sheets](reference/scenario-cheat-sheet.md)

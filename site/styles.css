@@ -100,9 +100,8 @@
 .cat-searchanalytics      { --cat: #f59e0b; --cat-bg: #fffbeb; }
 .cat-scalereliability     { --cat: #22c55e; --cat-bg: #f0fdf4; }
 .cat-security             { --cat: #ef4444; --cat-bg: #fef2f2; }
-.cat-aiadvanced           { --cat: #ec4899; --cat-bg: #fdf2f8; }
+.cat-aimachinelearning    { --cat: #ec4899; --cat-bg: #fdf2f8; }
 .cat-specializedsystems   { --cat: #06b6d4; --cat-bg: #ecfeff; }
-.cat-machinelearning      { --cat: #d946ef; --cat-bg: #fdf4ff; }
 .cat-reference            { --cat: #6366f1; --cat-bg: #eef2ff; }
 
 [data-theme="dark"] .cat-foundation         { --cat-bg: rgba(249,115,22,.12); }
@@ -112,9 +111,8 @@
 [data-theme="dark"] .cat-searchanalytics    { --cat-bg: rgba(245,158,11,.12); }
 [data-theme="dark"] .cat-scalereliability   { --cat-bg: rgba(34,197,94,.12); }
 [data-theme="dark"] .cat-security           { --cat-bg: rgba(239,68,68,.12); }
-[data-theme="dark"] .cat-aiadvanced         { --cat-bg: rgba(236,72,153,.12); }
+[data-theme="dark"] .cat-aimachinelearning   { --cat-bg: rgba(236,72,153,.12); }
 [data-theme="dark"] .cat-specializedsystems { --cat-bg: rgba(6,182,212,.12); }
-[data-theme="dark"] .cat-machinelearning    { --cat-bg: rgba(217,70,239,.12); }
 [data-theme="dark"] .cat-reference          { --cat-bg: rgba(99,102,241,.12); }
 
 /* ── Reset ── */

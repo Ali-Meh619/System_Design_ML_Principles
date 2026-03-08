@@ -20,7 +20,7 @@
 [![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/network/members)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Topics](https://img.shields.io/badge/Topics-42-purple?style=for-the-badge)](docs/)
+[![Topics](https://img.shields.io/badge/Topics-40-purple?style=for-the-badge)](docs/)
 [![Interactive](https://img.shields.io/badge/Site-Live-success?style=for-the-badge&logo=github)](https://ali-meh619.github.io/System_Design_ML_Principles/)
 
 <br>
@@ -42,11 +42,11 @@ Most system design resources are scattered blog posts or 400-page books. This re
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **42 interview-ready topics** | Every domain: distributed systems, machine learning, databases, security, and more |
+| 🎯 **40 interview-ready topics** | Every domain: distributed systems, machine learning, databases, security, and more |
 | 🌙 **Dark / Light mode** | Persisted preference, instant toggle with `d` |
 | ✅ **Progress tracking** | Mark topics as read. Your progress saves locally. |
 | 🔖 **Bookmarks** | Save topics to revisit. Accessible from any page. |
-| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 42 topics |
+| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 40 topics |
 | 📖 **Inline reader** | Read every topic without leaving the page — with prev/next navigation |
 | ⌨️ **Keyboard-first** | `/` search, `q` quiz, `b` bookmarks, `?` shortcuts |
 | 📊 **Visual progress bar** | See your overall completion at a glance |
@@ -57,7 +57,7 @@ Most system design resources are scattered blog posts or 400-page books. This re
 
 ---
 
-## 🗂️ Topic Coverage (42 Topics)
+## 🗂️ Topic Coverage (40 Topics)
 
 <details>
 <summary><strong>🟠 Foundation (4)</strong></summary>
@@ -102,11 +102,12 @@ Most system design resources are scattered blog posts or 400-page books. This re
 </details>
 
 <details>
-<summary><strong>🟡 Search & Analytics (3)</strong></summary>
+<summary><strong>🟡 Search & Analytics (4)</strong></summary>
 
 - 🔍 [Search & Typeahead Systems](docs/search/search-and-typeahead.md) — Inverted index, prefix trie autocomplete, relevance ranking (TF-IDF, BM25)
 - 📊 [Stream Processing & Top-K Systems](docs/search/stream-processing.md) — Count-Min Sketch, Lambda vs Kappa architecture, Flink, windowing
 - 📍 [Geo & Location Systems](docs/search/geo-systems.md) — Geohash, quadtree, proximity queries, Uber-style driver matching
+- 🎲 [Probabilistic Data Structures](docs/advanced/probabilistic-data-structures.md) — Bloom filter, HyperLogLog, Count-Min Sketch at massive scale
 
 </details>
 
@@ -131,30 +132,21 @@ Most system design resources are scattered blog posts or 400-page books. This re
 </details>
 
 <details>
-<summary><strong>🩷 AI & Advanced (4)</strong></summary>
+<summary><strong>🩷 AI & Machine Learning (5)</strong></summary>
 
 - 🤖 [Machine Learning in System Design](docs/advanced/ml-in-system-design.md) — 5-layer ML pipeline, feature store, recommendation systems, model serving
 - 🧠 [AI Agent System Design](docs/advanced/ai-agent-system-design.md) — Planner/tool/memory anatomy, multi-agent patterns, safety, LLM-as-a-Judge
-- 🎲 [Probabilistic Data Structures](docs/advanced/probabilistic-data-structures.md) — Bloom filter, HyperLogLog, Count-Min Sketch at massive scale
-- 📱 [Mobile System Design](docs/advanced/mobile-system-design.md) — Offline-first, delta sync, push notifications (APNs/FCM), battery constraints
+- 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, bagging vs boosting, data leakage, XGBoost, SVM, PCA, class imbalance
+- 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, Adam/AdamW, BatchNorm, CNN (ResNet), LSTM, full Transformer deep-dive
+- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Transformers, RAG, LoRA/QLoRA, RLHF/DPO, decoding strategies, KV cache, CoT, hallucinations
 
 </details>
 
 <details>
-<summary><strong>🪩 Machine Learning (3)</strong></summary>
-
-- 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Supervised/Unsupervised learning, Random Forests, SVMs, PCA, evaluation metrics
-- 🧠 [Deep Learning](docs/machine-learning/deep-learning.md) — Neural networks, Backpropagation, CNNs, RNNs, optimizers, dropout
-- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Transformers, Attention mechanism, RAG, Fine-tuning, LoRA, Prompt Engineering
-
-</details>
-
-<details>
-<summary><strong>🩵 Specialized Systems (3)</strong></summary>
+<summary><strong>🩵 Specialized Systems (2)</strong></summary>
 
 - 📝 [Real-time Collaboration (Google Docs)](docs/advanced/collaboration-editing.md) — OT vs CRDT, operation logs, full Google Docs architecture
 - 🎣 [Webhooks System Design](docs/advanced/webhooks.md) — Signed delivery, exponential retry, idempotency keys, full architecture
-- 🔌 [Realtime Communication Patterns](docs/architecture/realtime-communication.md) — Polling, SSE, WebSockets, Redis pub/sub scaling
 
 </details>
 
@@ -251,9 +243,9 @@ System_Design_ML_Principles/
 │   ├── search/                 # Full-text search, typeahead, geo, stream processing
 │   ├── scale/                  # Observability, HA, ID gen, pagination, notifications
 │   ├── security/               # Auth, privacy, compliance
-│   ├── advanced/               # ML, AI agents, probabilistic DS, collaboration
+│   ├── advanced/               # ML systems, AI agents, collaboration, webhooks
 │   ├── machine-learning/       # Classic ML, Deep Learning, LLM interview questions
-│   └── reference/              # Design templates (12 blueprints), scenario cheat sheet
+│   └── reference/              # Design templates, scenario cheat sheet, LeetCode, LLD
 └── assets/                     # Architecture diagram images
 ```
 

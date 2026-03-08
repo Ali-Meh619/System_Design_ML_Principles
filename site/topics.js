@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design & ML Playbook — Topics
-   42 sections across 11 categories
+   40 sections across 10 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 
@@ -392,6 +392,22 @@ window.TOPICS = [
     path:  "../docs/search/geo-systems.md"
   },
 
+  {
+    id:         "probabilistic",
+    title:      "Probabilistic Data Structures",
+    category:   "Search & Analytics",
+    icon:       "🎲",
+    difficulty: "advanced",
+    summary:    "Bloom filters, HyperLogLog, and Count-Min Sketch — when approximation beats exactness at massive scale.",
+    subtopics:  [
+      "Bloom Filter — \"Have I seen this before?\"",
+      "HyperLogLog — Counting Unique Items",
+      "Count-Min Sketch — Frequency Counting",
+    ],
+    tags:  ["bloom filter", "hyperloglog", "count-min sketch", "approximate", "probabilistic", "cardinality", "false positive"],
+    path:  "../docs/advanced/probabilistic-data-structures.md"
+  },
+
   /* ── SCALE & RELIABILITY ─────────────────────────────────────── */
 
   {
@@ -521,7 +537,7 @@ window.TOPICS = [
   {
     id:         "advanced",
     title:      "Advanced Data Patterns",
-    category:   "AI & Advanced",
+    category:   "AI & Machine Learning",
     icon:       "🔁",
     difficulty: "advanced",
     summary:    "Pre-computation and materialized views, ETL vs ELT, hot spot problem, and backfill/reprocessing patterns.",
@@ -538,7 +554,7 @@ window.TOPICS = [
   {
     id:         "ml",
     title:      "Machine Learning in System Design",
-    category:   "AI & Advanced",
+    category:   "AI & Machine Learning",
     icon:       "🤖",
     difficulty: "advanced",
     summary:    "The full ML system architecture: data pipeline, feature store, recommendation systems, and model serving infrastructure.",
@@ -555,7 +571,7 @@ window.TOPICS = [
   {
     id:         "agents",
     title:      "AI Agent System Design",
-    category:   "AI & Advanced",
+    category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
     summary:    "Agent anatomy (planner, tools, memory), cognitive architectures, multi-agent patterns, safety, and LLM-as-a-Judge evaluation.",
@@ -568,22 +584,6 @@ window.TOPICS = [
     ],
     tags:  ["llm", "agent", "rag", "tool use", "memory", "guardrails", "orchestrator", "multi-agent", "react", "chain-of-thought"],
     path:  "../docs/advanced/ai-agent-system-design.md"
-  },
-
-  {
-    id:         "probabilistic",
-    title:      "Probabilistic Data Structures",
-    category:   "AI & Advanced",
-    icon:       "🎲",
-    difficulty: "advanced",
-    summary:    "Bloom filters, HyperLogLog, and Count-Min Sketch — when approximation beats exactness at massive scale.",
-    subtopics:  [
-      "Bloom Filter — \"Have I seen this before?\"",
-      "HyperLogLog — Counting Unique Items",
-      "Count-Min Sketch — Frequency Counting",
-    ],
-    tags:  ["bloom filter", "hyperloglog", "count-min sketch", "approximate", "probabilistic", "cardinality", "false positive"],
-    path:  "../docs/advanced/probabilistic-data-structures.md"
   },
 
   /* ── SPECIALIZED SYSTEMS ─────────────────────────────────────── */
@@ -620,28 +620,12 @@ window.TOPICS = [
     path:  "../docs/advanced/webhooks.md"
   },
 
-  {
-    id:         "mobile",
-    title:      "Mobile System Design",
-    category:   "Specialized Systems",
-    icon:       "📱",
-    difficulty: "mid",
-    summary:    "Offline-first architecture, delta sync, push notifications (APNs/FCM), and battery/bandwidth constraints.",
-    subtopics:  [
-      "Offline Support & Sync (local-first)",
-      "Push Notifications (APNs, FCM, fanout strategy)",
-      "Battery Optimization",
-    ],
-    tags:  ["mobile", "offline", "sync", "push notification", "battery", "delta sync", "apns", "fcm", "bandwidth"],
-    path:  "../docs/advanced/mobile-system-design.md"
-  },
-
-  /* ── MACHINE LEARNING ────────────────────────────────────────── */
+  /* ── AI & MACHINE LEARNING ──────────────────────────────────── */
 
   {
     id:         "classic-ml",
     title:      "Classic Machine Learning",
-    category:   "Machine Learning",
+    category:   "AI & Machine Learning",
     icon:       "📈",
     difficulty: "intermediate",
     summary:    "Interview-focused ML foundations: bias-variance tradeoff, bagging vs boosting, data leakage (types + prevention checklist), L1/L2 regularization, evaluation metrics, Random Forests vs XGBoost/LightGBM, SVM kernel trick, K-means, PCA, cross-validation, class imbalance, missing value mechanisms (MCAR/MAR/MNAR), high-dimensional features (filter/wrapper/embedded methods), and hyperparameter tuning.",
@@ -675,7 +659,7 @@ window.TOPICS = [
   {
     id:         "deep-learning",
     title:      "Deep Learning",
-    category:   "Machine Learning",
+    category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "intermediate",
     summary:    "Neural networks from first principles: activation functions, weight initialization (Xavier vs He), backpropagation & vanishing gradients, Adam/AdamW, BatchNorm vs LayerNorm, Dropout, CNNs (ResNet), LSTMs, and a full deep-dive on the Transformer (self-attention math, causal masking, RoPE positional encoding, Pre-Norm vs Post-Norm, FFN/SwiGLU, encoder vs decoder, FlashAttention, ViT).",
@@ -712,7 +696,7 @@ window.TOPICS = [
   {
     id:         "llm-interviews",
     title:      "LLM Interview Questions",
-    category:   "Machine Learning",
+    category:   "AI & Machine Learning",
     icon:       "💬",
     difficulty: "advanced",
     summary:    "Modern GenAI for engineering interviews: Transformer architecture (self-attention, positional encoding, RoPE), pre-training objectives (CLM vs MLM), instruction fine-tuning, LoRA & QLoRA, RAG (chunking, vector DBs, hybrid search, re-ranking), prompt engineering (CoT, few-shot, ReAct), RLHF vs DPO alignment, LLM evaluation (benchmarks, LLM-as-judge), KV cache, quantization (GPTQ/AWQ), speculative decoding, hallucination mitigation, and long-context.",
