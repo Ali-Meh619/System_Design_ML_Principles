@@ -660,7 +660,7 @@ window.TOPICS = [
       "PCA — Eigenvectors, explained variance, when to use vs not",
       "Cross-Validation — Stratified k-fold, time-series split",
       "Data Leakage — Target leakage, train-test contamination, temporal & group leakage",
-      "Class Imbalance — class_weight, SMOTE, threshold tuning, PR-AUC",
+      "Class Imbalance — class_weight, SMOTE, Focal Loss (modulating factor), threshold tuning, PR-AUC",
       "Missing Values — MCAR/MAR/MNAR mechanisms, KNN imputation, MICE, indicator columns",
       "High-Dimensional Features — Filter/Wrapper/Embedded methods, curse of dimensionality",
       "Categorical Encoding — One-hot, Target Encoding, Hashing",

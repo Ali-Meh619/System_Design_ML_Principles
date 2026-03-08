@@ -312,9 +312,26 @@ Real-world datasets are often skewed (e.g., fraud detection: 0.1% positive).
 | **Oversampling (SMOTE)** | Synthesize new minority samples by interpolating between existing ones | Moderate imbalance; avoid for high-dimensional data |
 | **Undersampling** | Randomly remove majority samples | When majority class is huge; risks losing information |
 | **Threshold tuning** | Move decision boundary from 0.5 to optimize precision/recall | Any probabilistic classifier |
+| **Focal Loss** | Down-weight easy examples so training focuses on hard ones | Neural networks with severe imbalance (object detection, fraud) |
 | **Use PR-AUC / F1** | ROC-AUC hides imbalance problems | Always with imbalanced data |
 
 **SMOTE in brief:** For each minority sample, find k nearest minority neighbors, generate synthetic sample along the connecting line segment.
+
+**Focal Loss in depth:** Standard cross-entropy treats all examples equally. With a 99:1 imbalance, the model learns to predict "majority" for everything and still achieves low loss — the minority signal drowns out.
+
+```
+Standard CE:  L = -log(p)
+Focal Loss:   L = -α · (1 - p)^γ · log(p)
+```
+
+- `p` = predicted probability for the correct class
+- `(1 - p)^γ` = modulating factor — when `p` is high (easy example, already well-classified), this term → 0, effectively ignoring it
+- `γ` (focusing parameter, typically 2): higher γ = stronger down-weighting of easy examples
+- `α` (class weight): balances frequency difference, same as `class_weight` in sklearn
+
+**Concrete effect:** With γ = 2, an easy example with p = 0.9 gets loss weight `(1-0.9)² = 0.01` — 100× less than a hard example with p = 0.1. The network spends its gradient budget learning the hard, rare cases.
+
+Originally introduced in **RetinaNet** for object detection (background vastly outnumbers foreground objects). Works for any neural network loss function — not available for tree models.
 
 ---
 
