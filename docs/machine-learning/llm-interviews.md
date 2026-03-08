@@ -378,9 +378,195 @@ Accepted tokens: [t₁, t₂, t₃] ✓, [t₄] ✗ → stop, generate correct t
 Net speedup: ~2-3× if draft model accepts often enough
 ```
 
-### Continuous Batching
+### Decoding Strategies
 
-Unlike static batching (wait for all requests to finish before taking new ones), continuous batching inserts new requests into the batch as soon as slots are freed. Standard in vLLM, TGI.
+How a token is selected from the output probability distribution at each step is a separate decision from the model itself — and it drastically changes output quality, diversity, and latency.
+
+#### Greedy Decoding
+Always pick the highest-probability token:
+```
+token = argmax P(token | context)
+```
+- **Fast, deterministic**
+- Tends to produce repetitive, "safe" text
+- Best for factual, structured outputs where creativity is unwanted
+
+#### Beam Search
+Maintain `k` (beam width) candidate sequences in parallel; at each step expand each beam and keep the top-k overall:
+```
+Beam 1: "The cat sat on"    (log-prob = -2.1)
+Beam 2: "The cat slept on"  (log-prob = -2.4)
+Beam 3: "The cat lay on"    (log-prob = -2.6)
+→ Expand each by one token, keep top-3 again
+```
+- **Better quality than greedy** (explores more paths)
+- **Expensive:** O(k × vocab) per step
+- Still produces dull text; prefers high-probability but generic continuations
+- Common for: machine translation, summarization (short, constrained outputs)
+- **Not used in LLM chat inference** — too slow and repetitive for open-ended generation
+
+#### Temperature Sampling
+Scale logits before softmax to control randomness:
+```
+P(token) = softmax(logits / T)
+
+T < 1.0 → sharpen distribution → more deterministic, focused
+T = 1.0 → original distribution
+T > 1.0 → flatten distribution → more random, creative
+T → 0   → greedy decoding
+T → ∞   → uniform random
+```
+
+| Temperature | Effect | Use case |
+|------------|--------|---------|
+| 0.0 | Greedy (deterministic) | Factual Q&A, code generation |
+| 0.2–0.5 | Focused but slight variation | Structured tasks, classification |
+| 0.7–0.9 | Balanced creativity | General chat, writing |
+| 1.0–1.5 | High creativity | Brainstorming, creative writing |
+
+#### Top-k Sampling
+Sample only from the k most likely tokens (ignore the rest):
+```
+top_k = 50: keep only 50 highest-prob tokens, renormalize, then sample
+```
+- Prevents sampling very low-probability ("weird") tokens
+- **Problem:** k is fixed regardless of the distribution shape — if the distribution is already peaked (k=50 dilutes it), or very flat (k=50 is still too many), the same k behaves differently in different contexts
+
+#### Top-p (Nucleus) Sampling — The Standard
+Sample from the smallest set of tokens whose cumulative probability ≥ p:
+```
+Sort tokens by probability (descending)
+Include tokens until cumulative P ≥ p (e.g., 0.9)
+Renormalize and sample from this nucleus
+```
+
+```
+Example with p=0.9:
+token  |  prob  | cumul
+"cat"  |  0.60  | 0.60
+"dog"  |  0.25  | 0.85
+"bird" |  0.08  | 0.93  ← stop here (≥ 0.9)
+→ Sample from {cat, dog, bird} with renormalized probs
+
+If distribution is peaked: nucleus = 1-2 tokens (conservative)
+If distribution is flat: nucleus = many tokens (expansive)
+```
+
+- **Adapts to context** — automatically conservative when the model is confident, exploratory when uncertain
+- Most common default in production LLM APIs (OpenAI default: top_p=1.0, but users set 0.9–0.95)
+
+#### Combining Temperature + Top-p (Production Default)
+```
+1. Apply temperature scaling to logits
+2. Apply top-p nucleus filtering
+3. Sample
+```
+Most LLM APIs expose both; typical production settings:
+- Factual tasks: `temperature=0.1, top_p=0.9`
+- General chat: `temperature=0.7, top_p=0.95`
+- Creative writing: `temperature=1.2, top_p=0.98`
+
+#### Repetition Penalty
+Reduce the probability of tokens that already appeared in the context:
+```
+logit[token] = logit[token] / penalty   (if token already generated, penalty > 1)
+```
+Fixes the common failure mode where greedy/low-temperature decoding loops: "The cat sat on the mat. The cat sat on the mat. The cat…"
+
+#### Min-p Sampling (newer)
+Filter out tokens whose probability < `min_p × (probability of most likely token)`. Adapts threshold relative to the top token, avoids the fixed-k problem of top-k while being more principled than top-p for high-temperature settings.
+
+---
+
+### Dynamic Batching for Inference
+
+LLM inference has a fundamental throughput problem: **each forward pass generates only one token per sequence**, and GPU utilization collapses if you process requests one at a time.
+
+#### Why Static Batching Falls Short
+
+```
+Static batch of 3 requests:
+Request A: needs 20 tokens  → done at step 20
+Request B: needs 50 tokens  → done at step 50
+Request C: needs 30 tokens  → done at step 30
+
+Step 20: A finishes. GPU sits idle for A's slot until step 50.
+Step 30: C finishes. GPU sits idle for C's slot until step 50.
+→ ~50% GPU waste waiting for the longest request
+```
+
+GPU is underutilized because it must wait for the entire batch to finish before starting new requests.
+
+#### Continuous Batching (Iteration-Level Scheduling)
+
+Process each decoding *step* as an opportunity to add or remove sequences:
+
+```
+Step 1:  [A, B, C] → all generate token 1
+Step 2:  [A, B, C] → all generate token 2
+...
+Step 20: A finishes → immediately insert new request D
+Step 21: [B, C, D] → B and C continue; D starts from token 1
+Step 30: C finishes → immediately insert E
+...
+```
+
+- **New requests never wait** for the current batch to finish
+- GPU stays near 100% utilization
+- Standard in: **vLLM**, **TGI (Text Generation Inference)**, **TensorRT-LLM**
+
+#### Prefill vs Decode Phases
+
+Every LLM request has two distinct phases with very different compute profiles:
+
+| Phase | What happens | Compute type | Bottleneck |
+|-------|-------------|-------------|-----------|
+| **Prefill** | Process the full prompt in one forward pass | Compute-bound (matrix multiply) | GPU FLOPS |
+| **Decode** | Generate one token at a time, autoregressively | Memory-bound (load weights each step) | GPU memory bandwidth |
+
+**Disaggregated serving:** Route prefill and decode to different GPU pools, each optimized for its bottleneck. Prefill GPUs need raw FLOPS; decode GPUs need high memory bandwidth. Used at scale by hyperscalers.
+
+#### Chunked Prefill
+
+Long prompts (e.g., 32K tokens) block the GPU during prefill — no decoding happens meanwhile, hurting latency for other requests. **Chunked prefill** breaks the prompt into smaller chunks, interleaving prefill chunks with decode steps:
+
+```
+Without chunked prefill:
+[prefill 32K tokens ................ 200ms] [decode, decode, decode ...]
+      ↑ other requests are starved
+
+With chunked prefill (chunk=2K):
+[prefill 2K] [decode × N] [prefill 2K] [decode × N] ...
+      ↑ more uniform latency; other requests can be decoded in between
+```
+
+#### Paged Attention (vLLM)
+
+KV cache is the main memory bottleneck — it grows dynamically as sequences extend, and different requests have different lengths. Naive allocation wastes memory via internal fragmentation.
+
+**PagedAttention** treats KV cache like OS virtual memory:
+- Divide KV cache into fixed-size **pages** (e.g., 16 tokens per page)
+- Allocate pages on demand as sequence grows
+- Share pages between requests (for prefix caching / shared system prompts)
+- Reclaim pages immediately when a request finishes
+
+```
+Sequence A (20 tokens): [page 1: tok 1-16] [page 2: tok 17-20, 4 slots free]
+Sequence B (10 tokens): [page 3: tok 1-10, 6 slots free]
+→ No large pre-allocated block; minimal waste
+```
+
+**Prefix caching:** If many requests share the same system prompt, cache those KV pages and reuse across requests — reduces prefill cost to zero for the shared prefix.
+
+#### Batching Summary
+
+| Technique | What it solves | Key benefit |
+|-----------|--------------|-------------|
+| **Continuous batching** | GPU idle time between requests | Near 100% GPU utilization |
+| **Chunked prefill** | Long prompts starving decode | Uniform latency; better fairness |
+| **PagedAttention** | KV cache memory fragmentation | Higher batch sizes, less OOM |
+| **Prefix caching** | Repeated system prompts | Free KV reuse; lower TTFT |
+| **Disaggregated serving** | Prefill/decode compute mismatch | Better hardware specialization |
 
 ---
 
@@ -475,3 +661,12 @@ Dense vector representations capturing semantic meaning. Similar texts have high
 
 **"How would you reduce hallucinations in production?"**
 → RAG to ground answers in retrieved context, temperature = 0 for factual tasks, system prompt with "say I don't know if uncertain," self-consistency sampling, output validation layer.
+
+**"Greedy vs Beam Search vs Top-p — when do you use each?"**
+→ Greedy: fastest, deterministic, good for factual/structured tasks. Beam search: better quality for constrained outputs (translation, summarization) but expensive and repetitive. Top-p (nucleus): best for open-ended generation — adapts nucleus size to model confidence, prevents both boring and incoherent outputs. In practice: top-p + temperature is the standard for chat; greedy/temperature=0 for code or factual Q&A.
+
+**"What is continuous batching and why does it matter?"**
+→ Static batching waits for all sequences in the batch to finish before starting new ones — the GPU idles waiting for long sequences. Continuous batching inserts new requests as soon as any slot frees up (every decode step), keeping GPU near 100% utilization. It's the single biggest throughput improvement for LLM serving and is standard in vLLM and TGI.
+
+**"Explain the prefill vs decode distinction in LLM inference"**
+→ Prefill processes the full prompt in a single parallel forward pass — compute-bound (bottlenecked by FLOPS). Decode generates one token at a time — memory-bound (bottlenecked by loading model weights from GPU HBM each step). This is why throughput and latency scale differently. Disaggregated serving routes them to separate GPU pools optimized for each workload.

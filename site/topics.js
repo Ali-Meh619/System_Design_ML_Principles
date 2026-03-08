@@ -735,6 +735,8 @@ window.TOPICS = [
       "KV Cache — Cache K/V of past tokens; PagedAttention (vLLM)",
       "Quantization — FP16 → INT8 → INT4 (GPTQ/AWQ); post-training quantization",
       "Speculative Decoding — Draft model generates; large model verifies in parallel",
+      "Decoding Strategies — Greedy, Beam Search, Temperature, Top-k, Top-p (Nucleus), Repetition Penalty",
+      "Dynamic Batching — Continuous batching, Prefill vs Decode phases, Chunked Prefill, PagedAttention",
       "Hallucination Mitigation — RAG, temperature=0, self-consistency, citations",
       "Long Context — FlashAttention, sliding window, RoPE scaling, lost-in-the-middle",
     ],
