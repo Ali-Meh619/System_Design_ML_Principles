@@ -1,6 +1,6 @@
 # Classic Machine Learning
 
-> The foundation for ML interviews: bias-variance tradeoff, tree ensembles, evaluation at scale, class imbalance, and feature engineering. Understand the *why*, not just the API calls.
+> The foundation for ML interviews: bias-variance tradeoff, tree ensembles, evaluation at scale, class imbalance, feature engineering, and data leakage. Understand the *why*, not just the API calls.
 
 ---
 
@@ -101,6 +101,41 @@ Trees split data by the feature/threshold that maximizes **information gain** (c
   - **Gini impurity:** `1 - Σp²ᵢ` — computationally cheaper
   - **Information Gain / Entropy:** `-Σpᵢ·log(pᵢ)` — slightly better splits
 - **Overfitting control:** `max_depth`, `min_samples_leaf`, `min_samples_split`
+
+### Bagging vs Boosting — The Core Difference
+
+Understanding the distinction between these two ensemble strategies is one of the most common ML interview topics.
+
+| Dimension | Bagging | Boosting |
+|-----------|---------|---------|
+| **Build order** | Parallel — independent models | Sequential — each model learns from previous errors |
+| **Goal** | Reduce **variance** | Reduce **bias** |
+| **Data sampling** | Bootstrap (random with replacement) | Weighted — misclassified samples get higher weight |
+| **Combining** | Uniform average / majority vote | Weighted vote (better models count more) |
+| **Overfitting risk** | Low — averaging smooths noise | Higher — can overfit noisy data |
+| **Best for** | High-variance models (deep trees) | High-bias models (shallow trees / stumps) |
+| **Main algorithm** | Random Forest | AdaBoost, Gradient Boosting, XGBoost |
+
+**Intuition:** Bagging is like asking 100 independent experts and taking a majority vote — outlier opinions cancel out. Boosting is like having each new expert focus specifically on the cases the previous experts got wrong.
+
+```
+Bagging:
+Data → [Sample 1] → Tree 1 ─┐
+     → [Sample 2] → Tree 2 ─┤→ Average/Vote → Final prediction
+     → [Sample 3] → Tree 3 ─┘
+
+Boosting:
+Data → Tree 1 → Find errors → reweight
+     → Tree 2 (focuses on errors of Tree 1) → Find errors → reweight
+     → Tree 3 (focuses on errors of Trees 1+2) → ...
+     → Weighted combination → Final prediction
+```
+
+**AdaBoost in brief:** After each weak learner, increase weights of misclassified samples exponentially. Each learner's vote is weighted by `0.5 · ln((1-error)/error)` — better learners get louder voices.
+
+**Why does boosting reduce bias?** Each sequential model explicitly targets the residual error of the current ensemble. The final model can capture complex patterns that a single high-bias model cannot.
+
+---
 
 ### Random Forests
 
@@ -298,13 +333,36 @@ Often more impactful than algorithm choice.
 
 ### Handling Missing Values
 
-| Strategy | When |
-|---------|------|
-| **Mean/Median imputation** | MCAR (missing completely at random); fast baseline |
-| **Mode imputation** | Categorical features |
-| **Model imputation** | Missing Not At Random; use other features to predict |
-| **Add indicator column** | When "missingness" itself is informative |
-| **Drop** | Only if < 5% missing and MCAR |
+The mechanism of missingness matters as much as the strategy.
+
+**Missing data mechanisms:**
+- **MCAR (Missing Completely At Random):** Missingness is unrelated to any variable — a sensor randomly fails. Safe to impute simply.
+- **MAR (Missing At Random):** Missingness depends on *observed* variables — older people skip income questions, but given age, the missingness is random. Can impute using other features.
+- **MNAR (Missing Not At Random):** Missingness depends on the *missing value itself* — rich people hide income. Simple imputation is biased; need domain knowledge or model the missingness.
+
+| Strategy | How | When |
+|---------|-----|------|
+| **Mean imputation** | Replace with column mean | MCAR numeric; fast baseline; distorts distribution |
+| **Median imputation** | Replace with column median | MCAR numeric with outliers — more robust than mean |
+| **Mode imputation** | Replace with most frequent value | MCAR categorical |
+| **KNN imputation** | Use k nearest neighbors' values | MAR; preserves local relationships; slow at scale |
+| **Iterative imputation (MICE)** | Regress each missing column on others; iterate | MAR; best quality; expensive |
+| **Model imputation** | Train a model to predict missing column | MNAR; complex but powerful |
+| **Add indicator column** | Binary flag: `col_missing = 1 if NaN` | When missingness itself is predictive (often is) |
+| **Drop rows** | Remove rows with missing values | Only if < 1-5% missing AND MCAR AND you have enough data |
+| **Tree-native handling** | XGBoost/LightGBM learn optimal direction for NaN | Best for tree models — don't impute, just pass NaN |
+
+**Critical rule:** Fit imputers on **training data only**, then apply to validation/test. Fitting on the full dataset leaks test distribution — a subtle form of data leakage.
+
+```python
+# Correct
+imputer.fit(X_train)
+X_train_imp = imputer.transform(X_train)
+X_val_imp   = imputer.transform(X_val)   # use train statistics only
+
+# Wrong — data leakage
+imputer.fit(X_all)   # sees test data statistics
+```
 
 ### Feature Scaling
 
@@ -315,7 +373,148 @@ Often more impactful than algorithm choice.
 
 ---
 
-## 12. Hyperparameter Tuning
+## 12. Data Leakage
+
+**Data leakage** occurs when information from outside the training window "leaks" into the model, producing optimistically biased evaluation metrics that don't hold in production. It's one of the most common and costly mistakes in applied ML.
+
+### Types of Leakage
+
+**1. Target Leakage (most common)**
+A feature that is a direct consequence of the target — it's only available *after* the outcome is known.
+
+```
+Example: Predicting loan default
+Leaked feature: "loan_was_restructured" (only happens after default)
+Without it: model seems mediocre
+With it: model gets 99% accuracy in training; 50% in production
+```
+
+**2. Train-Test Contamination**
+Test data influences the training pipeline in any way.
+
+| Leaky practice | Why it's wrong | Fix |
+|----------------|---------------|-----|
+| `StandardScaler.fit(X_all)` | Test mean/std leaks into train scaling | Fit on train only |
+| `imputer.fit(X_all)` | Test distribution leaks into imputation | Fit on train only |
+| Feature selection on full dataset | Model "knows" test feature variance | Select inside CV fold |
+| Hyperparameter search on test set | Overfits test set | Use held-out validation |
+| SMOTE on full dataset before split | Synthetic samples from test in training | SMOTE only on train fold |
+
+**3. Temporal Leakage**
+Using future data to predict the past — extremely common with time-series.
+
+```
+Example: Predicting stock price tomorrow using a moving average
+Leaky:    7-day moving average includes days after prediction date
+Correct:  Only use data strictly before prediction timestamp
+```
+
+**4. Group Leakage**
+Data from the same entity appears in both train and test.
+
+```
+Example: Medical image classification
+Leaky:   5 images from same patient in both train and test
+Correct: Split by patient_id, not by image
+```
+
+### How to Detect Leakage
+
+- **Suspiciously high validation accuracy** (> 99% on a hard problem)
+- **Feature importance dominated by a single feature** you wouldn't have at prediction time
+- **Temporal patterns:** feature timestamp is *after* event timestamp
+- **Drop feature → big accuracy drop:** strong sign it's leaky
+- **Shuffle test labels → still high accuracy:** model learned from index/order, not features
+
+### Prevention Checklist
+
+```
+□ Split train/test BEFORE any preprocessing
+□ Fit all transformers (scaler, imputer, encoder) on train fold only
+□ For time-series: always split by time, not randomly
+□ For groups (patients, users): split by group_id
+□ Ask for every feature: "Is this available at prediction time?"
+□ Wrap preprocessing in a Pipeline to enforce train-only fitting
+□ SMOTE/oversampling only inside training fold
+```
+
+---
+
+## 13. High-Dimensional Features
+
+When your dataset has many features (p >> n, or p in the thousands), naive ML breaks down.
+
+### Problems with High Dimensionality
+
+- **Curse of dimensionality:** In high-dim space, all points become equidistant → KNN, clustering, distance-based methods fail
+- **Overfitting:** More features than samples → model memorizes training data
+- **Multicollinearity:** Highly correlated features → unstable coefficient estimates for linear models
+- **Computational cost:** Training and inference slow down
+- **Irrelevant features:** Noise features can hurt performance more than they help
+
+### Strategy 1: Filter Methods (Before Training)
+
+Remove features before any model is trained. Fast, model-agnostic.
+
+| Method | How | Best for |
+|--------|-----|---------|
+| **Variance threshold** | Remove near-zero variance features | Any — quick cleanup |
+| **Correlation filter** | Remove one of any two features with \|corr\| > 0.95 | Linear models |
+| **Chi-squared test** | For categorical features vs categorical target | Text, categoricals |
+| **Mutual Information** | Non-linear dependency between feature and target | Any type |
+| **ANOVA F-test** | Linear association between numeric feature and target | Numeric features |
+
+### Strategy 2: Wrapper Methods (Model-in-the-Loop)
+
+Use a model's performance to select features. More accurate but expensive.
+
+| Method | How |
+|--------|-----|
+| **RFE (Recursive Feature Elimination)** | Train model, remove lowest-importance feature, repeat |
+| **Forward selection** | Start with 0 features, add one at a time (best gain) |
+| **Backward elimination** | Start with all features, remove one at a time |
+
+### Strategy 3: Embedded Methods (During Training)
+
+Feature selection is part of the model fitting.
+
+| Method | How |
+|--------|-----|
+| **L1 Regularization (Lasso)** | Drives irrelevant feature weights to exactly 0 |
+| **Tree-based importance** | Random Forest / XGBoost: use feature importance scores |
+| **ElasticNet** | L1 + L2 — sparse but handles correlated features |
+
+### Strategy 4: Dimensionality Reduction
+
+Transform features into a smaller set of derived features.
+
+| Method | Type | Use case |
+|--------|------|---------|
+| **PCA** | Linear | Remove multicollinearity; speed up linear models |
+| **t-SNE** | Non-linear | **Visualization only** — not for preprocessing |
+| **UMAP** | Non-linear | Visualization + preprocessing; faster than t-SNE |
+| **Autoencoders** | Deep learning | Complex non-linear structure; image/text features |
+| **TruncatedSVD (LSA)** | Linear | Sparse matrices (text/TF-IDF); memory-efficient |
+
+### Practical Decision Flowchart
+
+```
+p > 10,000 features?
+    ├── Yes → Start with variance threshold + correlation filter (fast wins)
+    │         → Then L1 / RFE / tree importance
+    │         → PCA as last resort (loses interpretability)
+    └── No  → Tree-based importance + SHAP for selection
+              → Correlation filter if linear model
+
+n < p (more features than samples)?
+    ├── Use regularized models (Ridge, Lasso, ElasticNet)
+    ├── PCA to reduce to n < p before any model
+    └── Never use unregularized logistic regression or OLS
+```
+
+---
+
+## 14. Hyperparameter Tuning
 
 | Method | How | Pros/Cons |
 |--------|-----|-----------|
@@ -328,7 +527,7 @@ Often more impactful than algorithm choice.
 
 ---
 
-## Interview Quick-Reference
+## 15. Interview Quick-Reference
 
 **"Your model is overfitting, what do you do?"**
 → More training data → add regularization (L2) → reduce model complexity → dropout / early stopping → feature selection to remove noise
@@ -344,3 +543,12 @@ Often more impactful than algorithm choice.
 
 **"What feature importance methods exist?"**
 → Tree-based (mean decrease impurity — fast but biased toward high cardinality), Permutation importance (model-agnostic, unbiased), SHAP values (local + global, most reliable).
+
+**"What is data leakage and how do you prevent it?"**
+→ Leakage = information from outside the training window contaminates the model. Types: target leakage (feature only available after the event), train-test contamination (scaler/imputer fit on all data), temporal leakage (using future data), group leakage (same user in train and test). Prevention: split first, then fit transformers on train only, wrap in Pipeline, always ask "is this feature available at prediction time?"
+
+**"You have 50,000 features. What do you do?"**
+→ First, remove near-zero variance features and high-correlation pairs (fast filter). Then L1 regularization to get sparse weights, or tree-based importance to rank and prune. Use PCA to reduce to manageable dimensions if linear model needed. Never use unregularized models when p >> n.
+
+**"Bagging vs Boosting — what does each reduce?"**
+→ Bagging reduces variance by averaging independent models (Random Forest). Boosting reduces bias by sequentially fixing errors (XGBoost). Bagging is parallelizable; Boosting is sequential. Use Random Forest as a fast robust baseline; use XGBoost when you need maximum accuracy on tabular data.

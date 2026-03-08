@@ -29,7 +29,49 @@ Input x → [Linear: Wx + b] → [Activation σ] → [Linear: W'h + b'] → [Act
 
 ---
 
-## 2. Backpropagation
+## 2. Weight Initialization
+
+Poor initialization causes vanishing/exploding gradients before training even starts. The goal: keep the variance of activations and gradients roughly constant across layers.
+
+### Why It Matters
+
+If all weights start at zero: every neuron computes the same output, every gradient is the same, the network never breaks symmetry — it stays stuck. You must initialize with random values, but the *scale* matters enormously.
+
+**Too large:** Activations explode → saturated neurons → vanishing gradients (for sigmoid/tanh)
+**Too small:** Activations shrink to zero → gradients vanish immediately
+
+### Initialization Schemes
+
+| Method | Formula | Designed for | Key property |
+|--------|---------|-------------|-------------|
+| **Random Normal** | `N(0, 0.01)` | — (naïve) | Often too small for deep nets |
+| **Xavier / Glorot** | `Uniform(-√(6/(nᵢₙ+nₒᵤₜ)), √(...))` | Sigmoid / Tanh | Keeps variance equal in/out |
+| **He (Kaiming)** | `N(0, √(2/nᵢₙ))` | **ReLU** | Corrects for ReLU killing half its inputs |
+| **Orthogonal** | Initialize weight matrix as random orthogonal matrix | Deep RNNs | Preserves gradient magnitude exactly |
+| **Pretrained weights** | Copy from a pretrained model | Transfer learning | Best starting point when available |
+
+**Xavier derivation intuition:** For a linear layer `y = Wx`, if each `wᵢⱼ ~ N(0, σ²)`, then `Var(y) = nᵢₙ · σ² · Var(x)`. To keep `Var(y) = Var(x)`, we need `σ² = 1/nᵢₙ`. Xavier averages fan-in and fan-out: `σ² = 2/(nᵢₙ + nₒᵤₜ)`.
+
+**He initialization:** ReLU zeroes out half the values, reducing variance by 2×. He corrects by doubling: `σ² = 2/nᵢₙ`.
+
+```python
+# PyTorch defaults (already correct for common cases)
+nn.Linear   →  Kaiming Uniform by default
+nn.Conv2d   →  Kaiming Uniform by default
+nn.Embedding → Normal(0, 1) by default
+
+# Manual init
+torch.nn.init.xavier_uniform_(layer.weight)   # for tanh/sigmoid
+torch.nn.init.kaiming_normal_(layer.weight, mode='fan_in', nonlinearity='relu')
+```
+
+### Batch Normalization Reduces Init Sensitivity
+
+BatchNorm normalizes activations at each layer, making the network much less sensitive to initialization. With BatchNorm, you can often get away with less careful initialization. But with LayerNorm (Transformers), initialization still matters.
+
+---
+
+## 3. Backpropagation
 
 The algorithm that computes gradients by applying the **chain rule** backward through the computation graph.
 
@@ -47,7 +89,7 @@ Backward pass:  ∂L/∂w = ∂L/∂z · ∂z/∂w    (chain rule)
 
 ---
 
-## 3. Optimization Algorithms
+## 4. Optimization Algorithms
 
 ### SGD vs Adaptive Methods
 
@@ -73,7 +115,7 @@ Default: β₁=0.9, β₂=0.999, ε=1e-8
 
 ---
 
-## 4. Learning Rate Scheduling
+## 5. Learning Rate Scheduling
 
 Learning rate is often the most important hyperparameter. Start high (explore), end low (refine).
 
@@ -89,7 +131,7 @@ Learning rate is often the most important hyperparameter. Start high (explore), 
 
 ---
 
-## 5. Regularization in Neural Networks
+## 6. Regularization in Neural Networks
 
 ### Dropout
 
@@ -132,7 +174,7 @@ BN(x) = γ · (x - μ_batch) / √(σ²_batch + ε) + β
 
 ---
 
-## 6. Convolutional Neural Networks (CNNs)
+## 7. Convolutional Neural Networks (CNNs)
 
 Designed for spatial data (images, audio spectrograms, 1D signals) by exploiting **translation invariance** and **locality**.
 
@@ -184,7 +226,7 @@ If F = 0, layer becomes identity. Gradient flows directly through shortcut → n
 
 ---
 
-## 7. Recurrent Neural Networks & LSTMs
+## 8. Recurrent Neural Networks & LSTMs
 
 ### Vanilla RNN
 
@@ -222,7 +264,7 @@ For most sequence tasks, Transformers win. But LSTMs are still used in:
 
 ---
 
-## 8. Attention Mechanism
+## 9. Attention Mechanism
 
 The precursor to Transformers. Instead of forcing all information through a fixed-size hidden state, attention lets the decoder **look back at all encoder outputs**.
 
@@ -251,7 +293,7 @@ Allows the model to attend to information from different representation subspace
 
 ---
 
-## 9. Transfer Learning & Fine-Tuning
+## 10. Transfer Learning & Fine-Tuning
 
 Train on a large dataset (ImageNet, Common Crawl), then adapt to a specific task.
 
@@ -276,7 +318,7 @@ Head → replace entirely for new task
 
 ---
 
-## 10. Loss Functions for Deep Learning
+## 11. Loss Functions for Deep Learning
 
 | Loss | Formula | Use case |
 |------|---------|----------|
@@ -292,7 +334,7 @@ Head → replace entirely for new task
 
 ---
 
-## 11. Training at Scale
+## 12. Training at Scale
 
 ### Batch Size Effect
 
@@ -326,7 +368,7 @@ Store weights in FP32 but compute forward/backward passes in FP16:
 
 ---
 
-## 12. Common Failure Modes & Debugging
+## 13. Common Failure Modes & Debugging
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
@@ -339,6 +381,199 @@ Store weights in FP32 but compute forward/backward passes in FP16:
 | Slow convergence | Vanishing gradient | BatchNorm, skip connections, better init |
 
 **The overfit-single-batch test:** Before full training, overfit a single mini-batch. If train loss doesn't reach ~0, there's a bug in model/loss/data — fix this first.
+
+---
+
+## 14. Transformers In Depth
+
+The Transformer is the most important architecture in modern deep learning. It powers every major LLM, vision model (ViT), and multimodal model. Unlike RNNs, it processes the entire sequence in parallel, making it highly GPU-efficient.
+
+### Full Architecture Diagram
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │           TRANSFORMER BLOCK (×N)        │
+                    │                                         │
+Input tokens        │  ┌──────────┐                          │
+   │                │  │ LayerNorm │ ← Pre-norm (modern)      │
+   ▼                │  └────┬─────┘                          │
+[Token Embedding]   │       ▼                                 │
+   +                │  ┌──────────────────────┐              │
+[Positional Enc]    │  │  Multi-Head           │              │
+   │                │  │  Self-Attention       │              │
+   └──────────────► │  └──────────┬───────────┘              │
+                    │             │                           │
+                    │       ┌─────┴─────┐                    │
+                    │       │  Residual  │ x + Attn(x)        │
+                    │       └─────┬─────┘                    │
+                    │             ▼                           │
+                    │       ┌──────────┐                      │
+                    │       │LayerNorm │                      │
+                    │       └────┬─────┘                      │
+                    │            ▼                            │
+                    │  ┌──────────────────────┐              │
+                    │  │  Feed-Forward Network │              │
+                    │  │  Linear → GELU → Linear│             │
+                    │  └──────────┬───────────┘              │
+                    │             │                           │
+                    │       ┌─────┴─────┐                    │
+                    │       │  Residual  │ x + FFN(x)         │
+                    │       └─────┬─────┘                    │
+                    └─────────────┼───────────────────────────┘
+                                  │ (repeat N times)
+                                  ▼
+                            [LayerNorm]
+                                  │
+                            [Linear → Softmax]
+                                  │
+                           Output probabilities
+```
+
+### Scaled Dot-Product Attention — Step by Step
+
+```
+Given input X ∈ R^(seq_len × d_model):
+
+1. Project: Q = X·Wᵠ,  K = X·Wᵏ,  V = X·Wᵛ
+   (each W ∈ R^(d_model × d_head))
+
+2. Compute scores: S = Q·Kᵀ / √d_head
+   (S ∈ R^(seq_len × seq_len) — the attention matrix)
+
+3. Mask (decoder only): set future positions to -∞
+
+4. Normalize: A = softmax(S)
+   (A ∈ R^(seq_len × seq_len) — attention weights, each row sums to 1)
+
+5. Weighted sum: Output = A · V
+   (Output ∈ R^(seq_len × d_head))
+```
+
+**Why divide by √d_head?**
+Dot products grow with dimensionality: `E[q·k] ≈ d_head · σ²`. For d_head = 64, this is 8×. Large values push softmax into saturation → near-zero gradients. Dividing by `√d_head` brings values back to unit scale.
+
+**Attention matrix intuition:**
+- Row `i` represents "what does token i attend to?"
+- Column `j` represents "how much do all tokens attend to token j?"
+- `A[i,j]` = attention weight from token i to token j
+
+### Multi-Head Attention — Why Multiple Heads?
+
+```
+MultiHead(Q,K,V) = Concat(head₁,...,headₕ) · Wₒ
+headᵢ = Attention(Q·Wᵢᵠ, K·Wᵢᵏ, V·Wᵢᵛ)
+
+Dimensions:
+  d_model = 512,  h = 8 heads,  d_head = 64 each
+  Total parameters per head: 3 × (d_model × d_head)
+  Output projection Wₒ: (h·d_head) × d_model = d_model × d_model
+```
+
+Different heads learn to attend to different types of relationships simultaneously:
+- Head 1: syntactic agreement (subject-verb)
+- Head 2: coreference ("it" → "the cat")
+- Head 3: positional adjacency
+- Head 4: semantic similarity
+
+### Causal Masking (Decoder)
+
+In language modeling (GPT-style), token at position `t` must **not** see future positions. Achieved by masking the upper triangle of the attention matrix with `-∞` before softmax:
+
+```
+Attention mask for seq_len = 4:
+     t₁  t₂  t₃  t₄
+t₁ [  0  -∞  -∞  -∞ ]
+t₂ [  0   0  -∞  -∞ ]
+t₃ [  0   0   0  -∞ ]
+t₄ [  0   0   0   0 ]
+
+After softmax: upper triangle becomes 0 → no future leakage
+```
+
+### Positional Encoding in Detail
+
+**Sinusoidal (original paper):**
+```
+PE(pos, 2i)   = sin(pos / 10000^(2i/d))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d))
+```
+The frequency decreases with dimension index — high dims encode coarse position, low dims encode fine position. Allows the model to compute relative positions via linear combinations: `PE(pos+k)` is a linear function of `PE(pos)`.
+
+**RoPE (Rotary Position Embedding) — current standard:**
+Instead of adding position to embeddings, rotate Q and K vectors by an angle proportional to position *before* computing the dot product:
+
+```
+Rₒₜ(qₘ) · Rₒₜ(kₙ)ᵀ only depends on (m-n) — the relative distance
+```
+
+Why RoPE is preferred:
+- Attention scores naturally depend on relative positions, not absolute
+- Enables context length extension (YaRN, dynamic NTK scaling)
+- No additional parameters
+
+### Feed-Forward Network (FFN)
+
+```
+FFN(x) = W₂ · GELU(W₁x + b₁) + b₂
+
+Typical dimensions:
+  d_model = 4096  (LLaMA-7B)
+  d_ff    = 11008 = 4 × 4096 × (2/3)  (SwiGLU variant)
+```
+
+The FFN constitutes ~2/3 of total parameters. Research suggests it acts as a key-value memory store — different neurons fire for different input patterns.
+
+**SwiGLU (modern variant, used in LLaMA):**
+```
+SwiGLU(x, W, V) = Swish(xW) ⊙ (xV)
+```
+Gating mechanism that selectively activates features. Outperforms standard GELU in practice.
+
+### Pre-Norm vs Post-Norm
+
+| | Post-Norm (original) | Pre-Norm (modern) |
+|-|---------------------|------------------|
+| **Where** | After residual: `LayerNorm(x + F(x))` | Before sublayer: `x + F(LayerNorm(x))` |
+| **Training** | Harder to train (gradients through LN) | More stable; standard in modern LLMs |
+| **Performance** | Slightly better when trained | Pre-norm usually fine with warmup |
+
+Almost all modern LLMs (LLaMA, Mistral, GPT-NeoX) use **Pre-Norm** with RMSNorm (simpler than LayerNorm, no mean subtraction).
+
+### Encoder vs Decoder vs Encoder-Decoder
+
+| Architecture | Attention type | Pre-training | Best for |
+|-------------|---------------|-------------|---------|
+| **Encoder only** (BERT) | Bidirectional self-attention | Masked LM | Classification, NER, embeddings |
+| **Decoder only** (GPT) | Causal (masked) self-attention | Causal LM | Text generation, chat |
+| **Encoder-Decoder** (T5) | Bidirectional encoder + causal decoder + cross-attention | Seq2Seq denoising | Translation, summarization, QA |
+
+**Cross-attention in encoder-decoder:** The decoder Q attends to the encoder K/V — each decoder position can look at the full input sequence:
+```
+Cross-Attention:  Q = decoder state,  K = V = encoder output
+```
+
+### Computational Complexity
+
+| Component | Time | Space | Note |
+|-----------|------|-------|------|
+| Self-attention | O(n²·d) | O(n²) | Quadratic in sequence length! |
+| FFN | O(n·d²) | O(d²) | Linear in sequence length |
+| Embedding | O(n·d) | O(V·d) | V = vocabulary size |
+
+**The quadratic bottleneck:** For n=32K tokens, n² = 10⁹ attention scores. Solutions:
+- **FlashAttention:** Tiled GPU computation, avoids materializing full matrix → same output, O(n) memory
+- **Sliding window attention (Mistral):** Each token attends to W neighbors only → O(n·W)
+- **Linear attention:** Approximate kernelized attention → O(n)
+
+### Vision Transformer (ViT)
+
+Patch images into 16×16 tokens, project each patch to d_model, add positional encoding, feed into standard Transformer encoder:
+
+```
+224×224 image → 14×14 = 196 patches → 197 tokens (+ [CLS]) → Transformer encoder → classify
+```
+
+Key insight: with enough data, ViT matches or beats CNNs. CNNs have inductive bias (translation equivariance) baked in; ViTs learn it from data.
 
 ---
 
@@ -358,3 +593,15 @@ Store weights in FP32 but compute forward/backward passes in FP16:
 
 **"Difference between Dropout and BatchNorm?"**
 → Dropout adds noise to activations (regularization by masking). BatchNorm normalizes activations and adds learnable scale/shift (training stability + mild regularization). They're complementary; using both is common.
+
+**"Why use He initialization over Xavier for ReLU?"**
+→ Xavier assumes symmetric activations around zero. ReLU kills half the inputs (x < 0 → 0), halving the effective variance. He doubles the variance to compensate: σ² = 2/nᵢₙ. Using Xavier with ReLU leads to vanishing activations in deep networks.
+
+**"Explain the Transformer's self-attention complexity"**
+→ For a sequence of n tokens and model dimension d, self-attention is O(n²·d) time and O(n²) space — quadratic in sequence length. This is the core bottleneck for long contexts. FlashAttention uses tiled GPU SRAM computation to achieve O(n) memory while computing the same result. Sliding window attention limits each token to W neighbors: O(n·W).
+
+**"Why does multi-head attention work better than single-head?"**
+→ Single head of dimension d gives one "view" of token relationships. h heads of dimension d/h capture h different relationship types simultaneously (syntax, semantics, coreference, etc.) with the same total parameter count. The concatenation then mixes all these views via Wₒ.
+
+**"Pre-Norm vs Post-Norm — what changed and why?"**
+→ Original Transformer used Post-Norm (LayerNorm after residual), which is harder to train as gradients must flow through LayerNorm. Modern LLMs use Pre-Norm (LayerNorm before sublayer), which gives gradients a clean residual pathway and makes training more stable, especially at scale. Most use RMSNorm (no mean subtraction, faster) instead of full LayerNorm.
