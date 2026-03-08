@@ -13,7 +13,7 @@
 | [🔌 API & Networking](architecture/README.md) | 4 | 🟢–🟡 | REST/gRPC/GraphQL, load balancing, rate limiting, WebSocket |
 | [🌐 Distributed Systems](distributed/README.md) | 5 | 🟡–🔴 | CAP, consistency, patterns, microservices, resilience |
 | [🔍 Search & Analytics](search/README.md) | 4 | 🟡–🔴 | Inverted index, typeahead, stream processing, geo, probabilistic DS |
-| [📈 Scale & Reliability](scale/README.md) | 7 | 🟡–🔴 | Observability, HA, IDs, pagination, notifications, advanced data patterns |
+| [📈 Scale & Reliability](scale/README.md) | 6 | 🟡–🔴 | Observability, HA, IDs, pagination, notifications, advanced data patterns |
 | [🔐 Security](security/README.md) | 2 | 🟡 | Auth, OAuth 2.0, encryption, GDPR |
 | [🩷 AI & Machine Learning](advanced/README.md) | 5 | 🟡–🔴 | ML systems, AI agents, Classic ML, Deep Learning, LLMs |
 | [🩵 Specialized Systems](advanced/README.md) | 2 | 🟡–🔴 | Real-time collaboration (OT/CRDT), Webhooks |
