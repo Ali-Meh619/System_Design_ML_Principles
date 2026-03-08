@@ -120,9 +120,19 @@ Used by: T5, BART, mT5, Flan-T5.
 Update all model parameters on task-specific labeled data.
 
 - Pro: Best performance if enough data
-- Con: Expensive; requires storing full model per task; can catastrophic-forget
+- Con: Expensive compute (needs massive VRAM); requires storing a full copy of the model per task; prone to catastrophic forgetting.
 
-**Catastrophic forgetting:** Model forgets pre-trained knowledge when fine-tuned. Mitigations: replay buffer, EWC (Elastic Weight Consolidation), small LR.
+#### Catastrophic Forgetting
+
+**Catastrophic forgetting** occurs when a model completely overwrites or "forgets" its broad, general-purpose pre-trained knowledge while being fine-tuned on a narrow, specific task (e.g., fine-tuning a coding model exclusively on Python, causing it to lose its ability to write JavaScript or even hold a normal conversation).
+
+**Why it happens:** Neural networks share weights across representations. Large gradient updates during fine-tuning aggressively push these weights to minimize the new task's loss, disrupting the delicate balance learned during pre-training.
+
+**Mitigations:**
+1. **Replay Buffers:** Mix a small percentage of original pre-training data into the fine-tuning dataset to keep those pathways active.
+2. **Elastic Weight Consolidation (EWC):** Add a penalty term to the loss function that slows down learning on weights that were critical to the pre-training task.
+3. **Small Learning Rates:** Use an LR 1-2 orders of magnitude smaller than pre-training to make gentle updates.
+4. **Early Stopping:** Monitor performance on a general benchmark (like MMLU) and stop fine-tuning before general knowledge degrades too much.
 
 ### Instruction Fine-Tuning (IFT)
 
@@ -380,6 +390,16 @@ Loss = -log σ(β · (log π(chosen|x) - log π(rejected|x) - log π_ref(chosen|
 | **Exact Match (EM)** | Does output exactly match reference? | Too strict; useful for structured outputs |
 | **F1 (token-level)** | Token overlap between prediction and ground truth | QA benchmarks (SQuAD) |
 
+#### Why Perplexity Fails for Reasoning Models
+
+**Perplexity** measures how well a model predicts a sample of text (the "suprise" of seeing a sequence of words). Historically, a lower perplexity meant a better, more capable language model.
+
+However, this metric **breaks down completely when evaluating modern reasoning models (like OpenAI o1 or DeepSeek-R1)**.
+
+1. **Reasoning Models Don't Just Predict the Next Token:** These models generate an invisible (or visible) "chain of thought" before answering. Their goal is not to maximize the probability of the *exact* next word in human text, but to explore reasoning paths (which are often messy, self-correcting, and non-linear) to arrive at a correct final answer.
+2. **High Perplexity Does Not Mean Poor Quality:** A model exploring complex logic, pausing to rethink, or generating novel intermediate steps might have a high perplexity (because its internal monologue doesn't look like standard human training data), but it will often produce a vastly superior answer.
+3. **The Shift to Outcome-Based Metrics:** We must evaluate reasoning models based on outcome metrics like **Exact Match** (e.g., in math or coding benchmarks like GSM8K or HumanEval), **Pass@k**, or **LLM-as-a-Judge**, rather than token-level prediction accuracy.
+
 ### Benchmarks (Know the Names)
 
 | Benchmark | What it tests |
@@ -405,7 +425,21 @@ User: "Prompt: {prompt}\nResponse: {response}\nScore and reasoning:"
 
 ---
 
-## 8. Inference Optimization
+## 8. Hardware & Inference Optimization
+
+### Mixed Precision Training & Inference
+
+Neural networks were traditionally trained using 32-bit floating-point (FP32). Modern LLMs (and deep learning in general) use **Mixed Precision** — combining lower precision (16-bit) and higher precision (32-bit) in a single workflow.
+
+- **FP16 (Half Precision):** Uses 16 bits (1 sign, 5 exponent, 10 fraction). Can represent numbers with higher precision but a smaller range than FP32.
+- **BF16 (Brain Floating Point):** Uses 16 bits (1 sign, 8 exponent, 7 fraction). Has the same dynamic range as FP32 but lower precision.
+
+**Why BF16 is the standard for modern LLM training:**
+- FP16 suffers from "gradient overflow/underflow" — numbers get too large or too close to zero during backpropagation, causing the training to collapse (NaNs).
+- BF16 avoids this because its 8-bit exponent gives it the exact same range as FP32. It sacrifices fractional precision, but neural networks are incredibly robust to small precision errors.
+- **Mixed Precision Workflow (AMP):** The model weights, gradients, and optimizer states are kept in FP32 (the "master weights") to prevent small updates from disappearing. But the massive matrix multiplications during the forward and backward passes are cast down to BF16, leveraging the specialized Tensor Cores on modern GPUs (like Nvidia A100/H100). This roughly **halves VRAM usage and doubles computation speed** without losing model quality.
+
+---
 
 ### KV Cache
 

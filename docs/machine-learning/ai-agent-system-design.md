@@ -48,6 +48,30 @@ For complex tasks, one agent context window is often insufficient. Multi-agent s
 
 ---
 
+## Agent Frameworks & Tooling
+
+Building agents from scratch using raw LLM APIs (like OpenAI's) is possible but often tedious due to state management, tool execution loops, and observability needs. The ecosystem has evolved to provide robust frameworks:
+
+### 1. LangChain & LangGraph
+- **LangChain:** The original, most popular framework for building LLM applications. Provides abstractions for Prompts, LLMs, Memory, and Tools. However, standard LangChain (chains) struggles with complex, cyclic agent loops.
+- **LangGraph:** An extension of LangChain built specifically for stateful, multi-actor applications. It models the agent's workflow as a **cyclic graph** (nodes = functions/agents, edges = conditional routing).
+  - *Why it matters:* It gives developers fine-grained control over the agent loop, making it much easier to implement complex patterns like reflection, human-in-the-loop, and multi-agent handoffs compared to "black box" agents.
+
+### 2. AutoGen (Microsoft)
+- A framework specifically designed for **Multi-Agent Systems (MAS)**.
+- *How it works:* You define multiple agents (e.g., a "Coder" agent and a "Reviewer" agent), assign them system prompts and tools, and let them converse with each other to solve a task.
+- *Best for:* Code generation, complex problem-solving where specialized personas need to debate or iterate.
+
+### 3. AI SDKs (Vercel AI SDK, etc.)
+- For web developers, frameworks like the Vercel AI SDK provide React/Next.js primitives to stream agent responses, render UI components dynamically based on tool calls (Generative UI), and manage chat state on the client/server.
+
+### 4. Model Context Protocol (MCP)
+- An emerging open standard (introduced by Anthropic) that standardizes how AI models connect to data sources and tools.
+- *The problem it solves:* Previously, every agent needed custom API integrations for Slack, GitHub, local file systems, etc.
+- *How it works:* MCP uses a client-server architecture. An "MCP Server" exposes data and tools (e.g., a GitHub MCP server). An "MCP Client" (like Claude Desktop or a custom agent) can connect to any MCP Server to instantly gain those capabilities without custom integration code.
+
+---
+
 ## Tool Use & Safety Patterns
 
 Allowing LLMs to execute code or API calls creates massive risk (**Prompt Injection**, accidental deletion). Safety is an architectural requirement.
@@ -161,3 +185,4 @@ Without protection: Agent forwards all emails!
 - "Safety: all code execution in a Firecracker microVM — network disabled, filesystem read-only except /tmp, 2-second CPU limit. The agent can't break out."
 - "For the coding agent: tools are UNIX commands (grep, cat, ls, git, python). Read-only by default. Write tools (edit file, git commit) require HITL approval."
 - "Evaluation: LLM-as-a-Judge with GPT-4o grading GPT-4 outputs against a rubric of 100 test cases. We target >85% pass rate before shipping a new agent version."
+- "Frameworks: LangGraph is the standard for complex, stateful agents because standard LangChain chains are too linear for real-world agent loops. For tool integration at scale, the Model Context Protocol (MCP) standardizes how agents securely talk to external APIs."
