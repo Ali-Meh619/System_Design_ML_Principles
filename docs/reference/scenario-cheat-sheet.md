@@ -1,6 +1,6 @@
 # Common Scenarios & Solutions
 
-> **How to use:** Every system design question has a dominant constraint. Find the constraint → apply the pattern → customize. Each scenario below follows the same structure: trigger words → core pattern → steps → key numbers → trade-off.
+> **How to use:** Every system design question has a dominant constraint plus 1-2 modifiers. Find the main constraint → apply the base pattern → layer on the modifiers. Each scenario below follows the same structure: trigger words → core pattern → steps → key numbers → trade-off.
 
 ---
 
@@ -21,6 +21,23 @@
 | "Push notifications", "email alerts", "SMS pipeline" | Notification delivery | §11 |
 | "Login system", "OAuth", "SSO", "session management" | Auth & identity | §12 |
 | "TinyURL", "unique IDs at scale", "Snowflake" | ID / URL generation | §13 |
+| "B2B SaaS", "workspaces", "organizations", "enterprise login" | Multi-tenant isolation | §14 |
+| "GitHub/Stripe webhook", "partner callback", "deliver events to customer endpoint" | Third-party integration | §15 |
+| "For You feed", "recommendations", "ranking", "personalization" | Retrieval + ranking | §16 |
+| "Global users", "region outage", "data residency", "DR" | Multi-region reliability | §17 |
+
+---
+
+## The Modifier Map *(layer these on top)*
+
+| If the interviewer adds... | Layer on top |
+|---|---|
+| "Public API", "partner API" | Auth + rate limiting + cursor pagination + idempotency |
+| "Compliance", "enterprise", "regulated" | SSO/MFA + audit logs + encryption + data residency + deletion path |
+| "Cross-service workflow" | Outbox + queue + Saga + idempotency |
+| "Global users", "low latency worldwide" | CDN + geo/DNS routing + multi-region read path or DR |
+| "Personalization", "ranking" | Feature store + multi-stage ranking + experimentation |
+| "Cost is a concern" | Managed services + autoscaling + storage tiers + async work |
 
 ---
 
@@ -131,7 +148,7 @@
 
 ---
 
-## 5. Global Consistency (Money / Inventory)
+## 5. Strong Consistency (Money / Inventory)
 
 **Trigger words:** Banking, ticketing, flash sale, booking, "last ticket", "no double charge", inventory reservation
 
@@ -392,17 +409,121 @@
 
 ---
 
+## 14. Multi-Tenant B2B SaaS & Authorization
+
+**Trigger words:** B2B SaaS, workspaces, organizations, enterprise login, per-tenant admin roles, "prevent cross-tenant data leaks"
+
+**Core constraint:** Many customers share the same platform, but tenant isolation, authorization, and noisy-neighbor control must be explicit from day one.
+
+**Pattern: Tenant-aware data model + scoped identity + RBAC/ABAC + audit logs**
+
+1. **Tenant identity on every request** — JWT/session should carry `tenant_id`, `user_id`, and roles. Every cache key, DB query, and background job should stay tenant-scoped.
+2. **Choose isolation level deliberately** — shared DB/schema with `tenant_id` is the default for most SaaS; schema-per-tenant is useful when customization or noisy-neighbor issues grow; DB-per-tenant is usually reserved for whale or regulated customers.
+3. **Authorization after authentication** — RBAC is enough for many SaaS products; add ABAC/ReBAC when access depends on resource ownership, sharing, or organization hierarchy.
+4. **Enterprise login** — OIDC is the clean default; SAML still matters for enterprise customers. Mention SCIM if the interviewer asks about automated user provisioning/deprovisioning.
+5. **Protect against noisy neighbors** — apply per-tenant quotas, rate limits, concurrency caps, and tenant-aware partitions for especially large tenants.
+6. **Audit and admin safety** — log admin actions, membership changes, exports, privilege changes, and sensitive writes. Enterprise customers often care as much about auditability as raw scale.
+
+| Key Number | Value |
+|---|---|
+| Access token TTL | 15–60 min |
+| AuthZ check target | < 5 ms |
+| Audit log retention | 90–365 days+ |
+| Default quota window | 1 min / 1 hour / daily mix |
+
+**Primary trade-off:** Shared infrastructure is cheaper and simpler, but tenant isolation is logically enforced rather than physically isolated. Dedicated infrastructure improves isolation but increases cost and operational complexity.
+
+**When to deviate:** A common pattern is hybrid isolation: most tenants share the default stack, while a few large or regulated customers get isolated storage or dedicated clusters.
+
+---
+
+## 15. Webhooks & Third-Party Integrations
+
+**Trigger words:** GitHub webhook, Stripe webhook, Slack app, partner callback, "deliver events to a customer endpoint", "integrate with third-party APIs"
+
+**Core constraint:** External endpoints and third-party APIs are unreliable, slow, and outside your control. Delivery must still be secure, retryable, and observable.
+
+**Pattern: Durable event record → signed delivery worker → retries + idempotency**
+
+1. **Persist before sending** — after the source transaction commits, write an event to an outbox table or queue. Never generate a webhook only from in-memory state.
+2. **Sign every outbound request** — include `event_id`, timestamp, and an HMAC signature so receivers can verify authenticity and reject replays.
+3. **Retry with exponential backoff** — customer endpoints fail all the time. Retry at 1s, 10s, 1m, 10m, etc., then move to a DLQ or failed-delivery state.
+4. **Assume at-least-once delivery** — duplicates happen. Both sender and receiver should dedupe using `event_id` or an idempotency key.
+5. **Expose delivery visibility** — maintain delivery logs, status pages, and replay tooling so support and customers can inspect failures without digging through raw logs.
+6. **Protect the destination and yourself** — enforce per-endpoint rate limits, timeouts, and circuit breakers so one bad receiver does not poison the whole delivery fleet.
+
+| Key Number | Value |
+|---|---|
+| Delivery timeout | 3–10 s |
+| Retry attempts before DLQ | 3–10 |
+| Initial backoff | 1–10 s |
+| Signature timestamp tolerance | ±5 min |
+
+**Primary trade-off:** At-least-once delivery is practical and robust, but it means duplicates are unavoidable. Exactly-once over arbitrary third-party HTTP endpoints is not realistic.
+
+---
+
+## 16. Recommendation / Ranking & Personalization
+
+**Trigger words:** "For You", recommendation engine, home-feed ranking, search ranking, ads ranking, personalization, cold start
+
+**Core constraint:** You must choose the best few items from a huge candidate set under tight latency while balancing relevance, diversity, freshness, and exploration.
+
+**Pattern: Candidate generation → feature lookup → multi-stage ranking → business rules → online feedback loop**
+
+1. **Generate candidates cheaply** — use heuristics, collaborative filtering, ANN/vector retrieval, popularity, or graph-based retrieval to narrow millions of items to a few hundred or thousand.
+2. **Use a feature store or equivalent online feature path** — ranking quality collapses when training and serving features diverge. Point-in-time correctness matters.
+3. **Rank in stages** — a light ranker filters candidates first; a heavier ranker or re-ranker handles the final list. This is how you keep latency reasonable.
+4. **Add a post-ranking rules layer** — enforce diversity, freshness, safety, inventory constraints, sponsored placement, or creator fairness after the model score.
+5. **Run experiments and log outcomes** — offline metrics like NDCG or MRR are useful, but online metrics like CTR, watch time, retention, or conversion decide ship/no-ship.
+6. **Handle cold start explicitly** — new users and new items need fallback logic such as popularity, content-based retrieval, or exploration slots.
+
+| Key Number | Value |
+|---|---|
+| Candidate set size | 100–1000 |
+| Online ranking budget | 10–50 ms |
+| Feature freshness target | Seconds to minutes |
+| Exploration traffic / slots | 1–5% |
+
+**Primary trade-off:** Better ranking quality usually costs more latency, feature infrastructure, experimentation complexity, and serving spend. Offline gains do not guarantee online improvement.
+
+---
+
+## 17. Global / Multi-Region Reliability
+
+**Trigger words:** global users, region outage, disaster recovery, data residency, low latency worldwide, "must survive a regional failure"
+
+**Core constraint:** Reduce latency and survive region failures without creating unmanageable consistency, cost, and operational complexity.
+
+**Pattern: Multi-AZ first → explicit RTO/RPO → active-passive or active-active multi-region**
+
+1. **Start with one region across multiple AZs** — this handles the most common infrastructure failure before you take on cross-region complexity.
+2. **Use DNS/CDN/WAF at the edge** — route users to the closest healthy region when possible, and keep static content at the edge.
+3. **Replicate data deliberately** — asynchronous cross-region replication is the default. Reserve synchronous cross-region writes for narrow cases where correctness truly requires it.
+4. **Choose a failover mode** — cold standby, warm standby, active-passive, and active-active all exist for a reason. Pick one based on RTO/RPO and business criticality.
+5. **Keep region-local dependencies in mind** — caches, search indexes, queues, and feature stores may all need local copies or recovery plans, not just the primary database.
+6. **Run failover and restore drills** — a DR plan that has never been tested is just documentation.
+
+| Key Number | Value |
+|---|---|
+| Multi-AZ default | 2–3 AZs |
+| Cross-region RTT | ~50–200 ms |
+| Typical RPO target | 0–15 min |
+| Typical RTO target | Minutes to hours |
+
+**Primary trade-off:** Multi-region improves resilience and can reduce latency for global users, but it raises cost, complicates data consistency, and makes operations much harder.
+
+---
+
 ## Quick Reference: Core Constraint → Pattern
 
 | Scenario | Core Pattern | Key Technologies | Critical Trade-off |
 |---|---|---|---|
 | Read-heavy | Cache-Aside + CDN + Read Replicas | Redis, CloudFront, PgBouncer | Eventual consistency (staleness) |
 | Write-heavy | Queue → Batch → LSM DB | Kafka, Cassandra, InfluxDB | Near-real-time (not real-time) reads |
-| Real-time bidirectional | WebSocket + Redis Pub/Sub | Socket.io, Redis, Sticky sessions | Stateful servers, harder to scale |
-| Real-time server→client | SSE / Long Poll | EventSource, HTTP/2 | One-directional only |
-| Full-text search | Inverted Index | Elasticsearch, Lucene | Index sync lag (1–5 s) |
-| Geo proximity | Geohash / Quadtree | Redis GEO, PostGIS | Boundary conditions |
-| Strong consistency | SQL + Pessimistic Lock | PostgreSQL FOR UPDATE, ZooKeeper | Lower availability, more latency |
+| Real-time | WebSocket + Pub/Sub (+ SSE fallback) | Socket.io, Redis, Sticky sessions | Stateful servers, harder to scale |
+| Search / geo | Inverted Index + Geohash / Quadtree | Elasticsearch, Redis GEO, PostGIS | Index lag + boundary conditions |
+| Strong consistency | SQL transactions + locks + idempotency | PostgreSQL FOR UPDATE, version column, idempotency key | Lower availability, more latency |
 | Count at scale | Approx. counters + windows | Count-Min Sketch, Redis HLL, Flink | ~1% error (approx.) |
 | Social feed | Hybrid fan-out (push/pull) | Redis Lists, Kafka, Cassandra | Write amplification vs read latency |
 | Large file / blob | Chunked + Pre-signed URL + Dedup | S3, SHA-256, rsync | Complex client-side logic |
@@ -411,5 +532,23 @@
 | Notification pipeline | Async event queue + per-channel workers | Kafka, APNs, FCM, Twilio | Async = no exact delivery guarantee |
 | Authentication | Short-lived JWT + Redis refresh token | RS256, Redis, OAuth 2.0 | JWT: hard to revoke before expiry |
 | Unique IDs | Snowflake (time + machine + seq) | ZooKeeper, Base62 encoding | Machine ID coordination at startup |
-| Pagination | Cursor-based (keyset) | Opaque cursor, B-tree index | No random page jump |
-| Distributed lock | Redlock / ZooKeeper | Redis Redlock, Curator | Clock drift, lock lease expiry |
+| Multi-tenant SaaS | Tenant-scoped auth + RBAC/ABAC + quotas | OIDC/SAML, SCIM, audit logs | Shared infra is cheaper; isolation is weaker |
+| Webhooks / integrations | Durable outbox + signed retries + DLQ | HMAC, outbox, Kafka/SQS | At-least-once duplicates |
+| Recommendation / ranking | Candidate generation + multi-stage ranker | Feature store, ANN, LightGBM/NN | Quality vs latency/cost |
+| Global / multi-region | Multi-AZ → DR / active-passive / active-active | DNS, CDN, replication, failover | Cost and consistency complexity |
+
+---
+
+## Common Modifiers *(layer these on top of any scenario)*
+
+| Need | Default add-on |
+|---|---|
+| Public list API | Cursor pagination + auth + rate limiting |
+| Cross-service business workflow | Outbox + queue + Saga + idempotency |
+| Strict mutual exclusion | DB row lock first; fencing-token lock only when truly needed |
+| Enterprise / regulated customer | SSO + audit logs + secrets management + residency controls |
+| Aggressive cost constraints | Managed services + storage tiers + autoscaling + async pipelines |
+
+---
+
+**Final reminder:** Most real interviews are combinations, not pure patterns. Say the primary scenario first, then explicitly layer on the modifiers: "This is mainly a read-heavy feed problem, with ranking, multi-tenant auth, and rate limiting layered on top."

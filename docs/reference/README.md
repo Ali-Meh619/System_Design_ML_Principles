@@ -8,14 +8,14 @@
 
 | # | Topic | What it contains |
 |---|-------|----------------|
-| 1 | [Common Scenarios & Solutions](scenario-cheat-sheet.md) | 13 pattern cheat sheets for any problem type |
+| 1 | [Common Scenarios & Solutions](scenario-cheat-sheet.md) | 17 scenario cheat sheets for classic + modern interview constraints |
 | 2 | [Reusable Design Templates](reusable-design-templates.md) | 12 complete system blueprints |
 | 3 | [LeetCode Question Patterns](leetcode-patterns.md) | 21 coding patterns + complexity cheat sheet |
 | 4 | [Low-Level System Design (LLD)](low-level-design.md) | SOLID, 10 patterns, 11 full LLD implementations |
 
 ---
 
-## 9 Problem Patterns — Instant Recognition
+## 13 Problem Patterns — Instant Recognition
 
 When you see an interview question, identify the pattern first:
 
@@ -24,12 +24,16 @@ When you see an interview question, identify the pattern first:
 | **Read-Heavy** | "Netflix", "YouTube", "CDN", "100:1 read/write" | CDN + aggressive caching + read replicas |
 | **Write-Heavy** | "IoT sensors", "click stream", "100K writes/sec" | Kafka + Cassandra/LSM + async processing |
 | **Real-Time** | "live", "chat", "collaborative", "< 100ms" | WebSocket + Redis pub/sub + in-memory |
-| **Search** | "autocomplete", "full-text", "relevance" | Elasticsearch + inverted index + ranking |
-| **Global Consistency** | "payment", "inventory", "booking" | SQL + 2PC or Saga + strong consistency |
+| **Search / Geo** | "autocomplete", "full-text", "nearby", "location" | Elasticsearch + inverted index + geohash/PostGIS |
+| **Strong Consistency** | "payment", "inventory", "booking" | SQL + locks + idempotency + strong consistency |
 | **Top-K / Trending** | "trending", "most popular", "leaderboard" | Count-Min Sketch + Kafka streams |
 | **Social Feed** | "news feed", "timeline", "follow" | Fan-out on write (small following) or read |
 | **File Storage** | "upload", "S3-like", "blob" | Object store + CDN + chunked upload |
 | **Collaboration** | "Google Docs", "real-time edits", "CRDT" | OT/CRDT + WebSocket + presence |
+| **Multi-Tenant SaaS** | "org", "workspace", "tenant", "enterprise" | Tenant isolation + RBAC/ABAC + audit logs |
+| **Webhooks / Integrations** | "callback", "partner endpoint", "deliver events" | Outbox + signed retries + DLQ |
+| **Recommendation / Ranking** | "For You", "personalized", "ranking" | Candidate generation + ranker + feature store |
+| **Global / Multi-Region** | "global users", "DR", "region outage" | DNS/CDN + replication + failover |
 
 ---
 

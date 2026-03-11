@@ -176,7 +176,7 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 <details>
 <summary><strong>🟦 Reference (4)</strong></summary>
 
-- 🎯 [Common Scenarios & Solutions](docs/reference/scenario-cheat-sheet.md) — 13 scenario cheat sheets: read-heavy, write-heavy, real-time, search/geo, Top-K, fan-out, file storage, collaborative editing, rate limiting, notifications, auth, unique IDs
+- 🎯 [Common Scenarios & Solutions](docs/reference/scenario-cheat-sheet.md) — 17 scenario cheat sheets covering classic patterns plus multi-tenant SaaS, webhooks, recommendation/ranking, and multi-region reliability
 - 📋 [Reusable Design Templates](docs/reference/reusable-design-templates.md) — 12 full blueprints with architecture diagrams: YouTube, Twitter, WhatsApp, Uber, TinyURL, Rate Limiter, Metrics, TicketMaster, AI Agent, Typeahead, Google Docs, LeetCode
 - 🧩 [LeetCode Question Patterns](docs/reference/leetcode-patterns.md) — 21 algorithm patterns with code templates: arrays, two pointers, sliding window, trees, graphs, DP, backtracking, tries, segment tree, and more
 - 🏗️ [Low-Level System Design (LLD)](docs/reference/low-level-design.md) — SOLID principles, 10 design patterns with code, 11 classic LLD questions (LRU Cache, Parking Lot, Elevator, Rate Limiter, ATM, Tic-Tac-Toe, Logger, Library)
