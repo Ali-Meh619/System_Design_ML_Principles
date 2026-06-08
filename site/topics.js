@@ -728,7 +728,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
-    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, function calling mechanics, structured state, retrieval, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
+    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, function calling mechanics, structured state, agentic RAG, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
       "Cognitive Architectures (ReAct, CoT, Reflection)",
@@ -737,6 +737,8 @@ window.TOPICS = [
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
       "Hybrid Orchestration and Autonomy Levels",
       "Structured Agent State",
+      "Agentic RAG — Router RAG, corrective RAG, multi-hop RAG, GraphRAG, evidence checks",
+      "RAG Context Construction — dedupe, source grouping, parent expansion, compression, citations",
       "Tool Reliability, Retries & Idempotency",
       "False Commitment Prevention",
       "Agentic Dataset Design and Regression Tests",
@@ -747,7 +749,7 @@ window.TOPICS = [
       "Model Routing — Cheap vs expensive model selection, cascading",
       "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
+    tags:  ["llm", "agent", "rag", "agentic rag", "router rag", "corrective rag", "multi-hop rag", "graphrag", "hybrid retrieval", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 

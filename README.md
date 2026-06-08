@@ -159,7 +159,7 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 
 - 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback
 - 🎯 [Recommendation Systems](docs/machine-learning/recommendation-systems.md) — candidate generation, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ranking, reranking, metrics, cold start, exploration, bias, fairness
-- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — hybrid orchestration, autonomy levels, function calling, structured state, tool reliability, observability, agent evals, model routing, online experiments, safety
+- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — hybrid orchestration, autonomy levels, function calling, structured state, agentic RAG, tool reliability, observability, agent evals, model routing, online experiments, safety
 - 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, Naive Bayes, KNN, bagging vs boosting, SHAP/LIME, calibration, active learning, selective prediction, XGBoost, SVM, PCA
 - 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, CNNs, LSTMs, full Transformer deep-dive, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA
 - 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Tokenization, production RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, multi-modal models, KV cache, CoT
