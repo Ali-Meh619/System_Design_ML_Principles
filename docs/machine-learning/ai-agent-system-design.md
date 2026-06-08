@@ -315,6 +315,68 @@ User request
 
 The important distinction: **RAG gives evidence, tools query or change systems, memory stores user/session facts, and policy gates decide what the agent may do.** Do not call all of these "RAG" in an interview.
 
+### Chunking Strategies
+
+Chunking determines what the retriever can find. Bad chunks create bad evidence even if the vector database is fast.
+
+| Strategy | How it works | Use when | Main risk |
+|----------|--------------|----------|-----------|
+| **Fixed-size chunks** | Split every N tokens with overlap. | Fast baseline and homogeneous documents. | Cuts across semantic boundaries and duplicates context. |
+| **Recursive / structure-aware chunks** | Split by headings, sections, paragraphs, sentences, then token budget. | Docs, policies, code comments, markdown, legal text. | Parser quality matters; malformed documents need fallbacks. |
+| **Semantic chunks** | Split where embedding/topic similarity shifts. | Long prose with weak formatting. | More expensive and can be unstable across embedding models. |
+| **Sentence-window chunks** | Index one sentence or small span, then return neighboring sentences. | Fact lookup where exact sentence matters. | Too little context unless expanded at retrieval time. |
+| **Parent-child chunking** | Index small child chunks, return the larger parent section/document region. | Long documents with definitions, exceptions, or surrounding constraints. | Parent sections can become too large; cap and compress. |
+| **Hierarchical chunks** | Index summaries at document/section level and details at chunk level. | Large corpora, manuals, codebases, research docs. | Requires multi-stage retrieval and summary freshness. |
+| **Code-aware chunks** | Split by file, class, function, symbol, imports, and tests. | Coding agents and repository search. | Need language parsers and symbol metadata. |
+| **Table-aware chunks** | Preserve headers, row keys, units, and surrounding caption/source. | Tables, spreadsheets, metrics docs. | Flattened text can lose relationships between columns. |
+
+**Chunking parameters to tune:** chunk size, overlap, parent size, metadata fields, dedupe threshold, embedding model, and whether retrieval returns raw chunks, parent sections, or compressed evidence. Tune with retrieval Recall@K/MRR plus answer faithfulness, not by intuition.
+
+### Retrieval Methods
+
+| Method | What it retrieves well | Use when | Weakness |
+|--------|------------------------|----------|----------|
+| **BM25 / sparse search** | Exact terms, IDs, error codes, names, acronyms, symbols. | Enterprise search, code, logs, product docs. | Misses paraphrases and semantic matches. |
+| **Dense vector search** | Semantic similarity and paraphrases. | Natural-language questions over prose. | Can miss exact terms and retrieve plausible but irrelevant chunks. |
+| **Hybrid retrieval** | Union of sparse and dense candidates, usually fused with RRF. | Best default for agents over mixed corpora. | More knobs: source weights, fusion, dedupe, and latency. |
+| **Metadata-filtered retrieval** | Search restricted by tenant, permission, product, language, source, date, or policy version. | Multi-tenant and regulated systems. | Overly strict filters can hide relevant evidence. |
+| **Graph / entity retrieval** | Entities, relationships, neighborhoods, paths, and graph summaries. | Multi-hop questions and relationship-heavy domains. | Entity linking errors create convincing wrong evidence. |
+| **Structured retrieval** | SQL/API/tool results instead of text chunks. | Current state, transactions, metrics, inventories, permissions. | Requires typed schemas, validation, and authorization. |
+| **Cross-encoder reranking** | Jointly scores query and candidate text. | Precision matters and candidate set is already small. | Too slow for first-stage search over millions of chunks. |
+
+**Fusion pattern:** retrieve top candidates from BM25, dense ANN, and any source-specific retriever in parallel; dedupe by canonical source/span; fuse with reciprocal rank fusion or learned weights; then rerank the top 20-100 before context construction.
+
+### Query Planning And Expansion
+
+| Technique | How it works | Use when | Guardrail |
+|-----------|--------------|----------|-----------|
+| **Query rewriting** | Convert a messy user request into a search-focused query. | User wording is conversational or underspecified. | Keep original user intent in state so rewriting does not change the task. |
+| **Query decomposition** | Split a complex request into subquestions, retrieve each separately, then synthesize. | Multi-hop, comparison, root-cause, research, and codebase questions. | Store subquestions and evidence separately; do not let early wrong assumptions propagate silently. |
+| **HyDE** | Generate a hypothetical answer/document, embed it, and retrieve documents similar to that hypothetical text. | User query is short, abstract, or lacks the vocabulary used in the corpus. | Treat the hypothetical text as a retrieval aid, not evidence. Never cite it. |
+| **Multi-query retrieval** | Generate several query variants and retrieve for each. | Terminology varies across sources. | Cap total candidates and dedupe aggressively. |
+| **Step-back query** | Retrieve broader conceptual background before narrow details. | The user asks a specific question that depends on a larger concept. | Do not let background overwhelm exact evidence. |
+| **Tool-first routing** | Send the request to SQL/API/search tool before text RAG. | The answer depends on current or structured state. | Prefer live tool state over stale documents when they conflict. |
+
+### Parent-Child Retrieval
+
+Parent-child retrieval is often the right answer for agents because agents need both precision and enough context to act correctly.
+
+```text
+Index time:
+  document
+    -> parent sections with title, source, version, ACL
+    -> child chunks embedded for high-recall search
+
+Query time:
+  retrieve child chunks
+  -> rerank child chunks
+  -> expand to parent sections or bounded neighboring spans
+  -> compress to the evidence needed for this step
+  -> attach source, version, ACL, and citation spans
+```
+
+Use child chunks for **finding** and parent sections for **understanding**. This prevents the common failure where the retriever finds the right sentence but the agent misses the exception, definition, or policy condition nearby.
+
 ### Agentic RAG Patterns
 
 | Pattern | How it works | Use when | Main risk |

@@ -737,6 +737,9 @@ window.TOPICS = [
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
       "Hybrid Orchestration and Autonomy Levels",
       "Structured Agent State",
+      "Agentic RAG Chunking — fixed, recursive, semantic, sentence-window, parent-child, hierarchical",
+      "RAG Retrieval Methods — BM25, dense vector search, hybrid retrieval, metadata filters, GraphRAG",
+      "Query Planning — query rewriting, query decomposition, HyDE, multi-query retrieval",
       "Agentic RAG — Router RAG, corrective RAG, multi-hop RAG, GraphRAG, evidence checks",
       "RAG Context Construction — dedupe, source grouping, parent expansion, compression, citations",
       "Tool Reliability, Retries & Idempotency",
@@ -749,7 +752,7 @@ window.TOPICS = [
       "Model Routing — Cheap vs expensive model selection, cascading",
       "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "agentic rag", "router rag", "corrective rag", "multi-hop rag", "graphrag", "hybrid retrieval", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
+    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 
