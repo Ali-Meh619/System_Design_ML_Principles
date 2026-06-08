@@ -68,6 +68,7 @@ Theory / modeling focus:
 - "What are the core components of an AI agent's memory?"
 - "How does function calling work under the hood?"
 - "How would you design agentic RAG with routing, reranking, evidence checks, and abstention?"
+- "How do chunking strategy, retrieval method, query decomposition, HyDE, and parent-child retrieval change an agentic RAG design?"
 - "How would you evaluate an agent's performance?"
 - "How do you handle cost control and model routing in a production agent?"
 - "How do you decide whether an agent should answer, ask, act, or escalate?"
