@@ -287,6 +287,96 @@ This reduces both hallucination and long-context dilution.
 
 ---
 
+## Agentic RAG
+
+Traditional RAG retrieves once before generation. Agentic RAG treats retrieval as part of the agent loop: the LLM or controller can choose a source, rewrite the query, inspect evidence, retrieve again, call a structured tool, and decide whether there is enough support to answer.
+
+### Agentic RAG Architecture
+
+```text
+User request
+  -> intent/source router
+  -> query planner or query rewriter
+  -> parallel retrieval:
+       dense vector search
+       sparse BM25 / keyword search
+       structured tools or SQL where needed
+       graph/entity lookup where needed
+  -> metadata, ACL, freshness, and tenant filters
+  -> reranker over the small candidate set
+  -> context constructor:
+       dedupe
+       group by source
+       parent expansion
+       compression / evidence extraction
+  -> grounded generation or tool decision
+  -> evidence check, citation check, or abstain path
+```
+
+The important distinction: **RAG gives evidence, tools query or change systems, memory stores user/session facts, and policy gates decide what the agent may do.** Do not call all of these "RAG" in an interview.
+
+### Agentic RAG Patterns
+
+| Pattern | How it works | Use when | Main risk |
+|---------|--------------|----------|-----------|
+| **2-step RAG** | Retrieve once, then generate from top evidence. | Simple Q&A over a clean corpus. | Fails on ambiguous, multi-hop, or action-oriented requests. |
+| **Router RAG** | Classify the request and route to policy docs, code docs, SQL, ticket search, web, table index, or API. | Enterprise agents with many sources and schemas. | Bad routing silently searches the wrong corpus; log route decisions and add fallback retrieval. |
+| **Corrective RAG** | Retrieve, grade relevance, then rewrite the query or search again if evidence is weak. | Reducing irrelevant context and improving grounding. | Relevance graders can be overconfident; use thresholds and abstention. |
+| **Multi-hop RAG** | Decompose into subquestions, retrieve evidence for each, then synthesize. | Comparison, root-cause analysis, research, compliance, or codebase questions. | Early decomposition errors compound; store intermediate evidence and assumptions. |
+| **Tool-augmented RAG** | Combine retrieval with calculators, SQL, APIs, code execution, or workflow tools. | Agents that must compute, verify live state, or take action. | Tool results can conflict with documents; prefer live structured state for current facts. |
+| **Memory + RAG** | Use working memory, episodic memory, semantic document retrieval, and tool observations together. | Personal assistants, coding agents, research agents, workflow agents. | Memory can be stale or user-specific; separate memory from factual evidence. |
+| **GraphRAG / knowledge-graph RAG** | Retrieve entities, relationships, neighborhoods, or graph summaries in addition to chunks. | Multi-hop relationship questions, compliance, finance, enterprise entity graphs. | Entity linking and graph construction errors can mislead the agent. |
+| **Table / image-aware RAG** | Route to table parsers, OCR, visual indexes, or original assets when text chunks are insufficient. | Charts, diagrams, forms, screenshots, or tabular evidence. | Text surrogates can miss details; keep page, cell, and source references for verification. |
+
+### Context Construction After Retrieval
+
+| Step | Why it matters |
+|------|----------------|
+| **Dedupe near-duplicates** | Repeated chunks waste context and make the answer overconfident. |
+| **Group by source** | Adjacent chunks from one document may be clearer as one coherent section. |
+| **Parent expansion** | If a child chunk matched, include the parent section when definitions, constraints, or exceptions matter. |
+| **Compress or extract evidence** | Summarize or extract only answer-bearing facts when many chunks are relevant. |
+| **Order by utility** | Put the strongest evidence where the model is most likely to use it; avoid burying key facts in the middle. |
+| **Attach provenance** | Preserve source IDs, timestamps, versions, permissions, and citation spans for verification and audit. |
+
+### Agentic RAG Failure Modes
+
+| Failure | What happens | Mitigation |
+|---------|--------------|------------|
+| **Retrieval miss** | Correct evidence is not retrieved. | Improve chunking, hybrid retrieval, query rewriting, decomposition, metadata filters, and Recall@K. |
+| **Irrelevant context** | The LLM uses distracting but plausible evidence. | Use reranking, source grouping, context compression, and relevance thresholds. |
+| **Unsupported generation** | The agent answers from prior knowledge instead of retrieved evidence. | Require citations, verify claims against evidence, and abstain when support is weak. |
+| **Stale evidence** | Old documents override current system state. | Use freshness metadata and prefer live tools/APIs for current facts. |
+| **Permission leak** | Retriever returns unauthorized chunks. | Apply ACL and tenant filters before retrieval or inside the database query, not only after generation. |
+| **Prompt injection in retrieved text** | A retrieved document tries to override instructions. | Label retrieved content as untrusted data and keep policy/tool permissions outside the model. |
+| **Context bloat** | Too many chunks increase cost and reduce accuracy. | Retrieve fewer, rerank harder, compress context, and cap per-source evidence. |
+
+### Scaling Agentic RAG
+
+| Problem | Production control |
+|---------|--------------------|
+| Millions of chunks | Shard by tenant, source, product, language, jurisdiction, date, modality, or document type. |
+| Many duplicate documents | Deduplicate by hash, canonical source, near-duplicate embeddings, and source authority. |
+| Long documents | Use hierarchical retrieval: retrieve document/section summaries first, then detailed chunks inside the best sections. |
+| Frequent updates | Track document hashes, versions, deletion events, embedding model versions, and stale chunks; reindex only what changed. |
+| Strict access control | Filter by ACL before retrieval or in the vector database query. |
+| High latency | Cache frequent queries, retrieve sources in parallel, rerank only top candidates, and limit context size. |
+
+### Agentic RAG Evaluation
+
+| Layer | Metrics | Question answered |
+|-------|---------|-------------------|
+| **Retrieval** | Recall@K, MRR, NDCG@K, hit rate | Did the retriever find the source evidence? |
+| **Reranking** | Pairwise preference accuracy, NDCG@K, top-1 support rate | Did the reranker put the best evidence first? |
+| **Generation** | Faithfulness, citation precision/recall, answer correctness | Is the final answer supported by retrieved evidence? |
+| **Agent trajectory** | Correct source route, useful query rewrite, unnecessary retrieval rate, abstention correctness | Did the agent choose the right retrieval actions? |
+| **Security** | Unauthorized retrieval rate, cross-tenant leakage, prompt-injection pass rate | Did retrieval respect permissions and instruction boundaries? |
+| **Operations** | Retrieval latency, cost/query, index freshness, retrieval failure rate | Can the system run reliably in production? |
+
+**Best interview phrase:** RAG reduces hallucination only if retrieval returns the right evidence and generation is constrained to use it. I would measure retrieval recall and answer faithfulness separately, and I would design the agent to say "I do not have enough evidence" when retrieved context is weak.
+
+---
+
 ## Agentic Dataset Design
 
 Agent datasets need more than final answers. They should capture the path the agent took and the decision boundaries it faced.
@@ -634,7 +724,7 @@ Without protection: Agent forwards all emails!
 For most interview settings, I would recommend:
 
 1. **Hybrid planner/reactor** loop
-2. **Hybrid retrieval + re-ranking**
+2. **Agentic RAG with source routing, hybrid retrieval, re-ranking, evidence checks, and abstention**
 3. **Read tools by default, write tools behind approval**
 4. **Checkpointed execution** for long tasks
 5. **Memory compaction** via sliding window + summaries + episodic store
@@ -652,6 +742,8 @@ This is a much stronger answer than "just call an LLM with tools."
 | Tool hallucination | Agent invents nonexistent tool or arguments | Strict schema validation + tool registry |
 | Infinite loop / thrashing | Agent keeps retrying weak actions | Max steps + critic / replanning trigger |
 | Retrieval miss | Agent answers from bad memory | Hybrid retrieval + fallback search + abstain path |
+| Unsupported grounding | Agent answers without evidence or cites the wrong source | Evidence checks, citation validation, and abstention |
+| Permission leak | Retriever returns unauthorized data | Pre-retrieval ACL and tenant filters |
 | Prompt injection | Malicious content hijacks behavior | Sandboxing, privilege separation, approval gates |
 | Context bloat | Agent gets expensive and inconsistent | Summarization, pruning, retrieval caps |
 | Duplicate side effects | Same action executed twice | Idempotency keys and action ledger |
@@ -667,13 +759,15 @@ This is a much stronger answer than "just call an LLM with tools."
 - Timeout / abandonment rate
 - Cost per successful task
 - Hallucinated tool-call rate
-- Retrieval relevance score / judge score
+- Retrieval Recall@K / MRR / NDCG@K
+- Answer faithfulness and citation precision / recall
+- Retrieval route accuracy and abstention correctness
 
 ---
 
 ## Interview Answer Sketch
 
-I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, retrieval, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is hybrid search plus re-ranking, and tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, tool reliability, and hallucinated action rate on an evaluation set.
+I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, agentic RAG, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is not just vector search: route to the right source, combine dense and sparse retrieval, rerank, construct compact evidence, verify citations, and abstain when evidence is weak. Tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, retrieval recall, answer faithfulness, tool reliability, and hallucinated action rate.
 
 ---
 
@@ -685,6 +779,7 @@ I would design the agent as a loop, not a prompt: a planner/reactor LLM with mem
 - "Evaluation: LLM-as-a-Judge with GPT-4o grading GPT-4 outputs against a rubric of 100 test cases. We target >85% pass rate before shipping a new agent version."
 - "Frameworks: LangGraph is the standard for complex, stateful agents because standard LangChain chains are too linear for real-world agent loops. For tool integration at scale, the Model Context Protocol (MCP) standardizes how agents securely talk to external APIs."
 - "Function calling: the LLM outputs structured JSON tool calls, the application executes them, and returns results as tool messages. Parallel calls for independent lookups, sequential for dependent ones. Schema validation prevents malformed calls."
+- "Agentic RAG: route to the right source, retrieve with hybrid search, rerank, compress evidence, verify citations, and abstain when support is weak. Measure retrieval recall separately from final answer quality."
 - "Observability: every agent step is traced — LLM calls with tokens and latency, tool calls with arguments and results, total cost per request. LangSmith or Langfuse for tracing, with alerts on cost spikes and error rate increases."
 - "Model routing: not every request needs GPT-4. A classifier routes 70% of simple requests to a fast cheap model, 25% to a mid-tier model, and only 5% of complex reasoning tasks to the expensive model. Cuts blended cost by 70%+."
 - "Agent benchmarks: SWE-bench measures ability to fix real GitHub issues, but public leaderboard numbers change quickly and may not match your repository. We build custom eval suites of 100+ test cases, scored with LLM-as-a-Judge, targeting >85% pass rate before shipping."

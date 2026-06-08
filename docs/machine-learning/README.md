@@ -10,7 +10,7 @@
 |---|-------|------------|-------------------|
 | 1 | [Machine Learning in System Design](ml-in-system-design.md) | Advanced | Production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback |
 | 2 | [Recommendation Systems](recommendation-systems.md) | Advanced | Candidate generation, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ranking, reranking, losses, metrics, cold start, bias, exploration, A/B tests |
-| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, autonomy levels, function calling, memory/state, tool reliability, observability, evaluation, online experiments |
+| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, autonomy levels, function calling, memory/state, agentic RAG, tool reliability, observability, evaluation, online experiments |
 | 4 | [Classic Machine Learning](classic-ml.md) | Intermediate | Bias-variance, Naive Bayes, KNN, bagging vs boosting, SVM, PCA, SHAP/LIME, calibration, active learning, selective prediction |
 | 5 | [Deep Learning](deep-learning.md) | Intermediate | CNNs, LSTMs, Transformers, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA |
 | 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
@@ -67,6 +67,7 @@ Theory / modeling focus:
 - "How does the ReAct pattern work?"
 - "What are the core components of an AI agent's memory?"
 - "How does function calling work under the hood?"
+- "How would you design agentic RAG with routing, reranking, evidence checks, and abstention?"
 - "How would you evaluate an agent's performance?"
 - "How do you handle cost control and model routing in a production agent?"
 - "How do you decide whether an agent should answer, ask, act, or escalate?"
