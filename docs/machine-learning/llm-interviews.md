@@ -643,6 +643,29 @@ Reduce model size and speed up inference by using lower precision:
 - **AWQ (Activation-aware):** Identify and protect important weights (salient activations)
 - **GGUF (llama.cpp):** CPU-friendly quantization format
 
+### LLM Pruning And Layer Dropping
+
+Pruning removes parameters or blocks from a trained model to reduce memory, latency, or serving cost. For LLMs, the key interview point is that smaller checkpoints do not automatically mean faster inference: the hardware must exploit the resulting structure.
+
+| Type | Removes | Production note |
+|------|---------|-----------------|
+| **Unstructured pruning** | Individual weights | Can shrink checkpoints, but speedup requires sparse kernels and hardware support. |
+| **Structured pruning** | Attention heads, MLP neurons, channels, or blocks | More likely to improve latency on standard GPUs because tensor shapes actually shrink. |
+| **Movement pruning** | Weights moving toward zero during fine-tuning | Useful for task-specific compression when some training budget exists. |
+| **SparseGPT / Wanda-style pruning** | Weights selected by one-shot weight/activation statistics | Useful when retraining budget is limited, but must be validated per layer and task slice. |
+| **Layer dropping / depth reduction** | Full Transformer blocks selected by importance | Simple latency win, but can damage reasoning, long-context behavior, and instruction following unevenly. |
+
+**Pruning order for LLMs**
+
+1. start from a validated base or fine-tuned model
+2. prune heads, neurons, weights, or layers only when latency/cost requires it
+3. quantize with representative calibration data
+4. run adapter recovery or short fine-tuning if quality drops
+5. validate on general benchmarks, task benchmarks, hard production slices, safety checks, and long-context cases
+6. compare actual TTFT, TPOT, memory, throughput, calibration, and failure modes before release
+
+**Interview trap:** perplexity may look fine after pruning while structured output, tool-use reliability, rare skills, or long-context retrieval degrade. Always report slice-level regressions, not only average benchmark quality.
+
 ### Speculative Decoding
 
 Use a small draft model to generate k tokens; verify with large model in one forward pass. If accepted, free computation; if rejected, fall back.

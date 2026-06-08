@@ -468,12 +468,10 @@ Large neural networks are often too expensive to serve directly. Compression cha
 | Technique | What it changes | Main risk |
 |-----------|-----------------|-----------|
 | **Quantization** | Stores weights/activations in lower precision such as INT8 or INT4 | Average benchmarks may hide failures in rare skills, schema following, or calibration. |
-| **Pruning** | Removes weights, channels, heads, layers, or blocks | Unstructured sparsity may not speed up without hardware support; structured pruning can damage quality. |
-| **Layer dropping / depth reduction** | Removes entire transformer blocks based on importance | Fast but can remove capabilities unevenly. |
 | **Knowledge distillation** | Trains a smaller student to match a larger teacher | Student may inherit teacher mistakes and lose edge-case behavior. |
 | **PEFT recovery** | Tunes adapters after compression | Can recover targeted behavior but may overfit if validation slices are weak. |
 
-Here, PEFT means parameter-efficient fine-tuning such as LoRA or bottleneck adapters: the base model is mostly frozen, while small trainable modules recover targeted behavior after quantization, pruning, or distillation. QLoRA is the memory-saving variant where LoRA adapters train on top of a frozen 4-bit base model.
+Here, PEFT means parameter-efficient fine-tuning such as LoRA or bottleneck adapters: the base model is mostly frozen, while small trainable modules recover targeted behavior after quantization or distillation. QLoRA is the memory-saving variant where LoRA adapters train on top of a frozen 4-bit base model.
 
 ### Quantization Methods
 
@@ -485,26 +483,15 @@ Here, PEFT means parameter-efficient fine-tuning such as LoRA or bottleneck adap
 | **SmoothQuant** | Moves activation outliers into weights before quantization | Useful when activation quantization is the bottleneck. |
 | **QAT** | Simulates quantization during training | More expensive, useful when PTQ quality loss is unacceptable. |
 
-### Pruning Taxonomy
-
-| Type | Removes | Production note |
-|------|---------|-----------------|
-| **Unstructured pruning** | Individual weights | Smaller checkpoints, but speedup needs sparse kernels. |
-| **Structured pruning** | Channels, heads, neurons, or blocks | More likely to speed up on standard hardware. |
-| **Movement pruning** | Weights moving toward zero during fine-tuning | Good for task-specific compression. |
-| **SparseGPT / Wanda-style pruning** | One-shot pruning using weight/activation statistics | Useful when retraining budget is limited. |
-| **Layer dropping** | Full layers selected by importance | Simple speedup, but must test reasoning and long-context regressions. |
-
 ### Compression Stack Ordering
 
 A common safe order:
 
 1. start from a validated base or fine-tuned model
-2. prune or drop layers only if needed for latency/cost
-3. quantize with representative calibration data
-4. run adapter recovery or short fine-tuning if quality drops
-5. validate on general benchmarks, task benchmarks, and hard production slices
-6. compare latency, memory, cost, calibration, and failure modes before release
+2. quantize with representative calibration data
+3. run adapter recovery or short fine-tuning if quality drops
+4. validate on general benchmarks, task benchmarks, and hard production slices
+5. compare latency, memory, cost, calibration, and failure modes before release
 
 **Key interview point:** Compression is not done when perplexity looks fine. Validate structured output, rare classes, calibration, safety, and slice-level regressions.
 

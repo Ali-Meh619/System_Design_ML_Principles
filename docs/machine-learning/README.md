@@ -13,7 +13,7 @@
 | 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, autonomy levels, function calling, memory/state, tool reliability, observability, evaluation, online experiments |
 | 4 | [Classic Machine Learning](classic-ml.md) | Intermediate | Bias-variance, Naive Bayes, KNN, bagging vs boosting, SVM, PCA, SHAP/LIME, calibration, active learning, selective prediction |
 | 5 | [Deep Learning](deep-learning.md) | Intermediate | CNNs, LSTMs, Transformers, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA |
-| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
+| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
 
 *These sections are actively maintained and optimized for interview prep rather than textbook completeness.*
 
@@ -96,7 +96,6 @@ Theory / modeling focus:
 - "What is knowledge distillation and when would you use it?"
 - "What is GQA and why is it important for LLM inference?"
 - "Compare data parallelism, FSDP/ZeRO, tensor parallelism, and pipeline parallelism."
-- "How do quantization, pruning, layer dropping, and distillation interact?"
 
 ### LLMs
 
@@ -112,6 +111,7 @@ Theory / modeling focus:
 - "How do multi-modal models process images alongside text?"
 - "What are TTFT and TPOT, and how do you reduce them?"
 - "How do you evaluate an LLM judge before trusting it?"
+- "How do quantization, pruning, layer dropping, and adapter recovery interact for LLM serving?"
 
 ---
 

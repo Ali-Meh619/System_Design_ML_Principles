@@ -830,7 +830,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "intermediate",
-    summary:    "Neural networks from first principles: activation functions, weight initialization, backpropagation, Adam/AdamW, CNNs, LSTMs, Transformers, GANs/VAEs/Diffusion, distillation, compression, quantization, pruning, distributed training, GQA/MQA, and training at scale.",
+    summary:    "Neural networks from first principles: activation functions, weight initialization, backpropagation, Adam/AdamW, CNNs, LSTMs, Transformers, GANs/VAEs/Diffusion, distillation, compression, quantization, distributed training, GQA/MQA, and training at scale.",
     subtopics:  [
       "Activation Functions — ReLU, GELU, Sigmoid, Tanh, Softmax; dying ReLU problem",
       "Weight Initialization — Xavier (tanh), He/Kaiming (ReLU), why zero-init breaks symmetry",
@@ -865,7 +865,7 @@ window.TOPICS = [
       "Mixed Precision Training — FP16/BF16, gradient scaling, memory savings",
       "Debugging Training — Overfit single batch, loss curves, gradient norms",
     ],
-    tags:  ["deep learning", "neural networks", "cnn", "rnn", "lstm", "backpropagation", "adam", "batchnorm", "resnet", "attention", "gan", "vae", "diffusion", "distillation", "compression", "quantization", "pruning", "distributed training", "fsdp", "zero", "tensor parallelism", "pipeline parallelism", "augmentation", "self-supervised", "gqa", "transfer learning", "mixed precision", "interview"],
+    tags:  ["deep learning", "neural networks", "cnn", "rnn", "lstm", "backpropagation", "adam", "batchnorm", "resnet", "attention", "gan", "vae", "diffusion", "distillation", "compression", "quantization", "distributed training", "fsdp", "zero", "tensor parallelism", "pipeline parallelism", "augmentation", "self-supervised", "gqa", "transfer learning", "mixed precision", "interview"],
     path:  "../docs/machine-learning/deep-learning.md"
   },
 
@@ -875,7 +875,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "💬",
     difficulty: "advanced",
-      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, LLM evaluation, serving latency, MoE, KV cache, quantization, decoding, and long-context strategy.",
+      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, LLM evaluation, serving latency, MoE, KV cache, quantization, pruning, decoding, and long-context strategy.",
       subtopics:  [
         "Tokenization — BPE, WordPiece, SentencePiece; arithmetic & multilingual pitfalls",
         "Transformer Block — Embedding, MHA, FFN, LayerNorm, residuals (sketch from memory)",
@@ -904,6 +904,7 @@ window.TOPICS = [
         "Mixed Precision Training & Inference — FP16 vs BF16 vs FP32",
         "KV Cache — Cache K/V of past tokens; PagedAttention (vLLM)",
         "Quantization — FP16 → INT8 → INT4 (GPTQ/AWQ); post-training quantization",
+        "LLM Pruning — Unstructured vs structured pruning, SparseGPT/Wanda, layer dropping",
         "Speculative Decoding — Draft model generates; large model verifies in parallel",
         "Decoding Strategies — Greedy, Beam Search, Temperature, Top-k, Top-p (Nucleus), Repetition Penalty",
         "Dynamic Batching — Continuous batching, Prefill vs Decode phases, Chunked Prefill, PagedAttention",
@@ -911,7 +912,7 @@ window.TOPICS = [
         "Lost in the Middle — Primacy/recency bias, accuracy by position, mitigations",
         "Attention Dilution — Softmax normalisation over longer sequences, design implications",
     ],
-    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "perplexity", "hallucination", "attention", "interview"],
+    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "pruning", "llm pruning", "sparsegpt", "wanda", "perplexity", "hallucination", "attention", "interview"],
     path:  "../docs/machine-learning/llm-interviews.md"
   },
 
