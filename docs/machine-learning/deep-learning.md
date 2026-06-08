@@ -473,6 +473,8 @@ Large neural networks are often too expensive to serve directly. Compression cha
 | **Knowledge distillation** | Trains a smaller student to match a larger teacher | Student may inherit teacher mistakes and lose edge-case behavior. |
 | **PEFT recovery** | Tunes adapters after compression | Can recover targeted behavior but may overfit if validation slices are weak. |
 
+Here, PEFT means parameter-efficient fine-tuning such as LoRA or bottleneck adapters: the base model is mostly frozen, while small trainable modules recover targeted behavior after quantization, pruning, or distillation. QLoRA is the memory-saving variant where LoRA adapters train on top of a frozen 4-bit base model.
+
 ### Quantization Methods
 
 | Method | Mechanism | When to use |

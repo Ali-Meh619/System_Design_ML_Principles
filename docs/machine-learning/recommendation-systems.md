@@ -162,7 +162,7 @@ Collaborative filtering uses interaction patterns, not item content.
 User-user similarity:
 
 $$
-sim(u,v)=
+\operatorname{sim}(u,v)=
 \frac{\sum_{i\in I_u\cap I_v}(r_{u,i}-\bar r_u)(r_{v,i}-\bar r_v)}
 {\sqrt{\sum_{i\in I_u\cap I_v}(r_{u,i}-\bar r_u)^2}
 \,\sqrt{\sum_{i\in I_u\cap I_v}(r_{v,i}-\bar r_v)^2}}
@@ -172,14 +172,14 @@ User-based prediction:
 
 $$
 \hat r(u,i)=\bar r_u+
-\frac{\sum_{v\in N_k(u)}sim(u,v)(r_{v,i}-\bar r_v)}
-{\sum_{v\in N_k(u)} |sim(u,v)|}
+\frac{\sum_{v\in N_k(u)}\operatorname{sim}(u,v)(r_{v,i}-\bar r_v)}
+{\sum_{v\in N_k(u)} |\operatorname{sim}(u,v)|}
 $$
 
 Item-item score:
 
 $$
-score(u,j)=\sum_{i\in H_u}w_{u,i}sim(i,j)
+\operatorname{score}(u,j)=\sum_{i\in H_u}w_{u,i}\operatorname{sim}(i,j)
 $$
 
 | Method | Scales better when | Weakness |
@@ -221,7 +221,7 @@ $$
 SVD++:
 
 $$
-\hat r_{u,i}=\mu+b_u+b_i+q_i^T\left(p_u+|N(u)|^{-1/2}\sum_{j\in N(u)}y_j\right)
+\hat r_{u,i}=\mu+b_u+b_i+q_i^\top\left(p_u+|N(u)|^{-1/2}\sum_{j\in N(u)}y_j\right)
 $$
 
 ### 4.4 Implicit ALS / WRMF
@@ -333,12 +333,12 @@ $$
 Approximate nearest neighbor search makes embedding retrieval feasible at large catalog sizes.
 
 $$
-TopK(q)=\underset{x_i\in X}{arg\,topK}\;sim(q,x_i)
+\operatorname{TopK}(q)=\operatorname*{arg\,topK}_{x_i\in X}\;\operatorname{sim}(q,x_i)
 $$
 
 $$
-Recall@K_{ANN}=
-\frac{|TopK_{exact}(q)\cap TopK_{ANN}(q)|}{K}
+\mathrm{Recall@K}_{ANN}=
+\frac{|\operatorname{TopK}_{\text{exact}}(q)\cap \operatorname{TopK}_{\text{ANN}}(q)|}{K}
 $$
 
 | Index | How it works | Key parameters | Use when |
@@ -358,11 +358,11 @@ $$
 MIPS reranking:
 
 $$
-C_{K'}=TopK'_{approx}(q), \qquad K'>K
+C_{K'}=\operatorname{TopK}_{K',\text{approx}}(q), \qquad K'>K
 $$
 
 $$
-FinalTopK(q)=TopK_{x_i\in C_{K'}}q^Tx_i
+\operatorname{FinalTopK}(q)=\operatorname{TopK}_{x_i\in C_{K'}}(q^\top x_i)
 $$
 
 ### 4.10 Content-Based And Hybrid Retrieval
@@ -374,7 +374,7 @@ v_u=\frac{\sum_{i\in H_u}w_{u,i}v_i}{\sum_{i\in H_u}w_{u,i}}
 $$
 
 $$
-score(u,j)=cos(v_u,v_j)
+\operatorname{score}(u,j)=\cos(v_u,v_j)
 $$
 
 Use content signals for:
@@ -647,10 +647,10 @@ Remove candidates that should not be shown:
 ### Score Transformation
 
 $$
-score'(u,i)=score(u,i)+
-\lambda_f Freshness(i)+
-\lambda_q Quality(i)-
-\lambda_{fatigue}Fatigue(u,i)
+\operatorname{score}'(u,i)=\operatorname{score}(u,i)+
+\lambda_f \operatorname{Freshness}(i)+
+\lambda_q \operatorname{Quality}(i)-
+\lambda_{fatigue}\operatorname{Fatigue}(u,i)
 $$
 
 Weights should be tuned by offline replay and online experiments.
@@ -689,7 +689,7 @@ DPP is elegant but can be more expensive than MMR. It is useful to mention as an
 ### Constrained Slate Reranking
 
 $$
-\max_{S:|S|=K}\sum_{i\in S}score(u,i)
+\max_{S:|S|=K}\sum_{i\in S}\operatorname{score}(u,i)
 \quad
 \text{s.t. category/fairness/freshness constraints}
 $$
@@ -743,15 +743,15 @@ Offline metrics must match the stage and product surface.
 Let `R_u^K` be the top-K recommendations and `G_u` be relevant held-out items.
 
 $$
-Precision@K(u)=\frac{|R_u^K\cap G_u|}{K}
+\mathrm{Precision@K}(u)=\frac{|R_u^K\cap G_u|}{K}
 $$
 
 $$
-Recall@K(u)=\frac{|R_u^K\cap G_u|}{|G_u|}
+\mathrm{Recall@K}(u)=\frac{|R_u^K\cap G_u|}{|G_u|}
 $$
 
 $$
-HitRate@K(u)=\mathbf{1}[R_u^K\cap G_u\ne\emptyset]
+\mathrm{HitRate@K}(u)=\mathbf{1}[R_u^K\cap G_u\ne\emptyset]
 $$
 
 Use Recall@K heavily for retrieval, because the ranker cannot recover missed candidates.
@@ -759,15 +759,15 @@ Use Recall@K heavily for retrieval, because the ranker cannot recover missed can
 ### NDCG
 
 $$
-CG@K=\sum_{r=1}^{K}rel_r
+\mathrm{CG@K}=\sum_{r=1}^{K}\operatorname{rel}_r
 $$
 
 $$
-DCG@K=\sum_{r=1}^{K}\frac{2^{rel_r}-1}{\log_2(r+1)}
+\mathrm{DCG@K}=\sum_{r=1}^{K}\frac{2^{\operatorname{rel}_r}-1}{\log_2(r+1)}
 $$
 
 $$
-NDCG@K=\frac{DCG@K}{IDCG@K}
+\mathrm{NDCG@K}=\frac{\mathrm{DCG@K}}{\mathrm{IDCG@K}}
 $$
 
 NDCG rewards putting the most relevant items near the top and supports graded relevance.
@@ -775,17 +775,18 @@ NDCG rewards putting the most relevant items near the top and supports graded re
 ### MAP And MRR
 
 $$
-AP@K(u)=
+\mathrm{AP@K}(u)=
 \frac{1}{\min(|G_u|,K)}
-\sum_{r=1}^{K}Precision@r(u)\cdot rel_r
+\sum_{r=1}^{K}\mathrm{Precision@r}(u)\cdot \operatorname{rel}_r
 $$
 
 $$
-MAP@K=\frac{1}{|U|}\sum_{u\in U}AP@K(u)
+\mathrm{MAP@K}=\frac{1}{|U|}\sum_{u\in U}\mathrm{AP@K}(u)
 $$
 
 $$
-MRR=\frac{1}{N}\sum_{n=1}^{N}\frac{1}{rank_n^{first\ relevant}}
+r_n=\operatorname{rank}_n^{\text{first relevant}}, \qquad
+\operatorname{MRR}=\frac{1}{N}\sum_{n=1}^{N}\frac{1}{r_n}
 $$
 
 Use MAP for multiple binary relevant items; use MRR when the first good result matters most.
@@ -803,21 +804,21 @@ Use MAP for multiple binary relevant items; use MRR when the first good result m
 ### Catalog And Slate Health
 
 $$
-Coverage=\frac{|\cup_u R_u^K|}{|I|}
+\operatorname{Coverage}=\frac{\left|\bigcup_u R_u^K\right|}{|I|}
 $$
 
 $$
-ILD(L)=
-\frac{\sum_{i\in L}\sum_{j\in L,j\ne i}(1-sim(i,j))}
+\operatorname{ILD}(L)=
+\frac{\sum_{i\in L}\sum_{j\in L,j\ne i}(1-\operatorname{sim}(i,j))}
 {|L|(|L|-1)}
 $$
 
 $$
-Novelty(i)=-\log_2 P(i)
+\operatorname{Novelty}(i)=-\log_2 P(i)
 $$
 
 $$
-Serendipity(i,u)=unexpectedness(i,u)\cdot usefulness(i,u)
+\operatorname{Serendipity}(i,u)=\operatorname{unexpectedness}(i,u)\cdot\operatorname{usefulness}(i,u)
 $$
 
 | Metric | Why it matters |
@@ -888,7 +889,7 @@ $$
 \hat L_{IPS}=
 \frac{1}{|U||I|}
 \sum_{(u,i):O_{u,i}=1}
-\frac{loss(r_{u,i},\hat r_{u,i})}{P(O_{u,i}=1)}
+\frac{\operatorname{loss}(r_{u,i},\hat r_{u,i})}{P(O_{u,i}=1)}
 $$
 
 Doubly robust estimator:
@@ -906,9 +907,9 @@ Pure exploitation maximizes short-term predicted reward but stops learning.
 Epsilon-greedy:
 
 $$
-action=
+\operatorname{action}=
 \begin{cases}
-random\ item, & \text{with probability } \epsilon \\
+\text{random item}, & \text{with probability } \epsilon \\
 \arg\max_i Q(u,i), & \text{with probability } 1-\epsilon
 \end{cases}
 $$
@@ -916,23 +917,23 @@ $$
 UCB:
 
 $$
-score(i)=\hat\mu_i+c\sqrt{\frac{\ln N}{n_i}}
+\operatorname{score}(i)=\hat\mu_i+c\sqrt{\frac{\ln N}{n_i}}
 $$
 
 LinUCB:
 
 $$
-score(i)=\theta_i^Tx_u+\alpha\sqrt{x_u^TA_i^{-1}x_u}
+\operatorname{score}(i)=\theta_i^\top x_u+\alpha\sqrt{x_u^\top A_i^{-1}x_u}
 $$
 
 Thompson sampling:
 
 $$
-P(\theta_i)=Beta(\alpha_i,\beta_i)
+P(\theta_i)=\mathrm{Beta}(\alpha_i,\beta_i)
 $$
 
 $$
-\tilde\theta_i\sim Beta(\alpha_i,\beta_i),
+\tilde\theta_i\sim \mathrm{Beta}(\alpha_i,\beta_i),
 \qquad
 i^*=\arg\max_i\tilde\theta_i
 $$
@@ -950,11 +951,11 @@ Bandits are useful when feedback is fairly immediate. Full reinforcement learnin
 Monitor:
 
 $$
-NDCG_{group\ A}\approx NDCG_{group\ B}
+\mathrm{NDCG}_{\text{group A}}\approx \mathrm{NDCG}_{\text{group B}}
 $$
 
 $$
-\frac{E[exposure_{provider_i}]}{E[exposure_{provider_j}]}\approx 1
+\frac{\mathbb{E}[\operatorname{exposure}_{\text{provider }i}]}{\mathbb{E}[\operatorname{exposure}_{\text{provider }j}]}\approx 1
 \quad \text{for similar quality}
 $$
 
@@ -983,7 +984,7 @@ Mitigations:
 
 - item ID and learned embedding
 - category, tags, creator/seller/provider
-- content embeddings from text, image, audio, or video
+- content embeddings from text, image, or video
 - price, availability, age, freshness
 - historical CTR/CVR/watch time
 - quality, trust, moderation, or policy scores
@@ -1032,11 +1033,11 @@ User preference has multiple timescales:
 TimeSVD++ models temporal drift:
 
 $$
-\hat r_{u,i}(t)=\mu+b_i+b_u(t)+q_i^Tp_u(t)
+\hat r_{u,i}(t)=\mu+b_i+b_u(t)+q_i^\top p_u(t)
 $$
 
 $$
-b_u(t)=b_u+\alpha_u sign(t-t_u)|t-t_u|^\beta
+b_u(t)=b_u+\alpha_u \operatorname{sign}(t-t_u)|t-t_u|^\beta
 $$
 
 Practical production patterns:

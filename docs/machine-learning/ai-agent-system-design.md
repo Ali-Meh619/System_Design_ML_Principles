@@ -620,10 +620,12 @@ Without protection: Agent forwards all emails!
 ```
 
 **Defenses:**
-1. **Input sanitization:** Strip/escape system-level keywords from user content
-2. **Privilege separation:** Agent's "read" context and "write" instructions use separate models/prompts
-3. **Human-in-the-loop:** Require approval for any write operation
-4. **Constrained output format:** Force LLM to output only valid JSON tool calls, not free text
+1. **Instruction/data separation:** Keep untrusted retrieved content, user files, and tool outputs in clearly labeled data channels, not system/developer instruction channels
+2. **Privilege separation:** Give read, plan, and write actions different permissions; do not let text content directly grant tool authority
+3. **Policy outside the model:** Enforce allowlists, tenant boundaries, rate limits, and destructive-action rules in deterministic code
+4. **Human-in-the-loop:** Require approval for high-impact write operations or irreversible external side effects
+5. **Constrained output format:** Force structured tool calls, validate schema and arguments, and reject invalid outputs before execution
+6. **Sanitization as hygiene:** Escape or normalize untrusted text for display/logging, but do not rely on keyword stripping as the primary defense
 
 ---
 
@@ -685,4 +687,4 @@ I would design the agent as a loop, not a prompt: a planner/reactor LLM with mem
 - "Function calling: the LLM outputs structured JSON tool calls, the application executes them, and returns results as tool messages. Parallel calls for independent lookups, sequential for dependent ones. Schema validation prevents malformed calls."
 - "Observability: every agent step is traced — LLM calls with tokens and latency, tool calls with arguments and results, total cost per request. LangSmith or Langfuse for tracing, with alerts on cost spikes and error rate increases."
 - "Model routing: not every request needs GPT-4. A classifier routes 70% of simple requests to a fast cheap model, 25% to a mid-tier model, and only 5% of complex reasoning tasks to the expensive model. Cuts blended cost by 70%+."
-- "Agent benchmarks: SWE-bench measures ability to fix real GitHub issues (current SOTA ~50% resolved). We build custom eval suites of 100+ test cases, scored with LLM-as-a-Judge, targeting >85% pass rate before shipping."
+- "Agent benchmarks: SWE-bench measures ability to fix real GitHub issues, but public leaderboard numbers change quickly and may not match your repository. We build custom eval suites of 100+ test cases, scored with LLM-as-a-Judge, targeting >85% pass rate before shipping."
