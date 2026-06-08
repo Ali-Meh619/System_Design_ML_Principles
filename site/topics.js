@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    System Design & ML Playbook — Topics
-   48 sections across 11 categories
+   49 sections across 11 categories
    ═══════════════════════════════════════════════════════════════ */
 window.TOPICS = [
 
@@ -679,20 +679,47 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🤖",
     difficulty: "advanced",
-    summary:    "Production ML system design: feature stores, recommendation and ranking pipelines, rollout strategy, drift monitoring, rollback, and latency-cost-quality trade-offs.",
+    summary:    "Production ML system design: feature processing, feature stores, training pipelines, model registry, serving, rollout, evaluation ladder, A/B testing, monitoring, data flywheel, retraining, rollback, and latency-cost-quality trade-offs.",
     subtopics:  [
-      "The ML System Architecture (5 layers)",
-      "Feature Store — The Most Important ML Infrastructure",
-      "Recommendation System Architecture",
-      "Ranking Metrics — NDCG, MRR, CTR",
-      "Multi-Stage Ranking Architecture",
-      "Explore vs Exploit; Diversity vs Relevance",
-      "Offline vs Online Evaluation",
-      "Deployment & Rollout Strategy",
-      "Monitoring, Drift & Retraining",
+      "Interview Answer Spine",
+      "End-To-End Production Architecture",
+      "Data Ingestion and Contracts",
+      "Feature Processing",
+      "Feature Store and Point-In-Time Correctness",
+      "Labels and Training Dataset Creation",
+      "Training Pipeline and Model Registry",
+      "Serving Patterns and Latency Budgets",
+      "Offline Replay, Simulation, Shadow, Canary, A/B Tests",
+      "A/B Testing Parameters",
+      "Monitoring, Drift, Data Flywheel, Retraining, and Rollback",
     ],
-    tags:  ["machine learning", "feature store", "model serving", "training", "mlops", "drift", "recommendation", "ranking", "ndcg", "mrr", "retrieval", "reranking", "embeddings"],
+    tags:  ["machine learning", "production ml", "mlops", "feature store", "feature engineering", "model serving", "training", "model registry", "deployment", "ab testing", "experimentation", "shadow mode", "canary", "offline replay", "data flywheel", "monitoring", "drift", "retraining", "rollback", "calibration"],
     path:  "../docs/machine-learning/ml-in-system-design.md"
+  },
+
+  {
+    id:         "recommendation-systems",
+    title:      "Recommendation Systems",
+    category:   "AI & Machine Learning",
+    icon:       "🎯",
+    difficulty: "advanced",
+    summary:    "End-to-end recommender-system interview guide: data and exposure logging, candidate generation, retrieval models, ANN search, ranking, reranking, losses, metrics, A/B tests, cold start, exploration, bias, fairness, and production operations.",
+    subtopics:  [
+      "Interview Answer Spine",
+      "Data, Labels, and Interaction Metrics",
+      "Production Architecture",
+      "Candidate Generation and Retrieval Methods",
+      "Matrix Factorization, WRMF, BPR, EASE",
+      "Two-Tower Retrieval and ANN Search",
+      "Ranking Methods: GBDT, Wide & Deep, DeepFM, DCN, DLRM, DIN",
+      "Reranking: MMR, DPP, Diversity, Freshness, Constraints",
+      "Loss Functions and Negative Sampling",
+      "Evaluation Metrics: Recall@K, NDCG, MAP, MRR, Calibration",
+      "Bias, Exploration, IPS, Bandits, and Fairness",
+      "Scenario-Based Model Selection",
+    ],
+    tags:  ["recommendation", "recommender systems", "rec sys", "collaborative filtering", "matrix factorization", "implicit als", "wrmf", "bpr", "two tower", "two-tower", "ann", "faiss", "hnsw", "ranking", "reranking", "ndcg", "mrr", "map", "cold start", "bandits", "ips", "fairness", "diversity"],
+    path:  "../docs/machine-learning/recommendation-systems.md"
   },
 
   {
@@ -701,22 +728,26 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
-    summary:    "Agent anatomy, planner-vs-reactor trade-offs, function calling mechanics, retrieval, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, agent benchmarks, model routing, agentic workflows, and evaluation.",
+    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, function calling mechanics, structured state, retrieval, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
       "Cognitive Architectures (ReAct, CoT, Reflection)",
       "Function Calling — JSON schemas, parallel vs sequential, tool design principles",
       "Multi-Agent Patterns (Orchestrator-Worker, Planner-Critic, Handoffs)",
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
+      "Hybrid Orchestration and Autonomy Levels",
+      "Structured Agent State",
       "Tool Reliability, Retries & Idempotency",
+      "False Commitment Prevention",
+      "Agentic Dataset Design and Regression Tests",
       "Memory Pruning & Cost Control",
       "Observability & Tracing — LangSmith, Langfuse, full step tracing",
       "Agent Benchmarks — SWE-bench, WebArena, ToolBench, GAIA",
       "Agentic Workflows — Coding agent, research agent, data analysis agent",
       "Model Routing — Cheap vs expensive model selection, cascading",
-      "Evaluation (LLM-as-a-Judge, custom eval suites)",
+      "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "tool use", "function calling", "memory", "guardrails", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "chain-of-thought", "swe-bench", "observability", "model routing"],
+    tags:  ["llm", "agent", "rag", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 
@@ -762,7 +793,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "📈",
     difficulty: "intermediate",
-    summary:    "Interview-focused ML foundations: bias-variance tradeoff, Naive Bayes, KNN, bagging vs boosting, data leakage, L1/L2 regularization, evaluation metrics, Random Forests vs XGBoost/LightGBM, SVM kernel trick, K-means, PCA, cross-validation, class imbalance, SHAP/LIME interpretability, probability calibration, stacking ensembles, learning curves, and hyperparameter tuning.",
+    summary:    "Interview-focused ML foundations: bias-variance tradeoff, Naive Bayes, KNN, bagging vs boosting, data leakage, L1/L2 regularization, evaluation metrics, Random Forests vs XGBoost/LightGBM, SVM, PCA, class imbalance, SHAP/LIME, probability calibration, active learning, selective prediction, stacking, and tuning.",
     subtopics:  [
       "Bias-Variance Tradeoff — diagnosing underfitting vs overfitting",
       "L1/L2/Elastic Net Regularization — why L1 creates sparsity",
@@ -799,7 +830,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "intermediate",
-    summary:    "Neural networks from first principles: activation functions, weight initialization, backpropagation, Adam/AdamW, BatchNorm vs LayerNorm, CNNs, LSTMs, Transformers (full deep-dive), GANs/VAEs/Diffusion models, knowledge distillation, data augmentation, self-supervised learning, GQA/MQA, and training at scale.",
+    summary:    "Neural networks from first principles: activation functions, weight initialization, backpropagation, Adam/AdamW, CNNs, LSTMs, Transformers, GANs/VAEs/Diffusion, distillation, compression, quantization, pruning, distributed training, GQA/MQA, and training at scale.",
     subtopics:  [
       "Activation Functions — ReLU, GELU, Sigmoid, Tanh, Softmax; dying ReLU problem",
       "Weight Initialization — Xavier (tanh), He/Kaiming (ReLU), why zero-init breaks symmetry",
@@ -834,7 +865,7 @@ window.TOPICS = [
       "Mixed Precision Training — FP16/BF16, gradient scaling, memory savings",
       "Debugging Training — Overfit single batch, loss curves, gradient norms",
     ],
-    tags:  ["deep learning", "neural networks", "cnn", "rnn", "lstm", "backpropagation", "adam", "batchnorm", "resnet", "attention", "gan", "vae", "diffusion", "distillation", "augmentation", "self-supervised", "gqa", "transfer learning", "mixed precision", "interview"],
+    tags:  ["deep learning", "neural networks", "cnn", "rnn", "lstm", "backpropagation", "adam", "batchnorm", "resnet", "attention", "gan", "vae", "diffusion", "distillation", "compression", "quantization", "pruning", "distributed training", "fsdp", "zero", "tensor parallelism", "pipeline parallelism", "augmentation", "self-supervised", "gqa", "transfer learning", "mixed precision", "interview"],
     path:  "../docs/machine-learning/deep-learning.md"
   },
 
@@ -844,7 +875,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "💬",
     difficulty: "advanced",
-      summary:    "Modern GenAI for engineering interviews: tokenization (BPE), Transformer architecture, pre-training, LoRA & QLoRA, RAG, RLHF vs DPO, scaling laws, Mixture of Experts (MoE), multi-modal models, Constitutional AI, KV cache, quantization, decoding strategies, and long-context challenges.",
+      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, LLM evaluation, serving latency, MoE, KV cache, quantization, decoding, and long-context strategy.",
       subtopics:  [
         "Tokenization — BPE, WordPiece, SentencePiece; arithmetic & multilingual pitfalls",
         "Transformer Block — Embedding, MHA, FFN, LayerNorm, residuals (sketch from memory)",
@@ -879,7 +910,7 @@ window.TOPICS = [
         "Lost in the Middle — Primacy/recency bias, accuracy by position, mitigations",
         "Attention Dilution — Softmax normalisation over longer sequences, design implications",
     ],
-    tags:  ["llm", "genai", "transformers", "rag", "lora", "qlora", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "rlhf", "dpo", "kv cache", "mixed precision", "quantization", "perplexity", "hallucination", "attention", "interview"],
+    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "perplexity", "hallucination", "attention", "interview"],
     path:  "../docs/machine-learning/llm-interviews.md"
   },
 

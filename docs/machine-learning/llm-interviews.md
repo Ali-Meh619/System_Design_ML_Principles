@@ -165,6 +165,20 @@ Output: "{summary}"
 
 Used by: T5, BART, mT5, Flan-T5.
 
+### Training Lifecycle: What Each Stage Changes
+
+Do not collapse every model change into "fine-tuning." Each stage optimizes a different behavior.
+
+| Stage | What it changes | Interview nuance |
+|-------|-----------------|------------------|
+| **Data curation** | Filters, deduplicates, anonymizes, balances, and quality-scores raw corpora | Bad data creates bad behavior. Quality, coverage, privacy, and contamination controls matter before training starts. |
+| **Tokenization** | Maps text into subword IDs | Rare product names, IDs, acronyms, and multilingual text can fragment into many tokens, increasing cost and copying errors. |
+| **Pre-training** | Learns broad next-token or denoising objective over massive data | Gives grammar, world knowledge, and general reasoning priors, but not task policy or tool discipline. |
+| **Continual pre-training** | Continues self-supervised training on a target distribution | Useful for domain vocabulary and style, but can overfit or forget if the mix is too narrow. |
+| **SFT / instruction tuning** | Teaches desired responses, formats, and tool-call demonstrations | Best for output structure and common behavior; weaker for subtle preferences. |
+| **Preference optimization** | Chooses better outputs among alternatives | RLHF, DPO, KTO, ORPO, and related methods tune trade-offs like helpfulness, brevity, refusal, and grounding. |
+| **Deployment adaptation** | Compresses, routes, caches, and serves the model | Quantization, distillation, pruning, adapters, and batching must be validated on task slices, not only generic benchmarks. |
+
 ---
 
 ## 4. Fine-Tuning Strategies
@@ -236,6 +250,29 @@ Steps:
 3. Compute gradients only for LoRA parameters
 4. Dequantize frozen weights only when needed for computation
 
+### PEFT Design Choices
+
+LoRA is a family of decisions, not one checkbox.
+
+| Choice | Meaning | Practical guidance |
+|--------|---------|--------------------|
+| **Rank `r`** | Capacity of the low-rank update | Start low for style or format; increase for harder behavior changes or domain vocabulary. |
+| **Alpha scaling** | Strength of the adapter update | Too high can destabilize base behavior; too low underfits. Tune on both target-task and regression slices. |
+| **Target modules** | Which layers receive adapters | Q/V is common; add K/O or MLP layers when the behavior change needs more capacity. |
+| **Dropout** | Regularizes adapter activations | Useful for small or noisy datasets; too much makes the adapter weak. |
+| **Merge vs runtime adapter** | Bake adapter into weights or load dynamically | Merge for one global behavior; runtime adapters for task, tenant, or domain-specific behavior. |
+| **Adapter routing** | Select adapter by request type | Powerful but needs a reliable router and tests for wrong-adapter activation. |
+
+**PEFT variants to know**
+
+| Method | What changes | When to mention |
+|--------|--------------|-----------------|
+| **LoRA** | Learns low-rank additive updates | Default PEFT answer. |
+| **DoRA** | Separates weight direction and magnitude adaptation | Can help when LoRA capacity is not enough but full fine-tuning is too expensive. |
+| **QLoRA** | Trains LoRA on a quantized frozen base | Memory-constrained fine-tuning. |
+| **AdaLoRA** | Allocates adapter rank unevenly by layer importance | Useful when capacity budget is tight. |
+| **Prefix / prompt tuning** | Learns soft prompt vectors, not weight updates | Cheap adaptation for large models, weaker for complex tool behavior. |
+
 ---
 
 ## 5. Retrieval-Augmented Generation (RAG)
@@ -285,6 +322,20 @@ User query
 - **Self-RAG:** Model decides whether to retrieve (via trained special tokens).
 - **Hybrid Search:** Combine BM25 (keyword) + dense vector search; fuse results with RRF (Reciprocal Rank Fusion).
 - **Parent-child chunking:** Index small chunks; return their parent chunks for more context.
+
+### Production RAG Controls
+
+| Control | What it prevents | Implementation pattern |
+|---------|------------------|------------------------|
+| **Metadata filtering** | Cross-tenant or wrong-domain retrieval | Filter by tenant, product, policy version, permissions, and freshness before ranking. |
+| **Freshness precedence** | Stale docs overriding current state | Prefer live structured state or newer documents when sources conflict. |
+| **Reranking** | Semantically similar but irrelevant chunks | Re-score top-k with a cross-encoder or stronger model, then cap context aggressively. |
+| **Evidence checks** | Unsupported claims in grounded answers | Verify answer claims against retrieved evidence before returning. |
+| **Citation validation** | Citation mismatch | Ensure cited chunk actually supports the sentence it is attached to. |
+| **Fallback path** | Missing evidence | Retrieve again, ask a targeted clarification, or abstain instead of inventing. |
+| **Cache boundaries** | Data leakage through cached retrieval | Partition caches by tenant, user permission, and document version. |
+
+**Interview tip:** RAG quality is a product of retrieval recall, retrieval precision, context placement, generation discipline, and evidence verification. Do not evaluate only the final answer.
 
 ---
 
@@ -383,6 +434,22 @@ CoT: "Well, if we consider non-standard arithmetic... 5"  ← wrong
 
 ---
 
+### Adaptive Reasoning Budget
+
+Reasoning tokens are a latency and cost budget. Spend them based on task complexity and risk.
+
+| Task class | Budget | Pattern |
+|------------|--------|---------|
+| **Simple lookup or classification** | Minimal | Use direct answer or small classifier; avoid unnecessary chain-of-thought. |
+| **Moderate workflow** | Small bounded budget | Brief plan, one or two tool calls, then answer. |
+| **Complex reasoning** | Larger budget | Decompose, verify intermediate steps, and use tools for arithmetic or code. |
+| **High-risk action** | Reasoning plus policy gate | The model can propose, but deterministic rules, confirmation, and authorization decide. |
+| **Uncertain request** | Clarification budget | Ask a targeted question instead of spending tokens guessing. |
+
+Expose only the final answer or structured trace needed for debugging. Internal reasoning should not become user-facing product output by default.
+
+---
+
 ### Structured Output / JSON Mode
 
 Force the model to respond in a specific schema:
@@ -431,6 +498,20 @@ Loss = -log σ(β · (log π(chosen|x) - log π(rejected|x) - log π_ref(chosen|
 
 ---
 
+### Other Preference And Reasoning Objectives
+
+| Method | Idea | When it matters |
+|--------|------|-----------------|
+| **KTO** | Learns from desirable/undesirable examples without paired preferences | Useful when pairwise preference data is expensive. |
+| **ORPO** | Combines supervised tuning with preference optimization in one objective | Simpler alignment pipeline for instruction models. |
+| **RLAIF** | Uses AI feedback instead of or alongside human feedback | Scales critique data, but still needs human calibration. |
+| **ORM** | Outcome reward model scores only final answers | Good for tasks where final correctness is easy to verify. |
+| **PRM** | Process reward model scores intermediate reasoning steps | Useful for math, code, or tool trajectories where the path matters. |
+
+For agents, preference data should include successful and failed trajectories, tool observations, confirmations, recovery steps, and safety outcomes. A final-answer-only dataset can teach the model to sound correct while taking bad actions.
+
+---
+
 ## 8. LLM Evaluation
 
 ### Automatic Metrics
@@ -476,6 +557,14 @@ User: "Prompt: {prompt}\nResponse: {response}\nScore and reasoning:"
 ```
 
 **Biases to watch:** Position bias (prefers first option), verbosity bias (prefers longer), self-enhancement bias (LLM prefers its own outputs).
+
+| Judge risk | Failure | Control |
+|------------|---------|---------|
+| **Position bias** | One answer position wins too often | Swap answer order and average. |
+| **Verbosity bias** | Long output beats correct concise output | Rubric must explicitly score task success, factuality, and concision. |
+| **Rubric ambiguity** | Judge grades style instead of correctness | Use separate rubric items for grounding, tool correctness, safety, and helpfulness. |
+| **Judge drift** | Scores shift after judge model/prompt changes | Version judge model, prompt, rubric, and calibration set. |
+| **Weak human agreement** | Judge disagrees with expert labels | Sample disagreements for human review and tune rubric before trusting aggregate scores. |
 
 ---
 
@@ -537,6 +626,18 @@ Large model (70B) → verifies all 5 in one forward pass (parallel)
 Accepted tokens: [t₁, t₂, t₃] ✓, [t₄] ✗ → stop, generate correct t₄
 Net speedup: ~2-3× if draft model accepts often enough
 ```
+
+**When it helps:** long enough generations, high draft acceptance rate, and target-model verification that is cheaper than generating every token serially.
+
+**When it hurts:** very short outputs, poor draft model quality, heavy verifier overhead, or workloads already dominated by retrieval/tools rather than decoding.
+
+**Related fast-decoding ideas**
+
+| Technique | Mechanism | Trade-off |
+|-----------|-----------|-----------|
+| **Medusa-style heads** | Add heads that predict several future tokens from one base forward pass | Avoids a separate draft model but requires model-specific training. |
+| **Prefix KV caching** | Reuse KV cache for shared system prompts or repeated prefixes | Excellent for repeated prompts; requires careful cache invalidation and isolation. |
+| **Constrained decoding** | Restrict tokens to a schema or grammar | Improves validity for JSON/tool calls but may reduce flexibility. |
 
 ### Decoding Strategies
 
@@ -686,6 +787,18 @@ Every LLM request has two distinct phases with very different compute profiles:
 
 **Disaggregated serving:** Route prefill and decode to different GPU pools, each optimized for its bottleneck. Prefill GPUs need raw FLOPS; decode GPUs need high memory bandwidth. Used at scale by hyperscalers.
 
+#### Serving Latency Metrics
+
+| Metric | Meaning | What improves it |
+|--------|---------|------------------|
+| **TTFT** | Time to first token | Shorter prompts, prefix caching, faster prefill, routing to smaller model. |
+| **TPOT** | Time per output token | Faster decode stack, quantization, smaller model, better batching. |
+| **Inter-token latency** | Gap between streamed tokens | Decode optimization and scheduler fairness. |
+| **End-to-end latency** | Request received to final token | Prompt size, retrieval, tools, prefill, decode, post-processing. |
+| **P95/P99 latency** | Tail behavior | Separate long prompts, cap context, use timeouts, and monitor per route. |
+
+Optimizing only average latency is misleading. A system can have good mean latency while long-context or tool-heavy requests create unacceptable tail behavior.
+
 #### Chunked Prefill
 
 Long prompts (e.g., 32K tokens) block the GPU during prefill — no decoding happens meanwhile, hurting latency for other requests. **Chunked prefill** breaks the prompt into smaller chunks, interleaving prefill chunks with decode steps:
@@ -740,6 +853,21 @@ Sequence B (10 tokens): [page 3: tok 1-10, 6 slots free]
 | Gemini 1.5 Pro | 1M tokens |
 
 **Challenges with long context:**
+
+### Context Strategy
+
+Long context should be managed, not simply filled.
+
+| Strategy | Use for | Why it matters |
+|----------|---------|----------------|
+| **Pinned state object** | current goal, slots, constraints, tool results, pending actions | More reliable than hoping the model recovers key facts from old text. |
+| **Sliding window** | recent interaction history | Preserves local coherence without unlimited growth. |
+| **Structured summaries** | older commitments and unresolved issues | Compresses history while keeping durable facts. |
+| **Selective retrieval** | external knowledge and long-term memory | Adds relevant context without flooding the prompt. |
+| **Instruction reinjection** | critical rules near decision points | Reduces instruction dilution in long contexts. |
+| **Context pruning** | stale, redundant, or low-value text | Improves latency and reduces distraction. |
+
+**Failure to watch:** memory contamination. Retrieved or summarized content can be stale, sensitive, or irrelevant; treat it as data with provenance, not as new system instructions.
 
 ### Lost in the Middle
 
@@ -977,7 +1105,7 @@ The biggest training failure mode: all tokens route to the same 1-2 experts, lea
 
 ## 15. Multi-Modal Models
 
-Models that process and reason across multiple modalities (text, images, audio, video).
+Models that process and reason across multiple modalities such as text, images, video, and code.
 
 ### Vision-Language Models
 
@@ -986,7 +1114,7 @@ Models that process and reason across multiple modalities (text, images, audio, 
 | **CLIP** | Dual-encoder (image + text) | Zero-shot image classification, image-text retrieval |
 | **LLaVA** | Vision encoder + LLM (projection layer) | Visual Q&A, image reasoning |
 | **GPT-4V / GPT-4o** | Native multimodal | Image understanding, OCR, diagram analysis |
-| **Gemini** | Natively multimodal from pre-training | Text, image, video, audio, code |
+| **Gemini** | Natively multimodal from pre-training | Text, image, video, code |
 
 ### CLIP — Contrastive Language-Image Pre-training
 

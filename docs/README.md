@@ -1,6 +1,6 @@
 # System Design & Machine Learning Playbook — Documentation
 
-> **48 in-depth topics** covering everything from interview frameworks to cloud platform design, AI agent architectures, and Machine Learning concepts. The goal is interview usefulness first: clear defaults, trade-offs, failure modes, and memorable answer patterns.
+> **49 in-depth topics** covering everything from interview frameworks to cloud platform design, AI agent architectures, recommendation systems, and Machine Learning concepts. The goal is interview usefulness first: clear defaults, trade-offs, failure modes, and memorable answer patterns.
 
 ---
 
@@ -16,13 +16,13 @@
 | [🔍 Search & Analytics](search/README.md) | 4 | 🟡–🔴 | Inverted index, typeahead, stream processing, geo, probabilistic DS |
 | [📈 Scale & Reliability](scale/README.md) | 6 | 🟡–🔴 | Observability, HA, IDs, pagination, notifications, advanced data patterns |
 | [🔐 Security](security/README.md) | 4 | 🟡–🔴 | Auth, AuthZ/SSO/MFA, privacy, secrets, threat modeling |
-| [🩷 AI & Machine Learning](machine-learning/README.md) | 5 | 🟡–🔴 | ML systems, AI agents, Classic ML, Deep Learning, LLMs |
+| [🩷 AI & Machine Learning](machine-learning/README.md) | 6 | 🟡–🔴 | Production ML systems, recommendation systems, AI agents, Classic ML, Deep Learning, LLMs |
 | [🩵 Specialized Systems](specialized/README.md) | 2 | 🟡–🔴 | Real-time collaboration (OT/CRDT), Webhooks |
 | [📋 Reference](reference/README.md) | 4 | 🟢–🟡 | Cheat sheets, design templates, LeetCode patterns, LLD |
 
 ---
 
-## 📚 All 48 Topics
+## 📚 All 49 Topics
 
 ### 📐 Foundation
 - [Interview Framework — The Universal 4-Step Approach](foundation/interview-framework.md)
@@ -79,6 +79,7 @@
 
 ### 🩷 AI & Machine Learning
 - [Machine Learning in System Design](machine-learning/ml-in-system-design.md)
+- [Recommendation Systems](machine-learning/recommendation-systems.md)
 - [AI Agent System Design](machine-learning/ai-agent-system-design.md)
 - [Classic Machine Learning](machine-learning/classic-ml.md)
 - [Deep Learning](machine-learning/deep-learning.md)
@@ -143,11 +144,12 @@ Week 2:
 
 ```
 1. Complete Paths 1 + 2
-2. ML in System Design + AI Agent System Design
-3. Classic Machine Learning + Deep Learning
-4. LLM Interview Questions (RAG, fine-tuning, inference)
-5. Cloud Networking & Traffic Management
-6. IAM, Secrets & Governance + Reliability, Observability & Cost
+2. ML in System Design + Recommendation Systems
+3. AI Agent System Design
+4. Classic Machine Learning + Deep Learning
+5. LLM Interview Questions (RAG, fine-tuning, inference)
+6. Cloud Networking & Traffic Management
+7. IAM, Secrets & Governance + Reliability, Observability & Cost
 7. Secrets Management & Threat Modeling
 8. Probabilistic Data Structures
 9. Real-time Collaboration (CRDT vs OT)
@@ -235,4 +237,4 @@ Missing a topic? Open an issue with the title "Topic Request: [topic name]".
 
 ---
 
-*Last updated: March 2026 | 48 topics across 11 categories*
+*Last updated: June 2026 | 49 topics across 11 categories*

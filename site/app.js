@@ -53,6 +53,7 @@
     advanced: [
       'AI Agent System Design',
       'Machine Learning in System Design',
+      'Recommendation Systems',
       'Cloud Networking & Traffic Management',
       'IAM, Secrets & Governance',
       'Reliability, Observability & Cost',
@@ -228,7 +229,7 @@
     if (!q)     return true;
 
     const haystack = norm(
-      [topic.title, topic.category, topic.summary, ...(topic.tags || [])].join(' ')
+      [topic.title, topic.category, topic.summary, ...(topic.tags || []), ...(topic.subtopics || [])].join(' ')
     );
     return haystack.includes(q);
   }
@@ -705,6 +706,10 @@
     }
 
     elR.content.appendChild(wrapper);
+
+    if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      window.MathJax.typesetPromise([wrapper]).catch(() => {});
+    }
   }
 
   function closeReader() {

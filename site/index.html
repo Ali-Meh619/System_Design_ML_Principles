@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="48 curated system design, cloud, and machine learning topics with interactive progress tracking, inline reader, quiz/flashcard mode, dark mode, and keyboard-first navigation. Built for engineers cracking technical interviews.">
+  <meta name="description" content="49 curated system design, cloud, and machine learning topics with interactive progress tracking, inline reader, quiz/flashcard mode, dark mode, and keyboard-first navigation. Built for engineers cracking technical interviews.">
   <meta property="og:title" content="System Design & ML Playbook - Interactive Navigator">
-  <meta property="og:description" content="The most comprehensive, interactive system design, cloud, and ML reference for engineering interviews. 48 topics, inline reader, progress tracking, quiz mode, and more.">
+  <meta property="og:description" content="The most comprehensive, interactive system design, cloud, and ML reference for engineering interviews. 49 topics, inline reader, progress tracking, quiz mode, and more.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="System Design & ML Playbook">
-  <meta name="twitter:description" content="48 curated topics - Inline reader - Progress tracking - Quiz mode - Dark mode - Free forever">
+  <meta name="twitter:description" content="49 curated topics - Inline reader - Progress tracking - Quiz mode - Dark mode - Free forever">
   <title>System Design & ML Playbook - Interactive Navigator</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128208;</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,7 +96,7 @@
         <span class="hero-highlight">for any interview</span>
       </h1>
       <p class="hero-lead">
-        48 curated topics across 11 categories. Build intuition for distributed systems,
+        49 curated topics across 11 categories. Build intuition for distributed systems,
         cloud platforms, databases, caching, ML systems, and more &mdash; with inline reader, progress tracking, and built-in quiz mode.
       </p>
       <div class="hero-search">
@@ -195,9 +195,9 @@
           <div class="path-emoji" aria-hidden="true">&#127942;</div>
           <div class="path-info">
             <h3>Advanced</h3>
-            <p>AI Agents &rarr; ML Systems &rarr; Cloud Networking &rarr; IAM &rarr; Reliability/Cost &rarr; DB Internals</p>
+            <p>AI Agents &rarr; ML Systems &rarr; Recommendations &rarr; Cloud Networking &rarr; IAM &rarr; DB Internals</p>
           </div>
-          <span class="path-count">8 topics</span>
+          <span class="path-count">9 topics</span>
         </button>
       </div>
     </section>
@@ -270,7 +270,7 @@
       Click &#9675; on any topic card to mark it as read.
     </p>
     <div class="completed-footer">
-      <span class="completed-footer-text" id="completedFooterText">0 of 48 completed</span>
+      <span class="completed-footer-text" id="completedFooterText">0 of 49 completed</span>
       <span class="completed-footer-pct" id="completedFooterPct">0%</span>
     </div>
   </aside>
@@ -282,7 +282,7 @@
       <div class="quiz-header">
         <div class="quiz-meta">
           <span class="quiz-label">Quiz Mode</span>
-          <span class="quiz-pos" id="quizProgress">1 / 48</span>
+          <span class="quiz-pos" id="quizProgress">1 / 49</span>
         </div>
         <button class="btn-icon" id="closeQuiz" aria-label="Close quiz">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -418,7 +418,23 @@
     </div>
   </footer>
 
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]'], ['$$', '$$']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      },
+      startup: {
+        typeset: false
+      }
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
   <script src="topics.js"></script>
   <script src="app.js"></script>

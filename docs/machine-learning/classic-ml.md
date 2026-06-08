@@ -131,7 +131,7 @@ Data → Tree 1 → Find errors → reweight
      → Weighted combination → Final prediction
 ```
 
-**AdaBoost in brief:** After each weak learner, increase weights of misclassified samples exponentially. Each learner's vote is weighted by `0.5 · ln((1-error)/error)` — better learners get louder voices.
+**AdaBoost in brief:** After each weak learner, increase weights of misclassified samples exponentially. Each learner's vote is weighted by `0.5 · ln((1-error)/error)` — better learners get larger voting weights.
 
 **Why does boosting reduce bias?** Each sequential model explicitly targets the residual error of the current ensemble. The final model can capture complex patterns that a single high-bias model cannot.
 
@@ -734,7 +734,37 @@ Observed freq
 
 ---
 
-## 19. Stacking & Advanced Ensembles
+## 19. Active Learning And Selective Prediction
+
+When labels are expensive, do not sample randomly forever. Active learning selects examples that improve the model or reduce production risk.
+
+### Active Learning Selection Signals
+
+| Signal | Meaning | Example use |
+|--------|---------|-------------|
+| **High uncertainty** | Model confidence is low near a decision boundary | Label ambiguous classifications first. |
+| **Model disagreement** | Ensembles, prompts, or reruns choose different labels | Find brittle regions of the input space. |
+| **High-impact cases** | Rare mistakes are costly even if aggregate frequency is low | Over-sample fraud, safety, compliance, or churn-risk edge cases. |
+| **Production failures** | User correction, review override, or tool failure indicates missing supervision | Turn incidents into training examples. |
+| **Distribution shift** | New product, region, policy, or behavior changes input mix | Label fresh data from changed segments. |
+| **Slice underperformance** | A subgroup has worse metrics than aggregate | Target the failing slice rather than collecting generic data. |
+
+### Selective Prediction
+
+Selective prediction means the model predicts only when confidence is high enough; otherwise it abstains, asks for more information, or routes to review.
+
+| Mechanism | How it works | Trade-off |
+|-----------|--------------|-----------|
+| **Risk-tier thresholds** | Higher threshold for higher-impact decisions | Reduces harmful false positives but increases abstention. |
+| **Reject option** | Model returns "unknown" below confidence threshold | Needs a fallback path. |
+| **Conformal prediction** | Returns a set of plausible labels with statistical coverage under assumptions | Useful when multiple labels remain plausible. |
+| **Calibrated probability** | Uses Platt, isotonic, or temperature scaling before thresholding | Thresholds only mean what they say if probabilities are calibrated. |
+
+**Interview tip:** If the model is uncertain and the action is high-impact, the correct system behavior may be to abstain, ask, or escalate, not to force a low-confidence prediction.
+
+---
+
+## 20. Stacking & Advanced Ensembles
 
 Beyond bagging and boosting, **stacking** (stacked generalization) is a powerful ensemble technique that uses a meta-learner to combine base model predictions.
 
@@ -778,7 +808,7 @@ Use a simple holdout set (instead of cross-validation) for meta-learner training
 
 ---
 
-## 20. Learning Curves & Diagnosing Model Performance
+## 21. Learning Curves & Diagnosing Model Performance
 
 Learning curves plot model performance vs training set size or training iterations. They're the primary diagnostic tool for bias-variance analysis.
 
@@ -827,7 +857,7 @@ train_sizes, train_scores, val_scores = learning_curve(
 
 ---
 
-## 21. Interview Quick-Reference
+## 22. Interview Quick-Reference
 
 **"Your model is overfitting, what do you do?"**
 → More training data → add regularization (L2) → reduce model complexity → dropout / early stopping → feature selection to remove noise
