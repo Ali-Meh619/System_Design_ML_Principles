@@ -176,7 +176,7 @@ BN(x) = γ · (x - μ_batch) / √(σ²_batch + ε) + β
 
 ## 7. Convolutional Neural Networks (CNNs)
 
-Designed for spatial data (images, audio spectrograms, 1D signals) by exploiting **translation invariance** and **locality**.
+Designed for spatial or grid-like data (images, spectrogram-like matrices, 1D signals) by exploiting **translation invariance** and **locality**.
 
 ### Convolution Operation
 
@@ -461,7 +461,54 @@ Loss = α · KL(teacher_soft, student_soft) + (1-α) · CE(hard_labels, student_
 
 ---
 
-## 14. Data Augmentation
+## 14. Compression And Efficient Adaptation
+
+Large neural networks are often too expensive to serve directly. Compression changes the deployment shape, so validate after every compression step.
+
+| Technique | What it changes | Main risk |
+|-----------|-----------------|-----------|
+| **Quantization** | Stores weights/activations in lower precision such as INT8 or INT4 | Average benchmarks may hide failures in rare skills, schema following, or calibration. |
+| **Pruning** | Removes weights, channels, heads, layers, or blocks | Unstructured sparsity may not speed up without hardware support; structured pruning can damage quality. |
+| **Layer dropping / depth reduction** | Removes entire transformer blocks based on importance | Fast but can remove capabilities unevenly. |
+| **Knowledge distillation** | Trains a smaller student to match a larger teacher | Student may inherit teacher mistakes and lose edge-case behavior. |
+| **PEFT recovery** | Tunes adapters after compression | Can recover targeted behavior but may overfit if validation slices are weak. |
+
+### Quantization Methods
+
+| Method | Mechanism | When to use |
+|--------|-----------|-------------|
+| **PTQ** | Quantize after training using calibration data | Fastest path for inference compression. |
+| **GPTQ** | Layer-wise weight quantization minimizing reconstruction error | Common for LLM weight-only quantization. |
+| **AWQ** | Protects weights with high activation importance | Strong practical default for 4-bit serving. |
+| **SmoothQuant** | Moves activation outliers into weights before quantization | Useful when activation quantization is the bottleneck. |
+| **QAT** | Simulates quantization during training | More expensive, useful when PTQ quality loss is unacceptable. |
+
+### Pruning Taxonomy
+
+| Type | Removes | Production note |
+|------|---------|-----------------|
+| **Unstructured pruning** | Individual weights | Smaller checkpoints, but speedup needs sparse kernels. |
+| **Structured pruning** | Channels, heads, neurons, or blocks | More likely to speed up on standard hardware. |
+| **Movement pruning** | Weights moving toward zero during fine-tuning | Good for task-specific compression. |
+| **SparseGPT / Wanda-style pruning** | One-shot pruning using weight/activation statistics | Useful when retraining budget is limited. |
+| **Layer dropping** | Full layers selected by importance | Simple speedup, but must test reasoning and long-context regressions. |
+
+### Compression Stack Ordering
+
+A common safe order:
+
+1. start from a validated base or fine-tuned model
+2. prune or drop layers only if needed for latency/cost
+3. quantize with representative calibration data
+4. run adapter recovery or short fine-tuning if quality drops
+5. validate on general benchmarks, task benchmarks, and hard production slices
+6. compare latency, memory, cost, calibration, and failure modes before release
+
+**Key interview point:** Compression is not done when perplexity looks fine. Validate structured output, rare classes, calibration, safety, and slice-level regressions.
+
+---
+
+## 15. Data Augmentation
 
 Artificially expand training data by applying label-preserving transformations. Often more impactful than model improvements.
 
@@ -492,7 +539,7 @@ Artificially expand training data by applying label-preserving transformations. 
 
 ---
 
-## 15. Self-Supervised Learning
+## 16. Self-Supervised Learning
 
 Learn representations from unlabeled data by creating pretext tasks. The model learns features that transfer well to downstream tasks, eliminating the need for expensive labels.
 
@@ -537,7 +584,7 @@ Extremely data-efficient; works with standard ViT architecture.
 
 ---
 
-## 16. Training at Scale
+## 17. Training at Scale
 
 ### Batch Size Effect
 
@@ -561,6 +608,17 @@ Store weights in FP32 but compute forward/backward passes in FP16:
 
 **Gradient scaling:** Multiply loss by large factor before backward pass to prevent FP16 underflow; divide gradients back before optimizer step.
 
+### Training Stability Checklist
+
+| Symptom | Likely issue | Fix |
+|---------|--------------|-----|
+| NaNs early in training | FP16 overflow, LR too high, bad initialization | Use BF16 if available, lower LR, add warmup, clip gradients. |
+| Loss flatlines | Underflow, frozen wrong modules, bad labels | Check gradient norms, verify trainable parameters, overfit a small batch. |
+| QLoRA unstable | Quantized base plus adapter updates too aggressive | Lower adapter LR, use BF16 adapters, tune rank/alpha, inspect calibration data. |
+| QAT quality drop | Quantization simulation not representative | Use representative batches and compare per-slice metrics. |
+| Long-sequence OOM | Activation memory dominates | Gradient checkpointing, sequence packing, shorter context, or context parallelism. |
+| Distributed divergence | Sync, seed, or mixed-precision mismatch | Compare single-GPU run, check all-reduce, deterministic seeds, and loss scaling. |
+
 ### Data Parallelism vs Model Parallelism
 
 | | Data Parallelism | Model Parallelism |
@@ -568,6 +626,19 @@ Store weights in FP32 but compute forward/backward passes in FP16:
 | What | Each GPU gets a full model; data is split | Model is split across GPUs |
 | When | Model fits in single GPU | Model too large for one GPU (LLMs) |
 | Sync | Gradient averaging (AllReduce) | Pipeline or tensor parallelism |
+
+### Distributed Training Strategies
+
+| Strategy | What is sharded/replicated | Communication cost | Use when |
+|----------|----------------------------|--------------------|----------|
+| **Data parallelism** | Full model replicated; data split | Gradient all-reduce after backward pass | Model fits on each GPU. |
+| **FSDP / ZeRO** | Parameters, gradients, and optimizer states sharded | All-gather/reduce-scatter around layers | Optimizer state or model no longer fits per GPU. |
+| **Tensor parallelism** | Individual matrix multiplications split across GPUs | Communication inside many layers | Dense layers are too large for one device. |
+| **Pipeline parallelism** | Layers split into stages | Activation passing between stages; bubble overhead | Model is too deep or too large for one device. |
+| **Gradient checkpointing** | Activations recomputed instead of stored | Extra compute during backward pass | Activation memory is the bottleneck. |
+| **Sequence/context parallelism** | Long sequence dimension split | Attention communication across sequence shards | Long-context training exceeds memory. |
+
+Micro-batching reduces pipeline bubbles, but too many parallelism modes at once can make debugging and performance tuning much harder.
 
 ### Gradient Accumulation
 
@@ -605,7 +676,7 @@ MQA:  Q₁→K₁V₁, Q₂→K₁V₁, Q₃→K₁V₁, Q₄→K₁V₁   (1 sh
 
 ---
 
-## 17. Common Failure Modes & Debugging
+## 18. Common Failure Modes & Debugging
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
@@ -621,7 +692,7 @@ MQA:  Q₁→K₁V₁, Q₂→K₁V₁, Q₃→K₁V₁, Q₄→K₁V₁   (1 sh
 
 ---
 
-## 18. Transformers In Depth
+## 19. Transformers In Depth
 
 The Transformer is the most important architecture in modern deep learning. It powers every major LLM, vision model (ViT), and multimodal model. Unlike RNNs, it processes the entire sequence in parallel, making it highly GPU-efficient.
 

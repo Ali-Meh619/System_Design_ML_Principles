@@ -20,7 +20,7 @@
 [![Forks](https://img.shields.io/github/forks/Ali-Meh619/System_Design_ML_Principles?style=for-the-badge&color=0d9488&logo=github)](https://github.com/Ali-Meh619/System_Design_ML_Principles/network/members)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Topics](https://img.shields.io/badge/Topics-48-purple?style=for-the-badge)](docs/)
+[![Topics](https://img.shields.io/badge/Topics-49-purple?style=for-the-badge)](docs/)
 [![Interactive](https://img.shields.io/badge/Site-Live-success?style=for-the-badge&logo=github)](https://ali-meh619.github.io/System_Design_ML_Principles/)
 
 <br>
@@ -43,7 +43,7 @@ Most interview resources are either too scattered or too theoretical. This repo 
 | Track | Best for | Start here |
 |-------|----------|------------|
 | **Core System Design** | Distributed systems, cloud/platform, APIs, storage, scaling | [docs/](docs/) |
-| **AI & Machine Learning** | ML system design, agents, classic ML, deep learning, LLMs | [docs/machine-learning/README.md](docs/machine-learning/README.md) |
+| **AI & Machine Learning** | ML system design, recommendation systems, agents, classic ML, deep learning, LLMs | [docs/machine-learning/README.md](docs/machine-learning/README.md) |
 | **Reference & Practice Appendix** | Templates, cheat sheets, LeetCode patterns, LLD | [docs/reference/README.md](docs/reference/README.md) |
 
 Use the interactive site when you want navigation, quiz mode, and progress tracking. Use the Markdown docs when you want dense references you can skim before an interview.
@@ -52,11 +52,11 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **48 interview-ready topics** | Core system design, cloud/platform, AI/ML, security, and interview reference material |
+| 🎯 **49 interview-ready topics** | Core system design, cloud/platform, AI/ML, security, and interview reference material |
 | 🌙 **Dark / Light mode** | Persisted preference, instant toggle with `d` |
 | ✅ **Progress tracking** | Mark topics as read. Your progress saves locally. |
 | 🔖 **Bookmarks** | Save topics to revisit. Accessible from any page. |
-| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 48 topics |
+| 🃏 **Quiz / Flashcard mode** | Randomized flashcard review across all 49 topics |
 | 📖 **Inline reader** | Read every topic without leaving the page — with prev/next navigation |
 | ⌨️ **Keyboard-first** | `/` search, `q` quiz, `b` bookmarks, `?` shortcuts |
 | 📊 **Visual progress bar** | See your overall completion at a glance |
@@ -67,7 +67,7 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 
 ---
 
-## 🗂️ Topic Coverage (48 Topics)
+## 🗂️ Topic Coverage (49 Topics)
 
 <details>
 <summary><strong>🟠 Foundation (4)</strong></summary>
@@ -155,13 +155,14 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 </details>
 
 <details>
-<summary><strong>🩷 AI & Machine Learning (5)</strong></summary>
+<summary><strong>🩷 AI & Machine Learning (6)</strong></summary>
 
-- 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — feature store, recommendation and ranking systems, rollout strategy, drift, serving latency, rollback
-- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — planner/reactor loops, function calling, retrieval, observability, agent benchmarks, model routing, budgets, safety
-- 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, Naive Bayes, KNN, bagging vs boosting, SHAP/LIME, calibration, XGBoost, SVM, PCA
-- 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, CNNs, LSTMs, full Transformer deep-dive, GANs, VAEs, diffusion, distillation, GQA/MQA
-- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Tokenization, RAG, LoRA/QLoRA, RLHF/DPO, scaling laws, MoE, multi-modal models, KV cache, CoT
+- 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback
+- 🎯 [Recommendation Systems](docs/machine-learning/recommendation-systems.md) — candidate generation, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ranking, reranking, metrics, cold start, exploration, bias, fairness
+- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — hybrid orchestration, autonomy levels, function calling, structured state, tool reliability, observability, agent evals, model routing, online experiments, safety
+- 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, Naive Bayes, KNN, bagging vs boosting, SHAP/LIME, calibration, active learning, selective prediction, XGBoost, SVM, PCA
+- 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, CNNs, LSTMs, full Transformer deep-dive, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA
+- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Tokenization, production RAG, PEFT/LoRA/QLoRA, RLHF/DPO/KTO/ORPO, serving latency, MoE, multi-modal models, KV cache, CoT
 
 </details>
 
@@ -201,10 +202,10 @@ Interview Framework → Numbers to Know → Database Selection → Caching Deep 
 Distributed Fundamentals → Cloud Fundamentals → Compute & Deployment → Resilience Patterns → Observability → High Availability → Microservices → Notifications → Authorization / MFA
 ```
 
-### 🏆 Advanced — Push beyond the standard interview (8 topics)
+### 🏆 Advanced — Push beyond the standard interview (9 topics)
 
 ```
-AI Agent System Design → ML System Design → Cloud Networking → IAM / Governance → Reliability, Observability & Cost → Real-time Collaboration → Probabilistic DS → DB Internals
+AI Agent System Design → ML System Design → Recommendation Systems → Cloud Networking → IAM / Governance → Reliability, Observability & Cost → Real-time Collaboration → Probabilistic DS → DB Internals
 ```
 
 ---
@@ -260,7 +261,7 @@ System_Design_ML_Principles/
 │   ├── styles.css              # Full design system with dark/light mode
 │   ├── app.js                  # All interactive features
 │   └── topics.js               # Topic registry with icons, difficulty, tags, paths
-├── docs/                       # 48 topic documents
+├── docs/                       # 49 topic documents
 │   ├── foundation/             # Interview framework, estimation, I/O, networking
 │   ├── api-networking/         # APIs, load balancing, rate limiting, realtime
 │   ├── cloud-platform/         # Cloud foundations, deployment, networking, IAM, reliability

@@ -101,7 +101,7 @@ Function calling (tool use) is the mechanism by which an LLM invokes external to
 |---------|------|---------|
 | **Single call** | Simple lookup | "What's the weather in NYC?" → weather_api() |
 | **Parallel calls** | Independent lookups | "Compare NYC and LA weather" → weather_api("NYC") + weather_api("LA") simultaneously |
-| **Sequential calls** | Result of one informs the next | "Find the CEO of Apple, then search their recent speeches" → search() → search() |
+| **Sequential calls** | Result of one informs the next | "Find the CEO of Apple, then search their recent writing" → search() → search() |
 
 ### Tool Design Principles
 
@@ -137,6 +137,50 @@ Allowing LLMs to execute code or API calls creates massive risk (**Prompt Inject
 
 ---
 
+## Hybrid Orchestration And Autonomy Levels
+
+Production agents should not be either "pure LLM" or "hard-coded workflow" everywhere. The stronger default is a hybrid: deterministic state and policy gates around flexible LLM planning.
+
+| Orchestration style | Strength | Failure mode | Best use |
+|---------------------|----------|--------------|----------|
+| **Pure FSM** | Predictable, testable, easy to approve | Brittle when users go off-script | Regulated flows, fixed forms, mandatory confirmations |
+| **Pure LLM planner** | Flexible, handles novel requests | Can drift, skip steps, or overcommit | Low-risk exploration, summarization, drafting |
+| **Hybrid FSM + LLM** | Combines safety with flexibility | More engineering complexity | Most production agents |
+| **Policy engine + tools** | Deterministic authorization and business rules | Requires clean integration contracts | Any action that changes external state |
+
+**Autonomy levels**
+
+| Level | Allowed behavior | Production rule |
+|-------|------------------|-----------------|
+| **0. Answer only** | Gives information, no external actions | Good default before identity, permissions, or intent are clear. |
+| **1. Read-only tools** | Fetches data but cannot mutate state | Safe for lookup, search, and diagnostics if access is authorized. |
+| **2. Prepare action** | Fills arguments and previews the pending action | Require explicit confirmation before execution. |
+| **3. Execute low-risk action** | Executes reversible or low-impact action | Require schema validation, idempotency, and audit logging. |
+| **4. Propose high-risk action** | LLM proposes; deterministic systems decide | Require authorization, policy checks, confirmation, and rollback path. |
+| **5. Escalate** | Stops automation and routes to a human or safer workflow | Use when risk, ambiguity, repeated failure, or policy boundary is too high. |
+
+**Good interview line:** The LLM can be flexible in language and planning while deterministic infrastructure controls which actions it is allowed to execute.
+
+---
+
+## Structured Agent State
+
+Do not rely on raw message history or chat history as the only source of truth. Maintain a compact state object that is updated after each turn.
+
+| State field | What it stores | Why it matters |
+|-------------|----------------|----------------|
+| **Goal** | User objective and current workflow | Prevents tool choices from drifting across turns. |
+| **Slots** | Required entities, values, and confidence | Makes missing information explicit. |
+| **Confirmed facts** | Facts the user or system has verified | Separates known state from model guesses. |
+| **Pending action** | Tool name, arguments, risk tier, confirmation status | Prevents accidental execution. |
+| **Tool observations** | Latest tool outputs, timestamps, and errors | Lets the agent recover from partial failures. |
+| **Policy constraints** | Authorization, privacy, safety, and business rules | Keeps rules close to the decision point. |
+| **Escalation reason** | Why automation stopped | Gives the next handler useful context. |
+
+Pinned structured state is usually more reliable than stuffing every prior message into context. Use free-form history for language nuance; use structured state for commitments and actions.
+
+---
+
 ## Evaluation (LLM-as-a-Judge)
 
 How do you unit test an agent? Traditional assertions don't work on non-deterministic text. Use **LLM-as-a-Judge**: use a stronger model (e.g., GPT-4) to grade the output of your agent (e.g., GPT-3.5) against a rubric.
@@ -148,6 +192,18 @@ Evaluation Pipeline:
 3. Judge: "Did the agent call the correct tool with valid arguments? (Yes/No)"
 4. Score: Pass rate across 100 test cases.
 ```
+
+### Judge Failure Modes And Controls
+
+LLM judges are accelerators, not ground truth. Treat judge scores like model outputs that need calibration.
+
+| Risk | What happens | Control |
+|------|--------------|---------|
+| **Position bias** | Judge prefers the first or second answer independent of quality | Randomize order and average swapped comparisons. |
+| **Verbosity bias** | Longer answers score higher even when concise answers are better | Include brevity, directness, and task completion in the rubric. |
+| **Style bias** | Judge rewards wording similar to its own style | Calibrate against human labels and use multiple judges for major releases. |
+| **Rubric ambiguity** | Judge grades helpfulness but misses tool correctness or safety | Use explicit criteria: correct tool, valid args, grounded answer, no unsafe action. |
+| **Judge drift** | Changing judge model or prompt changes historical scores | Version judge model, rubric, prompt, and calibration set. |
 
 ---
 
@@ -175,6 +231,16 @@ LLM answers with grounded information
 - Store key events/decisions from past conversations in database
 - Retrieve relevant past sessions at start of new conversation
 - Enables "memory" across conversations without unlimited context
+
+### Memory Taxonomy For Agents
+
+| Memory type | Stores | Main risk | Control |
+|-------------|--------|-----------|---------|
+| **Working memory** | Current task, recent turns, tool results | Bloats context and cost | Sliding window plus state object |
+| **Episodic memory** | Prior interactions and outcomes | Stale or sensitive context | TTLs, consent, tenant isolation, retrieval filters |
+| **Semantic memory** | Stable facts, docs, policies, FAQs | Stale or conflicting knowledge | Versioned retrieval and freshness metadata |
+| **Procedural memory** | How to perform workflows | Hidden policy in prompts | Encode as skills, schemas, and workflow definitions |
+| **Policy memory** | Authorization, privacy, safety constraints | Prompt injection or instruction dilution | Enforce outside the model too |
 
 ---
 
@@ -221,6 +287,48 @@ This reduces both hallucination and long-context dilution.
 
 ---
 
+## Agentic Dataset Design
+
+Agent datasets need more than final answers. They should capture the path the agent took and the decision boundaries it faced.
+
+| Dataset component | Capture | Why it matters |
+|-------------------|---------|----------------|
+| **Turn-level labels** | intent, slots, ambiguity, next action, tool need, escalation state | Trains the agent to make the next correct move. |
+| **Trajectory labels** | final outcome, number of clarifications, recovery quality, policy compliance | Catches workflows that "succeed" through unsafe or poor intermediate steps. |
+| **Tool traces** | selected tool, arguments, result, timeout/error, retry behavior | Tool-use learning fails without observations after success and failure. |
+| **Negative examples** | wrong tool, malformed args, premature action, hallucinated result, missing confirmation | Teaches boundaries and recovery, not only happy paths. |
+| **Human repair examples** | how an expert fixed confusion or recovered from bad state | High-value data for recovery behavior. |
+| **Slice metadata** | domain, tenant, language, risk tier, tool path, length, customer segment | Enables targeted evaluation instead of aggregate-only metrics. |
+
+**Active learning signals**
+
+- high model uncertainty or unstable action choice
+- disagreement across models, prompts, or reruns
+- high-risk or high-value workflows
+- tool failures, retries, and timeouts
+- repeated clarifications or abandonment
+- new product, policy, region, or customer segment
+
+---
+
+## Regression Testing Nondeterministic Agents
+
+Do not regression-test agents by exact string equality. Test invariants, schemas, and outcomes.
+
+| Test type | What to assert |
+|-----------|----------------|
+| **Schema tests** | Tool calls parse and match allowed JSON schema. |
+| **Policy invariants** | The agent never performs restricted actions without required gates. |
+| **Semantic equivalence** | The final answer is correct even if wording changes. |
+| **Trajectory tests** | The agent chooses acceptable steps, not only an acceptable final response. |
+| **Slice tests** | Known hard slices remain above threshold after model, prompt, or tool changes. |
+| **Replay tests** | Historical incidents do not recur. |
+| **Canary monitors** | Online guardrails detect regressions that offline tests miss. |
+
+For high-risk agents, a release should pass old success cases, previous incidents, synthetic edge cases, and current production failure slices.
+
+---
+
 ## Tool Reliability, Retries & Idempotency
 
 Agents fail more often at the tool boundary than in raw text generation.
@@ -231,6 +339,7 @@ Agents fail more often at the tool boundary than in raw text generation.
 | Invalid arguments | Malformed JSON tool call | Schema validation + repair loop |
 | Duplicate action | Agent retries "send email" twice | Idempotency key / action UUID |
 | Partial success | File created but DB not updated | Compensating action or workflow checkpoint |
+| False commitment | Agent says an action is done before the tool confirms success | Track intended, attempted, pending, succeeded, and failed states separately |
 
 ### Practical rules
 
@@ -238,6 +347,7 @@ Agents fail more often at the tool boundary than in raw text generation.
 - Separate **read tools** from **write tools**
 - Require approval for destructive or expensive actions
 - Log every tool call with arguments, result, and latency
+- Never tell the user a side effect happened until the tool returns confirmed success
 
 ---
 
@@ -378,6 +488,25 @@ Evaluation Pipeline:
 - **Cost per task** — is it economically viable?
 - **Safety** — did it avoid harmful actions?
 - **Latency** — is it fast enough for the use case?
+
+---
+
+## Online Experiments For Agents
+
+Agent changes need online validation because users and tools react to the agent's behavior. Offline replay is necessary but not sufficient.
+
+| Experiment concern | Production guidance |
+|--------------------|---------------------|
+| **Randomization unit** | Randomize by stable user, account, organization, or workflow owner. Request-level assignment can contaminate multi-step behavior. |
+| **Shadow mode** | Run the new agent beside production first, but remember that shadow mode observes rather than changes the interaction. |
+| **Canary rollout** | Ramp gradually and stop automatically on safety, latency, cost, or tool-error guardrails. |
+| **Primary metric** | Pick the real outcome: task success, resolution, accepted edit, completed workflow, or human override reduction. |
+| **Guardrails** | Track unsafe action rate, hallucinated completion, invalid tool calls, latency, cost, escalations, complaints, and rollback triggers. |
+| **Delayed outcomes** | Wait for downstream labels such as user correction, support follow-up, refund reversal, or human review. |
+| **Slice analysis** | Check hard segments separately: long tasks, tool-heavy workflows, high-risk actions, low-confidence routing, and new domains. |
+| **Auditability** | Log experiment id, variant, model, prompt, tool versions, policy version, trace id, and final outcome. |
+
+Ship only when the treatment improves the primary metric without violating predeclared guardrails.
 
 ---
 
