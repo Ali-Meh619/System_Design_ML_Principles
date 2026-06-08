@@ -668,10 +668,23 @@
     elR.loading.setAttribute('hidden', '');
 
     const wrapper = document.createElement('div');
+    const mathTokens = [];
+
+    function protectMath(source) {
+      return String(source || '').replace(/\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)/g, match => {
+        const token = '@@MATH' + mathTokens.length + '@@';
+        mathTokens.push(match);
+        return token;
+      });
+    }
+
+    function restoreMath(html) {
+      return html.replace(/@@MATH(\d+)@@/g, (_, n) => esc(mathTokens[Number(n)] || ''));
+    }
 
     if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
       try {
-        wrapper.innerHTML = marked.parse(md);
+        wrapper.innerHTML = restoreMath(marked.parse(protectMath(md)));
       } catch (_) {
         const pre = document.createElement('pre');
         pre.style.cssText = 'white-space:pre-wrap;padding:1.5rem;line-height:1.6;font-size:.9rem';

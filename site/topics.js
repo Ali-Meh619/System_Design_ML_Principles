@@ -887,6 +887,7 @@ window.TOPICS = [
         "Catastrophic Forgetting — Replay buffers, EWC, small LR",
         "LoRA — Low-rank ΔW = B·A; rank r; which layers to adapt",
         "QLoRA — 4-bit quantized base + BF16 LoRA; enables fine-tune on single GPU",
+        "PEFT Variants — Prompt tuning, prefix tuning, bottleneck adapters, DoRA, AdaLoRA",
         "RAG Architecture — Chunking, embedding, vector DB, retriever, re-ranker, generator",
         "RAG Failure Modes — Bad retrieval, lost-in-the-middle, stale data, hallucination",
         "Advanced RAG — HyDE, hybrid search (BM25 + dense), RRF, parent-child chunks",
@@ -910,7 +911,7 @@ window.TOPICS = [
         "Lost in the Middle — Primacy/recency bias, accuracy by position, mitigations",
         "Attention Dilution — Softmax normalisation over longer sequences, design implications",
     ],
-    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "perplexity", "hallucination", "attention", "interview"],
+    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "perplexity", "hallucination", "attention", "interview"],
     path:  "../docs/machine-learning/llm-interviews.md"
   },
 

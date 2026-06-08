@@ -222,8 +222,9 @@ Fine-tune a fraction of parameters while keeping most weights frozen.
 Decompose weight update ΔW into two low-rank matrices:
 
 ```
+For W ∈ R^(d×k):
 W_new = W + ΔW = W + B·A
-where A ∈ R^(d×r), B ∈ R^(r×k), rank r ≪ min(d,k)
+where A ∈ R^(r×k), B ∈ R^(d×r), so B·A ∈ R^(d×k), rank r ≪ min(d,k)
 ```
 
 - Only train A and B (tiny fraction of total parameters)
@@ -250,6 +251,8 @@ Steps:
 3. Compute gradients only for LoRA parameters
 4. Dequantize frozen weights only when needed for computation
 
+Why it fits large models: the base weights stay frozen in 4-bit storage, so optimizer states and gradients exist only for the LoRA parameters. During forward/backward computation, quantized weights are dequantized into the compute dtype for matrix multiplies, but the quantized base weights are not updated. Production-grade QLoRA setups also use double quantization to reduce quantization metadata overhead and paged optimizers to avoid GPU memory spikes on long sequences.
+
 ### PEFT Design Choices
 
 LoRA is a family of decisions, not one checkbox.
@@ -272,6 +275,30 @@ LoRA is a family of decisions, not one checkbox.
 | **QLoRA** | Trains LoRA on a quantized frozen base | Memory-constrained fine-tuning. |
 | **AdaLoRA** | Allocates adapter rank unevenly by layer importance | Useful when capacity budget is tight. |
 | **Prefix / prompt tuning** | Learns soft prompt vectors, not weight updates | Cheap adaptation for large models, weaker for complex tool behavior. |
+
+### PEFT Methods: What Actually Trains
+
+The interview distinction is not just "few parameters." It is what receives trainable capacity, where it enters the Transformer, and whether the serving path can merge it away.
+
+| Method | What is trained | Where it enters | Inference cost | Strengths and failure modes |
+|--------|-----------------|-----------------|----------------|-----------------------------|
+| **Prompt tuning / soft prompt tuning** | A small table of continuous prompt embeddings | Prepended to the input embedding sequence | Extra prompt tokens consume context; no new matrix multiplies | Cheapest adaptation for very large models and simple classification/style tasks. It is weaker for complex reasoning, tool behavior, or tasks needing new domain concepts. The learned vectors are not natural-language prompts. |
+| **Prefix tuning** | Trainable prefix vectors, often projected into per-layer key/value states | Injected into attention layers as virtual prefix K/V or prefix activations | Extra prefix states increase KV cache and attention work | More expressive than prompt tuning for generation control because every layer sees task-specific conditioning. It can overfit narrow output formats and wastes context/cache budget if the prefix is too long. |
+| **Bottleneck adapters** | Small down-projection/up-projection modules with nonlinearities | Inserted inside or after attention/MLP blocks while base weights stay frozen | Adds runtime matmuls unless optimized or architecture supports adapter fusion | Good when each task/domain needs moderate capacity. Useful for multi-task serving, but wrong-adapter routing and adapter/version drift need explicit tests. |
+| **LoRA** | Low-rank matrices `A` and `B` that form an additive update to selected weights | Usually Q/V attention projections; sometimes K/O and MLP layers | Can be merged into base weights for no extra latency | Default PEFT answer. Target modules, rank, alpha, and merge policy determine quality and serving complexity. |
+| **DoRA** | LoRA-style direction updates plus a separately learned magnitude term | Same target modules as LoRA | Similar to LoRA, depending on implementation | Helps when plain LoRA underfits because direction and scale need different adaptation. Mention it when low-rank capacity is close but not enough. |
+| **QLoRA** | LoRA adapters on top of a frozen 4-bit base | Same as LoRA; base weights are quantized and frozen | Dequantization happens for compute; optimizer state remains LoRA-only | Best answer for memory-constrained fine-tuning of large models. Watch quantization sensitivity, sequence-length memory spikes, and evaluation regressions by task slice. |
+| **AdaLoRA** | Adaptive low-rank updates with rank budget reallocated by layer importance | Same target modules as LoRA, but rank varies across layers | Similar to LoRA after allocation | Useful when a fixed rank wastes capacity. It adds tuning complexity and needs stable importance estimates. |
+
+**Decision rule**
+
+| Need | Prefer | Reason |
+|------|--------|--------|
+| Smallest trainable footprint for a simple task | Prompt tuning | Minimal parameters and storage. |
+| Frozen model with stronger generation conditioning | Prefix tuning | Conditions multiple layers without changing weights. |
+| Separate behavior per task/domain with moderate capacity | Adapters or LoRA | More expressive than soft prompts. |
+| No added serving latency for one global behavior | Merged LoRA | The low-rank update can be folded into the base matrix. |
+| Many tenants, tasks, or domains | Runtime adapters or LoRA adapters plus router | Keeps variants separate, but requires adapter-routing tests and fallback behavior. |
 
 ---
 
@@ -1238,7 +1265,7 @@ A critical evaluation concern: if benchmark test data appears in the training se
 → Fine-tuning bakes knowledge into weights (can't update easily, may forget). RAG retrieves at inference time — updatable, inspectable, citable. Fine-tuning better for behavior/style changes; RAG better for knowledge-intensive tasks.
 
 **"What is LoRA and why use it?"**
-→ LoRA adds trainable low-rank decomposition (B·A) to frozen weight matrices. Updates only r×(d+k) instead of d×k parameters. Reduces trainable parameters by 1000×+ while matching full fine-tune quality for most tasks.
+→ LoRA adds a trainable low-rank update (B·A) to frozen weight matrices, with A and B sized so B·A matches W. It updates only r×(d+k) instead of d×k parameters. This reduces trainable parameters by 1000×+ while matching full fine-tune quality for many tasks.
 
 **"How does KV cache work?"**
 → During autoregressive generation, Q/K/V matrices of past tokens are recomputed on every new token. KV cache stores K and V for all past tokens, so each new step only computes for the new token. Critical for inference efficiency; trades memory for compute.
