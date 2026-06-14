@@ -1,6 +1,6 @@
 # AI Agent System Design
 
-> Designing systems where LLMs autonomously execute tasks. Covers Cognitive Architectures (ReAct, Plan-and-Solve), Multi-Agent Patterns, Memory Hierarchy, and Safety Guardrails.
+> Designing systems where LLMs execute multi-step tasks with tools, memory, retrieval, and safety controls. Covers ReAct/plan-execute loops, multi-agent patterns, structured state, agentic RAG, tool reliability, evaluation, and guardrails.
 
 ---
 
@@ -8,13 +8,13 @@
 
 An AI agent is a runtime system that uses an LLM as a reasoning engine to pursue a goal. It is not just a prompt; it is a software loop.
 
-**The 4 Components of an Agent**
+**Core components of an agent**
 
 | Component | Function | Implementation Pattern |
 |-----------|---------|----------------------|
 | **Profile / Persona** | Defines role, constraints, and personality. "You are a senior SRE. You are cautious." | System Prompt. |
 | **Memory** | **Short-term:** current context window. **Long-term:** Vector DB (RAG). **Episodic:** Past session logs. | Redis (chat history), Pinecone (knowledge), SQL (structured logs). |
-| **Planning** | Decomposing goals into steps. **ReAct** (Reason+Act), **Chain of Thought**, or **Plan-and-Solve**. | LLM generating a JSON plan or stepwise reasoning trace. |
+| **Planning** | Decomposing goals into steps. **ReAct** (Reason+Act), reflection, or plan-and-execute. | LLM generating a structured plan or stepwise reasoning trace. |
 | **Tools** | Capabilities the agent can invoke (Search, Calculator, Code Interpreter, Database). | Function Calling API (OpenAI/Anthropic), Sandbox environment. |
 
 ---
@@ -37,11 +37,11 @@ For complex tasks, one agent context window is often insufficient. Multi-agent s
 
 **Common MAS Patterns:**
 
-1. **Orchestrator-Workers (Boss/Worker):** A central "Planner" agent breaks down the user request and delegates subtasks to specialized workers ("Coder", "Researcher", "Reviewer"). The Planner aggregates results.
+1. **Orchestrator-workers:** A central planner breaks down the user request and delegates subtasks to specialized workers ("Coder", "Researcher", "Reviewer"). The planner aggregates results.
    - *Use case:* "Build a website" (Planner delegates HTML to Coder, Content to Writer).
 
-2. **Handoffs (Transfer):** Agent A starts the task, determines it's out of scope, and transfers the entire conversation state to Agent B.
-   - *Use case:* Customer Support Triage (Generalist Bot → Refund Specialist Bot).
+2. **Handoffs (Transfer):** Agent A starts the task, determines it belongs to another workflow, and transfers the structured state to Agent B.
+   - *Use case:* Request routing (Generalist agent → Billing workflow agent).
 
 3. **Autonomous Swarm:** Agents share a common message bus and react to messages relevant to their role. No central boss.
    - *Use case:* Research simulation, complex creative brainstorming.
@@ -181,12 +181,12 @@ Pinned structured state is usually more reliable than stuffing every prior messa
 
 ---
 
-## Evaluation (LLM-as-a-Judge)
+## Trace-Level Judge Evaluation
 
-How do you unit test an agent? Traditional assertions don't work on non-deterministic text. Use **LLM-as-a-Judge**: use a stronger model (e.g., GPT-4) to grade the output of your agent (e.g., GPT-3.5) against a rubric.
+Some agent behavior cannot be tested with exact string equality. Use deterministic assertions for schemas, permissions, and tool results; use an LLM judge only for semantic or trajectory quality that cannot be captured by simple assertions.
 
 ```
-Evaluation Pipeline:
+Trace evaluation pipeline:
 1. Dataset: Input: "Book a flight to Paris", Expected: "Tool call book_flight(destination='CDG')"
 2. Run Agent: Record the trace (steps taken, tool calls made).
 3. Judge: "Did the agent call the correct tool with valid arguments? (Yes/No)"
@@ -263,27 +263,6 @@ Use a **hybrid**:
 3. re-plan after important observations
 
 This is much more robust than either pure planning or pure reaction alone.
-
----
-
-## Retrieval Architecture Choices
-
-Agent quality depends heavily on how context is fetched.
-
-| Retrieval pattern | Best for | Trade-off |
-|-------------------|----------|-----------|
-| **Keyword search** | Code symbols, exact identifiers, logs | Misses semantic matches |
-| **Dense retrieval (vector search)** | Natural-language knowledge lookup | Can return plausible but irrelevant chunks |
-| **Hybrid retrieval** | Mixed corpora, enterprise search | More moving parts, but best default |
-| **Hierarchical retrieval** | Large documents / codebases | Better precision, extra orchestration |
-
-### Good production pattern
-
-- Start with hybrid retrieval
-- Re-rank top results before sending to the LLM
-- Cap context aggressively rather than dumping everything into the prompt
-
-This reduces both hallucination and long-context dilution.
 
 ---
 
@@ -838,7 +817,7 @@ I would design the agent as a loop, not a prompt: a planner/reactor LLM with mem
 - "The ReAct loop: Observe → Think → Act → Observe. The agent sees the codebase, decides what to grep, reads the result, decides on the fix. Iterative, exploratory."
 - "Safety: all code execution in a Firecracker microVM — network disabled, filesystem read-only except /tmp, 2-second CPU limit. The agent can't break out."
 - "For the coding agent: tools are UNIX commands (grep, cat, ls, git, python). Read-only by default. Write tools (edit file, git commit) require HITL approval."
-- "Evaluation: LLM-as-a-Judge with GPT-4o grading GPT-4 outputs against a rubric of 100 test cases. We target >85% pass rate before shipping a new agent version."
+- "Evaluation: use deterministic checks for schemas, permissions, and tool results; use a calibrated judge model for semantic trajectory quality. Target a release threshold before shipping a new agent version."
 - "Frameworks: LangGraph is the standard for complex, stateful agents because standard LangChain chains are too linear for real-world agent loops. For tool integration at scale, the Model Context Protocol (MCP) standardizes how agents securely talk to external APIs."
 - "Function calling: the LLM outputs structured JSON tool calls, the application executes them, and returns results as tool messages. Parallel calls for independent lookups, sequential for dependent ones. Schema validation prevents malformed calls."
 - "Agentic RAG: route to the right source, retrieve with hybrid search, rerank, compress evidence, verify citations, and abstain when support is weak. Measure retrieval recall separately from final answer quality."

@@ -306,6 +306,8 @@ The interview distinction is not just "few parameters." It is what receives trai
 
 Augment LLM generation with relevant context retrieved from an external knowledge base. Addresses hallucination, staleness, and knowledge grounding.
 
+Scope boundary: this section covers core RAG mechanics for LLM systems. The Agent guide covers agentic RAG, where a controller plans retrieval, routes across sources, calls tools, verifies evidence, and decides whether to answer or abstain.
+
 ```
 User query
     │

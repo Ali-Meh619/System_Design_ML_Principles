@@ -731,7 +731,7 @@ window.TOPICS = [
     summary:    "Agent anatomy, hybrid orchestration, autonomy levels, function calling mechanics, structured state, agentic RAG, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
-      "Cognitive Architectures (ReAct, CoT, Reflection)",
+      "Cognitive Architectures (ReAct, plan-execute, Reflection)",
       "Function Calling — JSON schemas, parallel vs sequential, tool design principles",
       "Multi-Agent Patterns (Orchestrator-Worker, Planner-Critic, Handoffs)",
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
@@ -745,6 +745,7 @@ window.TOPICS = [
       "Tool Reliability, Retries & Idempotency",
       "False Commitment Prevention",
       "Agentic Dataset Design and Regression Tests",
+      "Trace-Level Judge Evaluation — deterministic checks plus calibrated LLM judge",
       "Memory Pruning & Cost Control",
       "Observability & Tracing — LangSmith, Langfuse, full step tracing",
       "Agent Benchmarks — SWE-bench, WebArena, ToolBench, GAIA",
@@ -752,7 +753,7 @@ window.TOPICS = [
       "Model Routing — Cheap vs expensive model selection, cascading",
       "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "cot", "chain-of-thought", "swe-bench", "observability", "model routing", "online experiments"],
+    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "trace-level judge", "llm-as-a-judge", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 
