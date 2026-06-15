@@ -73,6 +73,7 @@ Theory / modeling focus:
 - "How do you handle cost control and model routing in a production agent?"
 - "How do you decide whether an agent should answer, ask, act, or escalate?"
 - "How do you prevent an agent from saying an action succeeded before the tool confirms it?"
+- "How do you prevent brittle behaviors like overcommitment, sycophancy, premature action, instruction dilution, and looped retries?"
 
 ### Classic ML
 
@@ -138,6 +139,7 @@ Theory / modeling focus:
 | **ReAct Agent** | Pattern where an agent iterates through Reason -> Act -> Observe. |
 | **Agent autonomy level** | Defines whether the model may answer, read, prepare, execute, or must escalate. |
 | **False commitment** | Agent claims a side effect happened before tool-confirmed success; prevent with explicit action state. |
+| **Agent sycophancy** | Agent lets user pressure or preferred answers override truth, policy, or authorization; prevent with preference data and external policy gates. |
 | **Bias vs Variance** | Bias = model too simple; variance = model too sensitive to training data. |
 | **L1 vs L2** | L1 creates sparsity; L2 shrinks weights smoothly. |
 | **Bagging vs Boosting** | Bagging reduces variance in parallel; boosting reduces bias sequentially. |
