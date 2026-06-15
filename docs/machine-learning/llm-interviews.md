@@ -1042,14 +1042,15 @@ Dense vector representations capturing semantic meaning. Similar texts have high
 
 ### Approximate Nearest Neighbor (ANN) Algorithms
 
-| Algorithm | How | Trade-off |
-|-----------|-----|----------|
+| Algorithm / library | How | Trade-off |
+|---------------------|-----|----------|
 | **HNSW** | Hierarchical graph; greedily search navigable small world | Fast query, high memory |
 | **IVF (Inverted File)** | Cluster vectors; search only nearby clusters | Lower memory; requires training |
 | **IVF-PQ** | IVF + Product Quantization (compress vectors) | Very memory-efficient; some quality loss |
-| **FAISS** | Facebook's library implementing many ANN methods | Industry standard |
+| **FAISS** | Meta's library implementing many ANN methods | Industry standard |
+| **ScaNN** | Partitioning + quantization + candidate reordering | Strong CPU recall/latency trade-off |
 
-**Recall vs Speed tradeoff:** More clusters / layers = higher recall but slower. Production systems typically target 95%+ recall at 10-50ms p99.
+**Recall vs Speed tradeoff:** Larger HNSW `efSearch`, more IVF probes, more ScaNN leaves, or larger rerank pools improve recall but increase latency and memory. Production RAG systems usually tune ANN recall separately from final answer quality because generation can look fluent even when retrieval missed the right evidence.
 
 ---
 

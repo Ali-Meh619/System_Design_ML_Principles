@@ -355,6 +355,25 @@ Chunking determines what the retriever can find. Bad chunks create bad evidence 
 
 **Fusion pattern:** retrieve top candidates from BM25, dense ANN, and any source-specific retriever in parallel; dedupe by canonical source/span; fuse with reciprocal rank fusion or learned weights; then rerank the top 20-100 before context construction.
 
+### Dense ANN Indexes For Agentic RAG
+
+ANN (Approximate Nearest Neighbor) search is the first-stage infrastructure for dense vector retrieval. The agent embeds the query, asks the ANN index for a fast top-k candidate set, then applies ACL/freshness filters, hybrid fusion, reranking, evidence compression, and citation checks. ANN is not the final judge of relevance; it is a latency/recall trade-off before the more precise stages.
+
+| Index / library | How it works | Best fit | Key parameters and risks |
+|-----------------|--------------|----------|--------------------------|
+| **HNSW** | Builds a multi-layer small-world graph; search greedily moves through neighbors toward the query vector. | Low-latency serving with high recall and frequently updated indexes. Common in Qdrant, Weaviate, Milvus, OpenSearch, and many vector DBs. | `M` controls graph degree and memory, `efConstruction` controls build quality, `efSearch` controls query recall/latency. Memory can be high; strict metadata filtering can hurt recall if applied only after search. |
+| **FAISS** | Meta's vector-search library with exact flat search, HNSW, IVF, IVF-PQ, OPQ, and GPU indexes. | Custom retrieval services, offline evaluation, GPU batch search, very large corpora, and experiments comparing index families. | `IndexFlat` is exact but expensive; IVF uses `nlist` clusters and `nprobe` searched clusters; PQ compresses vectors but can lose recall. Rebuild and version indexes with the embedding model. |
+| **ScaNN** | Google's ANN library using partitioning, asymmetric hashing / quantization, and a reordering step over the best candidates. | CPU-heavy semantic retrieval where high throughput and good recall/latency trade-offs matter. | Tune leaves searched, candidate count, quantization, and reorder size. Quantization improves speed and memory but can drop hard-neighbor recall. |
+| **IVF / IVF-PQ** | Clusters vectors into coarse partitions; searches only nearby partitions, optionally compressing residual vectors with product quantization. | Huge indexes where flat or pure graph search is too expensive. | Needs representative training data. Too few probes misses relevant chunks; too much compression hurts exact evidence retrieval. |
+
+**Production rules for agents**
+
+- Apply tenant, permission, source, and freshness filters before or inside retrieval when the vector DB supports it; do not rely only on post-generation filtering.
+- Over-retrieve from ANN (`top_k` larger than final context) because rerankers and evidence checks need enough candidates to recover from approximate misses.
+- Evaluate ANN separately from generation: Recall@K, MRR/NDCG, P95 latency, memory footprint, filter selectivity, and stale-index rate.
+- Keep embedding model, normalization method, distance metric, and index version tied together. Changing one without rebuilding or recalibrating can silently degrade retrieval.
+- For mixed corpora, pair dense ANN with BM25 and metadata filters; exact IDs, errors, names, code symbols, and policy versions are often better served by sparse or structured retrieval.
+
 ### Query Planning And Expansion
 
 | Technique | How it works | Use when | Guardrail |
@@ -500,7 +519,6 @@ Agents fail more often at the tool boundary than in raw text generation.
 | Invalid arguments | Malformed JSON tool call | Schema validation + repair loop |
 | Duplicate action | Agent retries "send email" twice | Idempotency key / action UUID |
 | Partial success | File created but DB not updated | Compensating action or workflow checkpoint |
-| False commitment | Agent says an action is done before the tool confirms success | Track intended, attempted, pending, succeeded, and failed states separately |
 
 ### Practical rules
 
@@ -795,7 +813,7 @@ Without protection: Agent forwards all emails!
 For most interview settings, I would recommend:
 
 1. **Hybrid planner/reactor** loop
-2. **Agentic RAG with source routing, hybrid retrieval, re-ranking, evidence checks, and abstention**
+2. **Agentic RAG with source routing, BM25 + dense ANN retrieval, re-ranking, evidence checks, and abstention**
 3. **Read tools by default, write tools behind approval**
 4. **Checkpointed execution** for long tasks
 5. **Memory compaction** via sliding window + summaries + episodic store
@@ -803,25 +821,6 @@ For most interview settings, I would recommend:
 7. **Trace logging + evaluation harness** before shipping
 
 This is a much stronger answer than "just call an LLM with tools."
-
----
-
-## Failure Modes
-
-| Failure mode | What happens | Mitigation |
-|--------------|--------------|-----------|
-| Overcommitment / sycophancy | Agent agrees too readily, promises too much, or lets social pressure override policy | Preference data with safe refusals, policy gates outside the model, and risk-tier action thresholds |
-| Premature action | Agent acts before slots, authorization, or confirmation are complete | Action preview, confirmation gates, and structured pending-action state |
-| False commitment | Agent claims success before a validated tool observation confirms it | Separate intended, attempted, succeeded, and failed states |
-| Instruction dilution | Long context makes policy, confirmations, or prior commitments less behaviorally salient | Pinned state, critical-rule reinjection, and deterministic policy checks |
-| Tool hallucination | Agent invents nonexistent tool or arguments | Strict schema validation + tool registry |
-| Infinite loop / thrashing | Agent keeps retrying weak actions | Max steps + critic / replanning trigger |
-| Retrieval miss | Agent answers from bad memory | Hybrid retrieval + fallback search + abstain path |
-| Unsupported grounding | Agent answers without evidence or cites the wrong source | Evidence checks, citation validation, and abstention |
-| Permission leak | Retriever returns unauthorized data | Pre-retrieval ACL and tenant filters |
-| Prompt injection | Malicious content hijacks behavior | Sandboxing, privilege separation, approval gates |
-| Context bloat | Agent gets expensive and inconsistent | Summarization, pruning, retrieval caps |
-| Duplicate side effects | Same action executed twice | Idempotency keys and action ledger |
 
 ---
 
@@ -842,7 +841,7 @@ This is a much stronger answer than "just call an LLM with tools."
 
 ## Interview Answer Sketch
 
-I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, agentic RAG, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is not just vector search: route to the right source, combine dense and sparse retrieval, rerank, construct compact evidence, verify citations, and abstain when evidence is weak. Tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, retrieval recall, answer faithfulness, tool reliability, and hallucinated action rate.
+I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, agentic RAG, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is not just vector search: route to the right source, combine BM25 with dense ANN indexes such as HNSW, FAISS, or ScaNN, rerank, construct compact evidence, verify citations, and abstain when evidence is weak. Tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, retrieval recall, answer faithfulness, tool reliability, and hallucinated action rate.
 
 ---
 
@@ -854,7 +853,7 @@ I would design the agent as a loop, not a prompt: a planner/reactor LLM with mem
 - "Evaluation: use deterministic checks for schemas, permissions, and tool results; use a calibrated judge model for semantic trajectory quality. Target a release threshold before shipping a new agent version."
 - "Frameworks: LangGraph is the standard for complex, stateful agents because standard LangChain chains are too linear for real-world agent loops. For tool integration at scale, the Model Context Protocol (MCP) standardizes how agents securely talk to external APIs."
 - "Function calling: the LLM outputs structured JSON tool calls, the application executes them, and returns results as tool messages. Parallel calls for independent lookups, sequential for dependent ones. Schema validation prevents malformed calls."
-- "Agentic RAG: route to the right source, retrieve with hybrid search, rerank, compress evidence, verify citations, and abstain when support is weak. Measure retrieval recall separately from final answer quality."
+- "Agentic RAG: route to the right source, retrieve with BM25 plus dense ANN such as HNSW/FAISS/ScaNN, rerank, compress evidence, verify citations, and abstain when support is weak. Measure ANN Recall@K separately from final answer quality."
 - "Observability: every agent step is traced — LLM calls with tokens and latency, tool calls with arguments and results, total cost per request. LangSmith or Langfuse for tracing, with alerts on cost spikes and error rate increases."
 - "Model routing: not every request needs GPT-4. A classifier routes 70% of simple requests to a fast cheap model, 25% to a mid-tier model, and only 5% of complex reasoning tasks to the expensive model. Cuts blended cost by 70%+."
 - "Agent benchmarks: SWE-bench measures ability to fix real GitHub issues, but public leaderboard numbers change quickly and may not match your repository. We build custom eval suites of 100+ test cases, scored with LLM-as-a-Judge, targeting >85% pass rate before shipping."
