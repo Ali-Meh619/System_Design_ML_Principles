@@ -728,7 +728,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
-    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, function calling mechanics, structured state, agentic RAG, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
+    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, brittle behavior controls, function calling mechanics, structured state, agentic RAG, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
       "Cognitive Architectures (ReAct, plan-execute, Reflection)",
@@ -736,6 +736,7 @@ window.TOPICS = [
       "Multi-Agent Patterns (Orchestrator-Worker, Planner-Critic, Handoffs)",
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
       "Hybrid Orchestration and Autonomy Levels",
+      "Brittle Agent Behaviors - overcommitment, sycophancy, premature action, instruction dilution",
       "Structured Agent State",
       "Agentic RAG Chunking — fixed, recursive, semantic, sentence-window, parent-child, hierarchical",
       "RAG Retrieval Methods — BM25, dense vector search, hybrid retrieval, metadata filters, GraphRAG",
@@ -753,7 +754,7 @@ window.TOPICS = [
       "Model Routing — Cheap vs expensive model selection, cascading",
       "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "trace-level judge", "llm-as-a-judge", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "swe-bench", "observability", "model routing", "online experiments"],
+    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "overcommitment", "sycophancy", "premature action", "instruction dilution", "social pressure", "metric gaming", "trace-level judge", "llm-as-a-judge", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 
@@ -881,7 +882,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "💬",
     difficulty: "advanced",
-      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, LLM evaluation, serving latency, MoE, KV cache, quantization, pruning, decoding, and long-context strategy.",
+      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, sycophancy and preference data, LLM evaluation, serving latency, MoE, KV cache, quantization, pruning, decoding, and long-context strategy.",
       subtopics:  [
         "Tokenization — BPE, WordPiece, SentencePiece; arithmetic & multilingual pitfalls",
         "Transformer Block — Embedding, MHA, FFN, LayerNorm, residuals (sketch from memory)",
@@ -901,6 +902,7 @@ window.TOPICS = [
         "Chain-of-Thought — Why it works (compute, error localisation, conditioning); when it fails",
         "RLHF — SFT → reward model → PPO; why it's complex and unstable",
         "DPO — Direct preference optimization; no RL, no reward model; simpler",
+        "Sycophancy and Agentic Preference Data - truthful correction, safe refusal, trajectory labels",
         "LLM Evaluation — Perplexity (and why it fails for reasoning models), Exact Match",
         "Scaling Laws — Kaplan, Chinchilla (20 tokens/param optimal), emergent abilities",
         "Mixture of Experts (MoE) — Router, top-k experts, load balancing, Mixtral",
@@ -918,7 +920,7 @@ window.TOPICS = [
         "Lost in the Middle — Primacy/recency bias, accuracy by position, mitigations",
         "Attention Dilution — Softmax normalisation over longer sequences, design implications",
     ],
-    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "pruning", "llm pruning", "sparsegpt", "wanda", "perplexity", "hallucination", "attention", "interview"],
+    tags:  ["llm", "genai", "transformers", "rag", "production rag", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "preference data", "trajectory labels", "sycophancy", "overcommitment", "safe refusal", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "pruning", "llm pruning", "sparsegpt", "wanda", "perplexity", "hallucination", "attention", "interview"],
     path:  "../docs/machine-learning/llm-interviews.md"
   },
 

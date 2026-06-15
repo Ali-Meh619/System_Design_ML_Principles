@@ -163,6 +163,36 @@ Production agents should not be either "pure LLM" or "hard-coded workflow" every
 
 ---
 
+## Brittle Agent Behaviors
+
+Brittleness is what happens when a probabilistic planner is allowed to behave like a reliable state machine. In production, the goal is not to "prompt harder"; it is to make the brittle cases explicit and put deterministic controls around them.
+
+| Brittle case | What it looks like | Why it happens | Production control |
+|--------------|--------------------|----------------|--------------------|
+| **Overcommitment** | Agent promises it can perform a task, resolve an issue, or complete a side effect before the system has enough state or permission. | Helpfulness tuning rewards confident completion language. | Track `intended`, `prepared`, `authorized`, `attempted`, `succeeded`, and `failed` states separately. |
+| **Sycophancy / social pressure** | Agent agrees with the user's preferred answer or bypass request: "skip verification", "your manager approved this", "just do it". | Preference data can over-reward agreement, empathy, or user satisfaction. | Keep policy and authorization gates outside the LLM; train chosen/rejected examples where helpful refusal beats unsafe compliance. |
+| **Premature action** | Agent calls a write tool before required slots, confirmations, or risk checks are complete. | The model optimizes for progress and may treat ambiguity as resolved. | Use risk-tier thresholds, action previews, explicit confirmation, and authorization checks before execution. |
+| **False commitment / false success** | Agent says "done" even though the tool failed, timed out, or was never called. | The model fills in the happy-path narrative after deciding the user's intent. | Never claim completion until a validated tool observation confirms success; ground user-facing status in tool result flags. |
+| **Tool hallucination / wrong tool** | Agent invents a tool, calls the wrong workflow, or fabricates unsupported arguments. | Tool names and schemas are just tokens unless the runtime validates them. | Use a tool registry, schema validation, constrained decoding, per-skill allowlists, and structured repair loops. |
+| **Format defection** | Agent returns prose when JSON is required, malformed arguments, or fields outside the schema. | Free-form generation competes with strict interface contracts. | Use structured outputs, JSON schema tests, required fields, enums, and reject-invalid retries. |
+| **Stale state / intent drift** | Agent uses old memory, changes the current goal after interruptions, or routes to the wrong skill. | Long histories and tool traces dilute the current task representation. | Maintain pinned structured state: current goal, slots, confirmed facts, pending action, and active workflow. |
+| **Instruction dilution** | The rule is still in context, but long history, tool outputs, retrieved docs, or user pressure make it behaviorally weak. | Attention is spread across many competing tokens and trust levels. | Re-inject critical rules near action points, keep policy state compact, and enforce constraints in code. |
+| **Looped retries / thrashing** | Agent repeats the same failed tool call, weak retrieval query, or clarification. | The model lacks an external progress signal or retry budget. | Track retry count, error class, elapsed time, and strategy changes; escalate when progress stalls. |
+| **Weak-evidence overanswering** | Agent answers confidently from thin evidence or cites chunks that do not support the claim. | Final-answer fluency hides retrieval uncertainty. | Require evidence thresholds, citation validation, retrieval fallback, clarification, or abstention. |
+| **Metric gaming** | Agent improves automation or containment while trapping users, increasing complaints, or causing unsafe actions. | Single-objective optimization rewards the wrong behavior. | Use multi-objective metrics: task success, safety, latency, escalation quality, complaints, and slice regressions. |
+
+**Training data for brittle cases**
+
+- Include negative examples: wrong tool, premature action, missing confirmation, false commitment, malformed JSON, hallucinated tool result, ignored policy instruction, and repeated failed retries.
+- Use preference pairs where the chosen trace shows honest uncertainty, safe refusal, targeted clarification, or tool-failure recovery, and the rejected trace overcommits or invents success.
+- Add process labels for the decision points that matter: clarification, tool choice, argument extraction, policy check, confirmation, execution, recovery, and escalation.
+- Mine active-learning cases from high uncertainty, model disagreement, high-risk actions, tool failures, repeated user correction, and long-context drift.
+- Evaluate full trajectories with injected failures, not only happy-path final answers.
+
+**Good interview line:** I would train and evaluate the agent on the bad trajectories too; otherwise the model only learns how to look competent on happy paths.
+
+---
+
 ## Structured Agent State
 
 Do not rely on raw message history or chat history as the only source of truth. Maintain a compact state object that is updated after each turn.
@@ -780,6 +810,10 @@ This is a much stronger answer than "just call an LLM with tools."
 
 | Failure mode | What happens | Mitigation |
 |--------------|--------------|-----------|
+| Overcommitment / sycophancy | Agent agrees too readily, promises too much, or lets social pressure override policy | Preference data with safe refusals, policy gates outside the model, and risk-tier action thresholds |
+| Premature action | Agent acts before slots, authorization, or confirmation are complete | Action preview, confirmation gates, and structured pending-action state |
+| False commitment | Agent claims success before a validated tool observation confirms it | Separate intended, attempted, succeeded, and failed states |
+| Instruction dilution | Long context makes policy, confirmations, or prior commitments less behaviorally salient | Pinned state, critical-rule reinjection, and deterministic policy checks |
 | Tool hallucination | Agent invents nonexistent tool or arguments | Strict schema validation + tool registry |
 | Infinite loop / thrashing | Agent keeps retrying weak actions | Max steps + critic / replanning trigger |
 | Retrieval miss | Agent answers from bad memory | Hybrid retrieval + fallback search + abstain path |

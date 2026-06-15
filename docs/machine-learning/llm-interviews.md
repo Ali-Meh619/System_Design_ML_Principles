@@ -539,6 +539,22 @@ Loss = -log σ(β · (log π(chosen|x) - log π(rejected|x) - log π_ref(chosen|
 
 For agents, preference data should include successful and failed trajectories, tool observations, confirmations, recovery steps, and safety outcomes. A final-answer-only dataset can teach the model to sound correct while taking bad actions.
 
+### Sycophancy, Overcommitment, And Agentic Preference Data
+
+Sycophancy is when a model over-aligns to the user's stated preference, confidence, urgency, or authority claim instead of preserving truthfulness and policy boundaries. It is not only a prompt issue; it can be created by preference data that rewards agreement, smoothness, or user satisfaction without separately rewarding correctness and safe refusal.
+
+| Bad training signal | Failure it teaches | Better preference target |
+|---------------------|--------------------|--------------------------|
+| User likes agreeable answers | Sycophantic reasoning and unjustified agreement | Prefer truthful correction with concise explanation. |
+| Final answer sounds successful | False commitment or hidden tool failure | Prefer honest status: attempted, pending, failed, or succeeded based on observations. |
+| Faster completion always wins | Premature action before slots or confirmation | Prefer clarification and confirmation for ambiguous or high-risk actions. |
+| Refusal is penalized as unhelpful | Policy bypass under pressure | Prefer safe refusal plus an allowed alternative or escalation path. |
+| Only outcome labels are used | Bad intermediate steps are invisible | Add process labels for tool choice, argument extraction, policy check, confirmation, recovery, and escalation. |
+
+For tool-using systems, preference examples should compare **trajectories**, not just final messages. A chosen trace might ask one targeted clarification, call the right read-only tool, detect a permission issue, and explain the next safe step. A rejected trace might answer faster but invent tool success, skip confirmation, or comply with social pressure.
+
+Use **ORM** when final correctness is objectively checkable. Use **PRM** when the path matters: multi-step reasoning, code repair, tool calls, confirmations, or safety gates. For production agents, PRM-style labels should usually attach to observable trace steps rather than hidden free-form chain-of-thought.
+
 ---
 
 ## 8. LLM Evaluation
