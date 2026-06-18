@@ -1,6 +1,6 @@
 # LLM Interview Questions
 
-> Modern GenAI for engineering interviews: Transformers from first principles, RAG architecture, fine-tuning strategies, inference optimization, alignment, and evaluation. These are the questions being asked at top companies today.
+> Modern GenAI for engineering interviews: Transformers from first principles, RAG architecture, adaptation strategies, inference optimization, alignment, and evaluation.
 
 ---
 
@@ -67,7 +67,7 @@ Transformers have no inherent sense of order (unlike RNNs). Positions must be in
 | **RoPE (Rotary)** | Rotate Q/K vectors by position before dot product | Relative + efficient; LLaMA, Mistral, GPT-NeoX |
 | **ALiBi** | Subtract linear position bias from attention scores | Very efficient; extrapolates to longer sequences |
 
-**RoPE is the current standard** for most open-source LLMs because it naturally encodes relative positions and works well with context length extension.
+**RoPE is widely used** in decoder-only LLMs because it encodes relative-position structure efficiently and supports several context-extension techniques, though the exact positional method remains architecture-specific.
 
 ---
 
@@ -83,7 +83,7 @@ Tokenization converts raw text into a sequence of integer IDs that the model can
 | **Words** | Vocabulary too large (millions); cannot handle new/rare words (OOV problem) |
 | **Subwords** | Best of both — common words are single tokens, rare words decompose into known subparts |
 
-### Byte Pair Encoding (BPE) — The Standard
+### Byte Pair Encoding (BPE)
 
 The dominant algorithm (used by GPT-2/3/4, LLaMA, Mistral).
 
@@ -177,23 +177,37 @@ Do not collapse every model change into "fine-tuning." Each stage optimizes a di
 | **Continual pre-training** | Continues self-supervised training on a target distribution | Useful for domain vocabulary and style, but can overfit or forget if the mix is too narrow. |
 | **SFT / instruction tuning** | Teaches desired responses, formats, and tool-call demonstrations | Best for output structure and common behavior; weaker for subtle preferences. |
 | **Preference optimization** | Chooses better outputs among alternatives | RLHF, DPO, KTO, ORPO, and related methods tune trade-offs like helpfulness, brevity, refusal, and grounding. |
-| **Deployment adaptation** | Compresses, routes, caches, and serves the model | Quantization, distillation, pruning, adapters, and batching must be validated on task slices, not only generic benchmarks. |
+| **Deployment optimization** | Compresses, routes, caches, and serves the model | Quantization, distillation, pruning, batching, and caching must be validated on task slices, not only generic benchmarks. |
 
-### Choose The Right Adaptation Mechanism
+### Choose Adaptation On Three Axes
 
-Do not answer every product gap with "fine-tune the model." First identify whether the missing capability is knowledge, language distribution, common behavior, a preference trade-off, or serving efficiency.
+Do not treat SFT, DPO, LoRA, QLoRA, and quantization as mutually exclusive alternatives. Make three separate decisions.
 
-| Need | Prefer | Why | Common mistake |
-|------|--------|-----|----------------|
-| **Current or private factual knowledge** | RAG, search, SQL, or APIs | Knowledge remains updateable, attributable, and permission-aware at inference time. | Fine-tuning facts into weights, where they become stale and difficult to cite or delete. |
-| **Domain vocabulary and input distribution** | Continual pre-training | Self-supervised training teaches terminology, style, syntax, and recurring patterns from the target corpus. | Expecting continual pre-training alone to teach tool policy, confirmations, or desired response behavior. |
-| **Output format and common instruction behavior** | SFT / instruction tuning | Demonstrations teach schemas, response style, task procedures, and standard tool-call patterns. | Training only successful examples, which creates overconfidence and weak recovery. |
-| **Subtle preferences and trade-offs** | DPO, RLHF, KTO, ORPO, or RLAIF | Preference data can rank concise vs verbose, grounded vs invented, and safe escalation vs unsafe compliance. | Scoring only the final answer when the intermediate trajectory matters. |
-| **Task- or tenant-specific behavior at low cost** | PEFT such as LoRA, adapters, prefix tuning, or prompt tuning | Keeps the base model frozen while storing small task-specific deltas. | Ignoring adapter routing, version compatibility, and regression tests. |
-| **Large capability shift with enough data and compute** | Full fine-tuning or additional pre-training | Provides more capacity than a small adapter when the target distribution is substantially different. | Catastrophic forgetting, data leakage, or paying full-training cost for a problem RAG or PEFT could solve. |
-| **Lower serving latency or memory** | Distillation, quantization, pruning, caching, batching, or model routing | Changes deployment cost rather than product knowledge or policy. | Treating compression as behavior training and skipping post-compression task-slice evaluation. |
+#### 1. Choose The Knowledge Source Or Training Objective
 
-**Interview rule:** use RAG/tools for changing knowledge, continual pre-training for domain language, SFT for demonstrations, preference optimization for trade-offs, PEFT/full tuning for durable behavior changes, and serving optimization for cost and latency.
+| Need | Prefer | Why |
+|------|--------|-----|
+| Current, private, attributable facts | RAG, search, SQL, or APIs | Keeps knowledge updateable, permission-aware, citable, and deletable. |
+| Domain language or input distribution | Continual pre-training | Learns recurring terminology, syntax, and style through self-supervision. |
+| Demonstrated formats, procedures, or tool behavior | SFT / instruction tuning | Learns from input-output or trajectory demonstrations. |
+| Preference trade-offs | DPO, RLHF, KTO, ORPO, or RLAIF | Optimizes chosen versus rejected behavior such as groundedness, brevity, and safe escalation. |
+
+#### 2. Choose Which Parameters Train
+
+| Update scope | Use when | Main trade-off |
+|--------------|----------|----------------|
+| Full parameter update | Broad distribution shift and enough data/compute justify maximum capacity. | Highest memory/storage cost and catastrophic-forgetting risk. |
+| LoRA, adapters, IA3, prefix tuning, or prompt tuning | Task/domain variants need small trainable state or independent deployment. | Capacity and runtime behavior depend on the method and target modules. |
+
+SFT or preference optimization can use full fine-tuning, LoRA, QLoRA, or another PEFT method. The objective determines **what behavior is learned**; the update scope determines **where trainable capacity lives**.
+
+**Training-memory choice:** QLoRA keeps the LoRA update scope but stores the frozen base in low-bit form and dequantizes weights into the compute dtype for matrix operations. It is a memory/precision recipe, not a different training objective or adapter location.
+
+#### 3. Choose The Deployment Form
+
+Use merged weights or runtime adapters, then independently choose distillation, quantization, pruning, caching, batching, speculative decoding, and model routing. These alter storage and serving economics; they do not replace the training objective.
+
+**Interview rule:** diagnose the gap first, then name the objective, parameter-update scope, and serving plan separately.
 
 ---
 
@@ -201,9 +215,9 @@ Do not answer every product gap with "fine-tune the model." First identify wheth
 
 ### Full Fine-Tuning
 
-Update all model parameters on task-specific labeled data.
+Update all model parameters under the selected objective, such as continual pre-training, SFT, or preference optimization.
 
-- Pro: Best performance if enough data
+- Pro: Maximum adaptation capacity when data, compute, and regression coverage are sufficient
 - Con: Expensive compute (needs massive VRAM); requires storing a full copy of the model per task; prone to catastrophic forgetting.
 
 #### Catastrophic Forgetting
@@ -243,23 +257,15 @@ W_new = W + ΔW = W + B·A
 where A ∈ R^(r×k), B ∈ R^(d×r), so B·A ∈ R^(d×k), rank r ≪ min(d,k)
 ```
 
-- Only train A and B (tiny fraction of total parameters)
+- Only train A and B for selected target matrices
 - At inference: merge into W_new = W + B·A (no latency overhead)
-- Typical r = 8 or 16; often reduces trainable params by 10,000×
+- For one `d × k` target matrix, LoRA trains `r(d+k)` parameters instead of `dk`; the total percentage depends on rank and how many modules are adapted
 
-**Which layers to apply LoRA to?** Query/Value projections in attention (most common). Sometimes Key, FFN layers too.
-
-| Method | Trainable Params | Memory | Performance |
-|--------|----------------|--------|-------------|
-| Full fine-tune | 100% | Very high | Best |
-| LoRA (r=16) | ~0.1-0.5% | Much lower | Close to full FT |
-| QLoRA | ~0.1-0.5% | Very low (4-bit base) | Slightly below LoRA |
-| Prompt Tuning | < 0.01% | Minimal | Good for large models |
-| Prefix Tuning | < 0.1% | Minimal | Good for generation |
+**Which layers should receive LoRA?** Treat this as architecture- and task-dependent. Evaluate attention projections (Q/K/V/O) and MLP projections under a trainable-parameter budget; narrow Q/V targeting is a starting point, not a universal default.
 
 #### QLoRA (Quantized LoRA)
 
-LoRA applied to a 4-bit quantized base model. Enables fine-tuning 65B+ parameter models on a single 48GB GPU.
+QLoRA is a memory-efficient LoRA training recipe over a frozen low-bit base model. Feasible model size depends on architecture, sequence length, batch size, optimizer, adapter targets, checkpointing, and hardware; do not treat one GPU example as a universal capacity guarantee.
 
 Steps:
 1. Quantize base model to 4-bit NF4 (NormalFloat)
@@ -275,38 +281,29 @@ LoRA is a family of decisions, not one checkbox.
 
 | Choice | Meaning | Practical guidance |
 |--------|---------|--------------------|
-| **Rank `r`** | Capacity of the low-rank update | Start low for style or format; increase for harder behavior changes or domain vocabulary. |
+| **Rank `r`** | Capacity of the low-rank update | Start low for narrow style or format changes; increase when the target behavior or distribution needs more update capacity. Tokenizer fragmentation is a separate problem. |
 | **Alpha scaling** | Strength of the adapter update | Too high can destabilize base behavior; too low underfits. Tune on both target-task and regression slices. |
-| **Target modules** | Which layers receive adapters | Q/V is common; add K/O or MLP layers when the behavior change needs more capacity. |
+| **Target modules** | Which layers receive adapters | Compare Q/K/V/O attention and MLP projections against the task, memory budget, and regression slices. |
 | **Dropout** | Regularizes adapter activations | Useful for small or noisy datasets; too much makes the adapter weak. |
 | **Merge vs runtime adapter** | Bake adapter into weights or load dynamically | Merge for one global behavior; runtime adapters for task, tenant, or domain-specific behavior. |
 | **Adapter routing** | Select adapter by request type | Powerful but needs a reliable router and tests for wrong-adapter activation. |
 
-**PEFT variants to know**
-
-| Method | What changes | When to mention |
-|--------|--------------|-----------------|
-| **LoRA** | Learns low-rank additive updates | Default PEFT answer. |
-| **DoRA** | Separates weight direction and magnitude adaptation | Can help when LoRA capacity is not enough but full fine-tuning is too expensive. |
-| **QLoRA** | Trains LoRA on a quantized frozen base | Memory-constrained fine-tuning. |
-| **AdaLoRA** | Allocates adapter rank unevenly by layer importance | Useful when capacity budget is tight. |
-| **Prefix / prompt tuning** | Learns soft prompt vectors, not weight updates | Cheap adaptation for large models, weaker for complex tool behavior. |
-
 ### PEFT Methods: What Actually Trains
 
-The interview distinction is not just "few parameters." It is what receives trainable capacity, where it enters the Transformer, and whether the serving path can merge it away.
+The interview distinction is not just "few parameters." It is what receives trainable capacity, where it enters the Transformer, and whether the serving path can merge it away. QLoRA is listed as a training recipe because it changes how a LoRA base is stored and computed, not where the adapter enters the network.
 
 | Method | What is trained | Where it enters | Inference cost | Strengths and failure modes |
 |--------|-----------------|-----------------|----------------|-----------------------------|
-| **Prompt tuning / soft prompt tuning** | A small table of continuous prompt embeddings | Prepended to the input embedding sequence | Extra prompt tokens consume context; no new matrix multiplies | Cheapest adaptation for very large models and simple classification/style tasks. It is weaker for complex reasoning, tool behavior, or tasks needing new domain concepts. The learned vectors are not natural-language prompts. |
+| **Prompt tuning / soft prompt tuning** | A small table of continuous prompt embeddings | Prepended to the input embedding sequence | Adds sequence positions and normal Transformer compute, but no adapter modules | Very small trainable state for simple classification or style conditioning. It is often weaker for complex reasoning, tool behavior, or large distribution shifts. The learned vectors are not natural-language prompts. |
 | **Prefix tuning** | Trainable prefix vectors, often projected into per-layer key/value states | Injected into attention layers as virtual prefix K/V or prefix activations | Extra prefix states increase KV cache and attention work | More expressive than prompt tuning for generation control because every layer sees task-specific conditioning. It can overfit narrow output formats and wastes context/cache budget if the prefix is too long. |
 | **Bottleneck adapters** | Small down-projection/up-projection modules with nonlinearities | Inserted inside or after attention/MLP blocks while base weights stay frozen | Adds runtime matmuls unless optimized or architecture supports adapter fusion | Good when each task/domain needs moderate capacity. Useful for multi-task serving, but wrong-adapter routing and adapter/version drift need explicit tests. |
-| **LoRA** | Low-rank matrices `A` and `B` that form an additive update to selected weights | Usually Q/V attention projections; sometimes K/O and MLP layers | Can be merged into base weights for no extra latency | Default PEFT answer. Target modules, rank, alpha, and merge policy determine quality and serving complexity. |
+| **IA3** | Learned multiplicative vectors that scale attention or feed-forward activations | Applied to selected key/value/MLP activations | Small runtime elementwise scaling | Extremely small trainable state; capacity may be lower than LoRA for substantial behavior shifts. |
+| **LoRA** | Low-rank matrices `A` and `B` that form an additive update to selected weights | Selected attention and/or MLP projections | Can be merged into base weights for no extra latency | Strong general PEFT answer. Target modules, rank, alpha, and merge policy determine quality and serving complexity. |
 | **DoRA** | LoRA-style direction updates plus a separately learned magnitude term | Same target modules as LoRA | Similar to LoRA, depending on implementation | Helps when plain LoRA underfits because direction and scale need different adaptation. Mention it when low-rank capacity is close but not enough. |
-| **QLoRA** | LoRA adapters on top of a frozen 4-bit base | Same as LoRA; base weights are quantized and frozen | Dequantization happens for compute; optimizer state remains LoRA-only | Best answer for memory-constrained fine-tuning of large models. Watch quantization sensitivity, sequence-length memory spikes, and evaluation regressions by task slice. |
+| **QLoRA recipe** | LoRA adapters on top of a frozen low-bit base | Same adapter targets as LoRA; base weights are quantized and frozen | Dequantization happens for compute; optimizer state remains adapter-only | Strong answer for memory-constrained adaptation. Watch quantization sensitivity, sequence-length memory spikes, and task-slice regressions. |
 | **AdaLoRA** | Adaptive low-rank updates with rank budget reallocated by layer importance | Same target modules as LoRA, but rank varies across layers | Similar to LoRA after allocation | Useful when a fixed rank wastes capacity. It adds tuning complexity and needs stable importance estimates. |
 
-**Decision rule**
+#### Decision Rule
 
 | Need | Prefer | Reason |
 |------|--------|--------|
@@ -328,16 +325,16 @@ Scope boundary: this section covers core RAG mechanics for LLM systems. The Agen
 User query
     │
     ▼
-[Embedding Model] → query vector
+[Query analysis / optional rewrite]
     │
     ▼
-[Vector Database] → top-k similar chunks (cosine similarity)
+[Retriever over dense, sparse, structured, or live sources]
     │
     ▼
-[Context = top-k chunks + user query]
+[Fusion, filtering, reranking, and context construction]
     │
     ▼
-[LLM] → grounded response
+[LLM] → answer with evidence, citations, or abstention
 ```
 
 ### Core Components
@@ -345,11 +342,9 @@ User query
 | Component | Purpose | Examples |
 |-----------|---------|---------|
 | **Chunking** | Split documents into retrievable pieces | Fixed-size, recursive, semantic, sentence-window |
-| **Embedding model** | Convert text to dense vectors | OpenAI text-embedding-3, Cohere, BGE, E5 |
-| **Vector DB** | Approximate nearest neighbor search | Pinecone, Weaviate, Qdrant, pgvector, Faiss |
-| **Retriever** | Find top-k chunks by similarity | Semantic (dense), BM25 (sparse), Hybrid |
+| **Retriever** | Find evidence from one or more sources | Dense embeddings, BM25, SQL, graph, search API, live service |
 | **Re-ranker** | Re-score top-k chunks for precision | Cross-encoder (e.g., ms-marco-MiniLM) |
-| **Generator** | Produce answer from context | GPT-4, Claude, LLaMA, Mistral |
+| **Generator** | Produce an answer from selected evidence | Instruction model with citation and abstention policy |
 
 ### RAG Failure Modes
 
@@ -357,7 +352,7 @@ User query
 |---------|-------|-----|
 | Wrong chunks retrieved | Bad embeddings or chunking | Smaller chunks, better overlap, re-ranking |
 | Relevant chunk retrieved but ignored | LLM ignores context ("lost in the middle") | Put most relevant at start/end; reduce context size |
-| Hallucination despite retrieval | LLM overrides context with parametric knowledge | Stronger system prompt: "only use provided context" |
+| Hallucination despite retrieval | Evidence is incomplete or generation adds unsupported claims | Claim-level evidence checks, citation validation, calibrated abstention, or escalation |
 | Stale information | Retrieved docs are outdated | Add timestamps; prefer recent docs |
 | Chunk too large | Exceeds context window; dilutes signal | Smaller chunks + parent document retrieval |
 
@@ -381,6 +376,18 @@ User query
 | **Cache boundaries** | Data leakage through cached retrieval | Partition caches by tenant, user permission, and document version. |
 
 **Interview tip:** RAG quality is a product of retrieval recall, retrieval precision, context placement, generation discipline, and evidence verification. Do not evaluate only the final answer.
+
+### RAG Evaluation Decomposition
+
+| Layer | Measures |
+|-------|----------|
+| Retrieval | Recall@K, MRR, NDCG@K, source/route accuracy, permission isolation |
+| Reranking/context | Top-support precision, context relevance, duplicate rate, token efficiency |
+| Generation | Answer correctness, groundedness/faithfulness, citation precision and recall |
+| Decision policy | Abstention quality, clarification quality, fallback success |
+| End to end | Task success, latency, cost, freshness, and segment regressions |
+
+Evaluate retrieval against labeled evidence before judging generated prose. A fluent answer cannot reveal that the retriever missed the authoritative source.
 
 ---
 
@@ -526,7 +533,7 @@ Step 3: PPO Optimization
         → KL penalty prevents drifting too far from SFT model
 ```
 
-**Problem:** RLHF is complex, unstable, and slow. PPO requires 4 models in memory simultaneously (actor, critic, reference, reward model).
+**Problem:** RLHF with PPO is operationally complex: actor, critic, reference policy, and reward model all participate in training, although implementations may shard, offload, or schedule them rather than keeping every full model resident on one GPU.
 
 ### DPO (Direct Preference Optimization)
 
@@ -539,7 +546,7 @@ Loss = -log σ(β · (log π(chosen|x) - log π(rejected|x) - log π_ref(chosen|
 
 - **β** controls how far from reference model
 - Much simpler than RLHF: single training loop, no reward model
-- Used by: LLaMA-2, Zephyr, many open-source fine-tunes
+- Used by: Zephyr and many preference-tuned open models; verify a specific model's training recipe before citing it
 
 ---
 
@@ -586,15 +593,11 @@ Use **ORM** when final correctness is objectively checkable. Use **PRM** when th
 | **Exact Match (EM)** | Does output exactly match reference? | Too strict; useful for structured outputs |
 | **F1 (token-level)** | Token overlap between prediction and ground truth | QA benchmarks (SQuAD) |
 
-#### Why Perplexity Fails for Reasoning Models
+#### What Perplexity Does And Does Not Measure
 
-**Perplexity** measures how well a model predicts a sample of text (the "suprise" of seeing a sequence of words). Historically, a lower perplexity meant a better, more capable language model.
+**Perplexity** measures next-token fit on a controlled corpus and tokenizer. It remains useful for pre-training progress, domain adaptation, data-quality comparisons, and compression regressions.
 
-However, this metric **breaks down completely when evaluating modern reasoning models (like OpenAI o1 or DeepSeek-R1)**.
-
-1. **Reasoning Models Don't Just Predict the Next Token:** These models generate an invisible (or visible) "chain of thought" before answering. Their goal is not to maximize the probability of the *exact* next word in human text, but to explore reasoning paths (which are often messy, self-correcting, and non-linear) to arrive at a correct final answer.
-2. **High Perplexity Does Not Mean Poor Quality:** A model exploring complex logic, pausing to rethink, or generating novel intermediate steps might have a high perplexity (because its internal monologue doesn't look like standard human training data), but it will often produce a vastly superior answer.
-3. **The Shift to Outcome-Based Metrics:** We must evaluate reasoning models based on outcome metrics like **Exact Match** (e.g., in math or coding benchmarks like GSM8K or HumanEval), **Pass@k**, or **LLM-as-a-Judge**, rather than token-level prediction accuracy.
+It is not a sufficient product or reasoning metric: lower next-token loss does not guarantee correct answers, tool use, instruction following, safety, or calibrated uncertainty. Use executable tests for code, exact/numeric checks where the task has a canonical answer, task rubrics, human review, and calibrated judges for semantic outputs. HumanEval is scored through functional execution and Pass@k, not ordinary exact-string match.
 
 ### Benchmarks (Know the Names)
 
@@ -610,20 +613,27 @@ However, this metric **breaks down completely when evaluating modern reasoning m
 
 ### LLM-as-a-Judge
 
-Use a stronger LLM (GPT-4) to evaluate outputs:
+Use a capable reference model to evaluate outputs that cannot be checked deterministically. Pointwise grading evaluates one output against a rubric; pairwise grading compares two outputs and therefore needs order swapping.
 
+```text
+System: Evaluate only the supplied task, reference evidence, and candidate response.
+Return separate fields:
+- task_correct: yes/no
+- grounded_in_reference: yes/no/not_applicable
+- instruction_following: 1-5
+- safety_or_policy_violation: yes/no
+- concise_rationale: one sentence citing the decisive evidence
 ```
-System: "You are evaluating responses. Score 1-10 on helpfulness and accuracy."
-User: "Prompt: {prompt}\nResponse: {response}\nScore and reasoning:"
-```
-
-**Biases to watch:** Position bias (prefers first option), verbosity bias (prefers longer), self-enhancement bias (LLM prefers its own outputs).
 
 | Judge risk | Failure | Control |
 |------------|---------|---------|
 | **Position bias** | One answer position wins too often | Swap answer order and average. |
 | **Verbosity bias** | Long output beats correct concise output | Rubric must explicitly score task success, factuality, and concision. |
+| **Self/style preference** | Judge favors outputs resembling its own style or family | Calibrate against expert labels and include heterogeneous judges for major decisions. |
 | **Rubric ambiguity** | Judge grades style instead of correctness | Use separate rubric items for grounding, tool correctness, safety, and helpfulness. |
+| **Missing evidence/domain context** | Judge cannot verify a specialized claim | Supply references, tool observations, and gold constraints; use deterministic checks where possible. |
+| **Prompt injection in evaluated text** | Candidate output attempts to control the judge | Delimit evaluated content as data and include adversarial judge tests. |
+| **Nondeterminism** | Repeated grading changes the score | Measure repeated-run agreement and adjudicate unstable cases. |
 | **Judge drift** | Scores shift after judge model/prompt changes | Version judge model, prompt, rubric, and calibration set. |
 | **Weak human agreement** | Judge disagrees with expert labels | Sample disagreements for human review and tune rubric before trusting aggregate scores. |
 
@@ -638,10 +648,10 @@ Neural networks were traditionally trained using 32-bit floating-point (FP32). M
 - **FP16 (Half Precision):** Uses 16 bits (1 sign, 5 exponent, 10 fraction). Can represent numbers with higher precision but a smaller range than FP32.
 - **BF16 (Brain Floating Point):** Uses 16 bits (1 sign, 8 exponent, 7 fraction). Has the same dynamic range as FP32 but lower precision.
 
-**Why BF16 is the standard for modern LLM training:**
+**Why BF16 is commonly preferred on supported hardware:**
 - FP16 suffers from "gradient overflow/underflow" — numbers get too large or too close to zero during backpropagation, causing the training to collapse (NaNs).
 - BF16 avoids this because its 8-bit exponent gives it the exact same range as FP32. It sacrifices fractional precision, but neural networks are incredibly robust to small precision errors.
-- **Mixed Precision Workflow (AMP):** The model weights, gradients, and optimizer states are kept in FP32 (the "master weights") to prevent small updates from disappearing. But the massive matrix multiplications during the forward and backward passes are cast down to BF16, leveraging the specialized Tensor Cores on modern GPUs (like Nvidia A100/H100). This roughly **halves VRAM usage and doubles computation speed** without losing model quality.
+- **Mixed Precision Workflow (AMP):** Matrix multiplications use a lower-precision compute dtype while selected reductions, master weights, gradients, or optimizer states may use higher precision depending on the framework and optimizer. Arithmetic throughput can improve substantially, but total memory and speed gains depend on optimizer states, activations, communication, kernels, and hardware.
 
 ---
 
@@ -660,7 +670,15 @@ For 70B model with 2048 seq len, this can be tens of GB. → Need KV cache manag
 
 **vLLM's PagedAttention:** Manages KV cache like OS virtual memory — pages allocated on demand, enables higher batch sizes and better GPU utilization.
 
-### Quantization
+### Model Compression
+
+Compression changes checkpoint size, memory, latency, or throughput while trying to preserve target behavior.
+
+#### Distillation
+
+Train a smaller student to match teacher outputs, logits, intermediate representations, or task labels. Distillation can produce dense hardware-friendly speedups, but it may transfer teacher errors and lose rare capabilities; validate the same hard slices used for the teacher.
+
+#### Quantization
 
 Reduce model size and speed up inference by using lower precision:
 
@@ -677,7 +695,7 @@ Reduce model size and speed up inference by using lower precision:
 - **AWQ (Activation-aware):** Identify and protect important weights (salient activations)
 - **GGUF (llama.cpp):** CPU-friendly quantization format
 
-### LLM Pruning And Layer Dropping
+#### LLM Pruning And Layer Dropping
 
 Pruning removes parameters or blocks from a trained model to reduce memory, latency, or serving cost. For LLMs, the key interview point is that smaller checkpoints do not automatically mean faster inference: the hardware must exploit the resulting structure.
 
@@ -689,14 +707,14 @@ Pruning removes parameters or blocks from a trained model to reduce memory, late
 | **SparseGPT / Wanda-style pruning** | Weights selected by one-shot weight/activation statistics | Useful when retraining budget is limited, but must be validated per layer and task slice. |
 | **Layer dropping / depth reduction** | Full Transformer blocks selected by importance | Simple latency win, but can damage reasoning, long-context behavior, and instruction following unevenly. |
 
-**Pruning order for LLMs**
+**Compression pipeline**
 
-1. start from a validated base or fine-tuned model
-2. prune heads, neurons, weights, or layers only when latency/cost requires it
-3. quantize with representative calibration data
-4. run adapter recovery or short fine-tuning if quality drops
-5. validate on general benchmarks, task benchmarks, hard production slices, safety checks, and long-context cases
-6. compare actual TTFT, TPOT, memory, throughput, calibration, and failure modes before release
+1. Start from a validated base or adapted model and define hardware-specific latency, memory, and quality targets.
+2. Compare distillation, structured pruning, unstructured sparsity, and quantization against the kernels the serving stack can exploit.
+3. Choose pruning/quantization/recovery order empirically; it is method- and hardware-dependent rather than universal.
+4. Use representative calibration data and recovery tuning or adapters when needed.
+5. Validate general capabilities, target tasks, hard production slices, safety, structured output, tool use, and long-context behavior.
+6. Compare actual TTFT, time per output token, memory, throughput, calibration, and failure modes before release.
 
 **Interview trap:** perplexity may look fine after pruning while structured output, tool-use reliability, rare skills, or long-context retrieval degrade. Always report slice-level regressions, not only average benchmark quality.
 
@@ -708,7 +726,7 @@ Use a small draft model to generate k tokens; verify with large model in one for
 Draft model (7B) → generates tokens [t₁, t₂, t₃, t₄, t₅] speculatively
 Large model (70B) → verifies all 5 in one forward pass (parallel)
 Accepted tokens: [t₁, t₂, t₃] ✓, [t₄] ✗ → stop, generate correct t₄
-Net speedup: ~2-3× if draft model accepts often enough
+Potential speedup depends on draft acceptance and verification cost
 ```
 
 **When it helps:** long enough generations, high draft acceptance rate, and target-model verification that is cheaper than generating every token serially.
@@ -777,7 +795,7 @@ top_k = 50: keep only 50 highest-prob tokens, renormalize, then sample
 - Prevents sampling very low-probability ("weird") tokens
 - **Problem:** k is fixed regardless of the distribution shape — if the distribution is already peaked (k=50 dilutes it), or very flat (k=50 is still too many), the same k behaves differently in different contexts
 
-#### Top-p (Nucleus) Sampling — The Standard
+#### Top-p (Nucleus) Sampling
 Sample from the smallest set of tokens whose cumulative probability ≥ p:
 ```
 Sort tokens by probability (descending)
@@ -800,7 +818,7 @@ If distribution is flat: nucleus = many tokens (expansive)
 - **Adapts to context** — automatically conservative when the model is confident, exploratory when uncertain
 - Most common default in production LLM APIs (OpenAI default: top_p=1.0, but users set 0.9–0.95)
 
-#### Combining Temperature + Top-p (Production Default)
+#### Combining Temperature + Top-p
 ```
 1. Apply temperature scaling to logits
 2. Apply top-p nucleus filtering
@@ -856,9 +874,9 @@ Step 30: C finishes → immediately insert E
 ...
 ```
 
-- **New requests never wait** for the current batch to finish
-- GPU stays near 100% utilization
-- Standard in: **vLLM**, **TGI (Text Generation Inference)**, **TensorRT-LLM**
+- New requests can enter as decode slots become available instead of waiting for the whole batch
+- Utilization and throughput usually improve, subject to scheduler overhead, memory pressure, and workload shape
+- Implemented by several specialized LLM serving runtimes
 
 #### Prefill vs Decode Phases
 
@@ -929,14 +947,7 @@ Sequence B (10 tokens): [page 3: tok 1-10, 6 slots free]
 
 ## 10. Context Window & Long-Context
 
-| Model | Context Window |
-|-------|--------------|
-| GPT-3.5 | 16K tokens |
-| GPT-4o | 128K tokens |
-| Claude 3.5 | 200K tokens |
-| Gemini 1.5 Pro | 1M tokens |
-
-**Challenges with long context:**
+Advertised context capacity is model- and version-specific and changes frequently. More importantly, fitting tokens does not guarantee reliable retrieval, instruction retention, or acceptable latency. Benchmark the exact model, prompt format, evidence position, and context length used in production.
 
 ### Context Strategy
 
@@ -955,63 +966,41 @@ Long context should be managed, not simply filled.
 
 ### Lost in the Middle
 
-Empirically, LLM accuracy on retrieval tasks degrades significantly when the relevant information is placed in the **middle of a long context**, even when the model technically "fits" the full context.
+Many models show position sensitivity on long-context retrieval: relevant information in the middle can be used less reliably than information near the beginning or end, even when every token fits. The size of the effect depends on the model, task, prompt format, distractors, and context length.
 
 ```
 Context: [Doc 1] [Doc 2] ... [Doc 10 ← relevant] ... [Doc 20]
                                 ↑
                         Model often misses this
 
-Performance by position of relevant document:
-  Position 1  (beginning): ~85% accuracy
-  Position 10 (middle):    ~55% accuracy  ← sharp drop
-  Position 20 (end):       ~80% accuracy
+Observed accuracy must be measured for the exact model and evaluation setup.
 ```
 
-**Why this happens:**
-
-1. **Attention score distribution:** Transformers have a natural tendency to assign higher attention weights to tokens near the query position and to the beginning of the sequence (recency and primacy effects). Middle tokens compete with many others for attention.
-
-2. **Training data bias:** Most documents in pre-training have the key information early (headlines, abstracts, introductions). The model has learned a prior that important content comes first or last.
-
-3. **Positional encoding saturation:** At very long distances, positional embeddings may become less discriminative, making relative importance of middle tokens harder to judge.
+Potential contributors include position sensitivity, distractor interference, prompt structure, training distribution, and imperfect retrieval or use of evidence. Treat these as hypotheses to test rather than one universal causal explanation.
 
 **Practical mitigations:**
 - Place the most important context at the **start or end** of the prompt, not the middle
 - Use **re-ranking** in RAG to put the highest-relevance chunks at the extremes
 - Reduce context size: retrieve fewer, more precise chunks rather than many mediocre ones
-- Use models specifically trained for long-context (Gemini 1.5, Claude 3) — they show less degradation
+- Benchmark models trained for long context, but do not assume an advertised window removes position sensitivity
 
-### Attention Dilution
+### Long-Context Interference
 
-As context length grows, each token's attention is distributed across more tokens — the attention weight any single important token receives shrinks.
-
-```
-Attention weight ≈ softmax(QKᵀ / √d)
-
-With 100 tokens:   each token gets ~0.01 average attention weight
-With 10,000 tokens: each token gets ~0.0001 average attention weight
-                        ↑ 100× more diluted
-```
-
-Even if the model attends to the right token with *relatively* high weight, the absolute value is so small that the gradient signal weakens and the model may fail to fully utilise that token's value.
-
-**Why it interacts with the "lost in the middle" problem:**
-Softmax normalises over the full sequence. As context grows, the denominator `Σ exp(score)` grows, further suppressing individual attention weights. A token in the middle must "compete louder" against an increasingly large crowd.
+Longer contexts add distractors, repeated entities, conflicting instructions, stale history, and more opportunities to retrieve the wrong span. The fact that attention weights sum to one does not imply every important token's weight must shrink proportionally, and no inference-time "gradient weakening" explanation applies. Evaluate whether the model locates and uses the correct evidence, not an average-attention heuristic.
 
 **Implications for system design:**
 | Scenario | Impact | Mitigation |
 |---------|--------|-----------|
 | Long RAG context | Middle chunks ignored | Rerank; put best chunks first/last |
 | Long conversation history | Early turns diluted | Summarise old turns; sliding window memory |
-| System prompt + long user message | System prompt diluted | Repeat key instructions at the end |
+| System/developer instruction + long input | Critical rule becomes behaviorally weak | Reinject the rule through the same trusted instruction channel near the decision point; never copy untrusted text into that channel |
 | Multi-document QA | Cross-document signals diluted | Chunk-level retrieval; targeted extraction |
 
 **Attention complexity:** O(n²) makes very long sequences expensive
 
 **KV cache size:** Grows linearly with sequence length
 
-**Solutions:**
+**Efficiency and context-extension techniques:**
 - **FlashAttention:** Tiled computation that avoids materializing the full attention matrix; 2-4× speedup, same output
 - **RoPE scaling (YaRN, LongRoPE):** Extend to longer contexts without full retraining
 - **Sliding window attention:** Each token only attends to W neighbors; O(n·W) complexity (Mistral)
@@ -1034,11 +1023,11 @@ LLMs generate fluent, plausible-sounding text that may be factually wrong.
 | Strategy | Mechanism |
 |---------|-----------|
 | **RAG** | Ground answers in retrieved documents |
-| **Temperature = 0** | Greedy decoding; more deterministic, less creative |
-| **Calibrated uncertainty** | Prompt: "If you don't know, say 'I don't know'" |
-| **Self-consistency** | Multiple samples + majority vote filters noise |
-| **Constrained generation** | Only allow outputs matching retrieved facts |
-| **Citation generation** | Force model to cite source for each claim |
+| **Low-variance decoding** | Improves reproducibility but does not make unsupported facts correct |
+| **Calibrated abstention** | Use evidence/uncertainty thresholds and escalate when support is weak |
+| **Independent verification** | Deterministic tools, claim-level entailment checks, or external validators |
+| **Structured constraints** | Enforce schemas, types, and allowed values where the output space is formal |
+| **Citation validation** | Require citations and verify that each cited source supports its claim |
 | **RLHF / DPO** | Train against confabulation via human feedback |
 
 ---
@@ -1047,14 +1036,9 @@ LLMs generate fluent, plausible-sounding text that may be factually wrong.
 
 ### Text Embeddings
 
-Dense vector representations capturing semantic meaning. Similar texts have high cosine similarity.
+Dense vectors encode model-specific semantic relationships. Compare vectors using the normalization and distance metric expected by the embedding model and index.
 
-| Model | Dim | Notes |
-|-------|-----|-------|
-| OpenAI text-embedding-3-small | 1536 | Best price/performance |
-| OpenAI text-embedding-3-large | 3072 | Higher accuracy |
-| BAAI/bge-m3 | 1024 | Open-source, multilingual, state-of-art |
-| E5-large | 1024 | Good open-source for RAG |
+Choose an embedding model by language/domain coverage, maximum input length, dimensionality, normalization and distance assumptions, throughput, licensing, and retrieval quality on labeled queries. Rebuild or version the index whenever the embedding model or preprocessing changes.
 
 ### Approximate Nearest Neighbor (ANN) Algorithms
 
@@ -1063,7 +1047,7 @@ Dense vector representations capturing semantic meaning. Similar texts have high
 | **HNSW** | Hierarchical graph; greedily search navigable small world | Fast query, high memory |
 | **IVF (Inverted File)** | Cluster vectors; search only nearby clusters | Lower memory; requires training |
 | **IVF-PQ** | IVF + Product Quantization (compress vectors) | Very memory-efficient; some quality loss |
-| **FAISS** | Meta's library implementing many ANN methods | Industry standard |
+| **FAISS** | Meta's library implementing exact, HNSW, IVF, PQ, and GPU variants | Implementation library, not one algorithm |
 | **ScaNN** | Partitioning + quantization + candidate reordering | Strong CPU recall/latency trade-off |
 
 **Recall vs Speed tradeoff:** Larger HNSW `efSearch`, more IVF probes, more ScaNN leaves, or larger rerank pools improve recall but increase latency and memory. Production RAG systems usually tune ANN recall separately from final answer quality because generation can look fluent even when retrieval missed the right evidence.
@@ -1106,22 +1090,13 @@ Chinchilla (70B params, 1.4T tokens) > Gopher (280B params, 300B tokens)
 ```
 
 **Practical implications:**
-- LLaMA-1 (7B) was trained on 1T tokens — roughly compute-optimal
-- GPT-4 is believed to be substantially "over-trained" (more tokens than Chinchilla-optimal) to improve inference economics — train longer once, serve a smaller model many times
-- **Inference-optimal scaling:** When inference cost dominates (production), it's cheaper to train a smaller model on more data than to serve a larger model
+- Compute-optimal ratios are empirical results for a training regime, not universal constants across data quality, architecture, and objectives.
+- When serving cost dominates, training a smaller model longer can be economically preferable to repeatedly serving a larger model.
+- Make the choice with total lifecycle cost and target-task quality, not parameter count alone.
 
 ### Emergent Abilities
 
-Some capabilities appear suddenly at specific scale thresholds:
-
-| Capability | Approximate threshold |
-|-----------|----------------------|
-| Few-shot learning | ~1B parameters |
-| Chain-of-thought reasoning | ~10B parameters |
-| Code generation | ~10B parameters |
-| Complex reasoning (GSM8K) | ~100B parameters |
-
-**Debate:** Recent work questions whether "emergence" is an artifact of discontinuous evaluation metrics rather than a true phase transition. With continuous metrics, performance scales smoothly.
+Capabilities can appear discontinuous under thresholded metrics, but the apparent threshold depends on data, prompting, architecture, and evaluation. Continuous metrics often reveal smoother scaling, so avoid memorizing parameter-count boundaries as laws.
 
 ---
 
@@ -1164,7 +1139,6 @@ MoE FFN:       Each token → Router → top-2 of 8 experts
 |-------|-------------|---------------|---------|-------|
 | **Mixtral 8×7B** | 46.7B | ~12.9B | 8 | 2 |
 | **Mixtral 8×22B** | 141B | ~39B | 8 | 2 |
-| **GPT-4** (rumored) | ~1.8T | ~280B | 16 | 2 |
 | **DeepSeek-V2** | 236B | ~21B | 160 | 6 |
 | **Grok-1** | 314B | ~86B | 8 | 2 |
 
@@ -1175,7 +1149,7 @@ MoE FFN:       Each token → Router → top-2 of 8 experts
 | Much larger capacity per FLOP | Higher total memory (all experts must be loaded) |
 | Better performance at same compute | All-to-all communication overhead in distributed training |
 | Scales well beyond dense model limits | Load balancing is tricky; some experts may be underutilized |
-| Same inference latency as smaller dense model | More complex to serve; expert parallelism needed |
+| Lower active compute than an equally large dense model | Routing, expert memory, communication, and serving topology can still increase latency |
 
 ### Router Collapse
 
@@ -1184,7 +1158,7 @@ The biggest training failure mode: all tokens route to the same 1-2 experts, lea
 - **Expert capacity factor:** Cap how many tokens each expert can handle per batch
 - **Random routing with noise:** Add noise to router logits during training
 
-**Interview tip:** "MoE lets you scale model capacity without proportionally scaling compute. Mixtral 8×7B has GPT-3.5-level performance with 12.9B active parameters because it has 8 specialized experts and routes each token to the best 2. The main challenge is load balancing — you need an auxiliary loss to prevent router collapse."
+**Interview tip:** "MoE increases total capacity without activating every parameter for every token. The main challenges are routing quality, load balancing, expert memory, all-to-all communication, and serving topology."
 
 ---
 
@@ -1313,8 +1287,8 @@ A critical evaluation concern: if benchmark test data appears in the training se
 **"Why does Chain-of-Thought help, and when does it fail?"**
 → CoT works by externalising reasoning as tokens — each step becomes context for the next, allocating more effective compute to the problem. Three mechanisms: more computation per answer, error localisation, and conditioning effect. It fails when: (1) the model generates plausible-sounding but wrong reasoning ("hallucinated CoT"), (2) the reasoning is a post-hoc rationalisation of a wrong pre-decided answer (faithfulness gap), (3) errors cascade through dependent steps, or (4) the task has no useful intermediate steps (simple recall, classification). Mitigation: self-consistency sampling + tool-based verification of arithmetic steps.
 
-**"Explain lost in the middle and attention dilution"**
-→ Lost in the middle: accuracy on retrieval tasks drops sharply when relevant content is in the middle of a long context (~55% vs ~85% at extremes). Caused by attention primacy/recency bias and training data priors. Fix: put important context at start/end of prompt; re-rank RAG chunks to extremes. Attention dilution: as context length grows, softmax normalises over more tokens — each token's attention weight shrinks proportionally. Middle tokens must "compete louder" in an increasingly crowded sequence. Design implication: in RAG, fewer precise chunks beat many mediocre ones.
+**"Explain lost in the middle and long-context interference"**
+→ Long-context models can show position sensitivity and distractor interference, so evidence in the middle may be used less reliably. The magnitude and causes are model- and task-dependent; benchmark the exact setup. In RAG, retrieve fewer high-quality chunks, rerank them, remove duplicates/conflicts, and test evidence use by position.
 
 **"Explain the Transformer architecture"**
 → Token embeddings + positional encoding → N layers each: LayerNorm + Multi-Head Self-Attention (Q·Kᵀ/√d scaled softmax weighted sum of V) + residual, LayerNorm + FFN + residual → linear layer + softmax over vocab.
@@ -1323,28 +1297,28 @@ A critical evaluation concern: if benchmark test data appears in the training se
 → Fine-tuning bakes knowledge into weights (can't update easily, may forget). RAG retrieves at inference time — updatable, inspectable, citable. Fine-tuning better for behavior/style changes; RAG better for knowledge-intensive tasks.
 
 **"What is LoRA and why use it?"**
-→ LoRA adds a trainable low-rank update (B·A) to frozen weight matrices, with A and B sized so B·A matches W. It updates only r×(d+k) instead of d×k parameters. This reduces trainable parameters by 1000×+ while matching full fine-tune quality for many tasks.
+→ LoRA adds a trainable low-rank update (B·A) to selected frozen weight matrices. For one d×k matrix it trains r(d+k) parameters instead of dk; total savings depend on rank and target modules. It can be merged for serving, while runtime adapters support separate task or tenant variants.
 
 **"How does KV cache work?"**
 → During autoregressive generation, Q/K/V matrices of past tokens are recomputed on every new token. KV cache stores K and V for all past tokens, so each new step only computes for the new token. Critical for inference efficiency; trades memory for compute.
 
 **"What's the difference between RLHF and DPO?"**
-→ RLHF: train reward model from preferences → use PPO to optimize policy against reward model. DPO: directly optimize preference data as a classification loss, no reward model or RL needed. DPO is simpler, more stable, nearly equivalent quality.
+→ RLHF with PPO trains a reward model and optimizes a policy against it with a reference/KL constraint. DPO directly optimizes chosen-versus-rejected pairs relative to a reference policy, avoiding online RL and a separately served reward model during optimization. Relative quality depends on data, objective, and tuning.
 
 **"How would you reduce hallucinations in production?"**
-→ RAG to ground answers in retrieved context, temperature = 0 for factual tasks, system prompt with "say I don't know if uncertain," self-consistency sampling, output validation layer.
+→ Improve evidence retrieval, validate citations and claim support, use deterministic tools for verifiable facts, calibrate abstention/escalation thresholds, and monitor unsupported-claim rate. Lower temperature improves reproducibility, not factual correctness.
 
 **"Greedy vs Beam Search vs Top-p — when do you use each?"**
-→ Greedy: fastest, deterministic, good for factual/structured tasks. Beam search: better quality for constrained outputs (translation, summarization) but expensive and repetitive. Top-p (nucleus): best for open-ended generation — adapts nucleus size to model confidence, prevents both boring and incoherent outputs. In practice: top-p + temperature is the standard for chat; greedy/temperature=0 for code or factual Q&A.
+→ Greedy is deterministic and useful when reproducibility matters. Beam search explores multiple high-probability sequences and is common in constrained sequence tasks, but can be expensive or repetitive. Top-p samples from an adaptive probability mass for open-ended generation. Tune decoding against task quality rather than treating one method as universally best.
 
 **"What is continuous batching and why does it matter?"**
-→ Static batching waits for all sequences in the batch to finish before starting new ones — the GPU idles waiting for long sequences. Continuous batching inserts new requests as soon as any slot frees up (every decode step), keeping GPU near 100% utilization. It's the single biggest throughput improvement for LLM serving and is standard in vLLM and TGI.
+→ Static batching waits for all sequences in the batch to finish before admitting new work. Continuous batching can insert requests as decode slots free up, improving utilization and throughput; the gain depends on traffic, sequence lengths, scheduler, and hardware.
 
 **"Explain the prefill vs decode distinction in LLM inference"**
 → Prefill processes the full prompt in a single parallel forward pass — compute-bound (bottlenecked by FLOPS). Decode generates one token at a time — memory-bound (bottlenecked by loading model weights from GPU HBM each step). This is why throughput and latency scale differently. Disaggregated serving routes them to separate GPU pools optimized for each workload.
 
 **"What are scaling laws and how do they guide training decisions?"**
-→ Performance improves as a power law with model size, data, and compute. Chinchilla (2022) showed most models were undertrained: optimal allocation uses ~20 tokens per parameter. A 7B model should see ~140B tokens. In production, "over-training" smaller models (more tokens than optimal) makes sense because you train once but serve millions of times — inference cost dominates.
+→ Performance often follows empirical power laws in model size, data, and compute. Chinchilla found a roughly 20-tokens-per-parameter compute-optimal ratio for its regime, but the ratio is not universal across data quality, architecture, and objectives. When serving dominates lifecycle cost, training a smaller model longer may be economical; decide from target quality and total train-plus-serve cost.
 
 **"How does Mixture of Experts (MoE) work?"**
 → Replace the dense FFN in each Transformer layer with N expert FFNs and a learned router. Each token is routed to the top-k experts (typically 2 of 8). Total parameters are N× larger, but active parameters per token stay the same. Mixtral 8×7B has 46.7B total but only activates 12.9B per token. Main challenge: router collapse — need load balancing loss to ensure all experts are utilized.

@@ -158,11 +158,11 @@ Use the interactive site when you want navigation, quiz mode, and progress track
 <summary><strong>🩷 AI & Machine Learning (6)</strong></summary>
 
 - 🤖 [Machine Learning in System Design](docs/machine-learning/ml-in-system-design.md) — production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback
-- 🎯 [Recommendation Systems](docs/machine-learning/recommendation-systems.md) — candidate generation, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ranking, reranking, metrics, cold start, exploration, bias, fairness
-- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — hybrid orchestration, autonomy levels, function calling, structured state, agentic RAG, tool reliability, observability, agent evals, model routing, online experiments, safety
+- 🎯 [Recommendation Systems](docs/machine-learning/recommendation-systems.md) — candidate generation, source fusion, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ordered-slate reranking, counterfactual evaluation, feedback loops, exploration, fairness
+- 🧠 [AI Agent System Design](docs/machine-learning/ai-agent-system-design.md) — hybrid orchestration, autonomy levels, structured state vs retrieval, agentic RAG, tool reliability, observability, calibrated agent evals, model routing, online experiments, safety
 - 📈 [Classic Machine Learning](docs/machine-learning/classic-ml.md) — Bias-variance, Naive Bayes, KNN, bagging vs boosting, SHAP/LIME, calibration, active learning, selective prediction, XGBoost, SVM, PCA
 - 🔬 [Deep Learning](docs/machine-learning/deep-learning.md) — Weight init, backprop, CNNs, LSTMs, full Transformer deep-dive, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA
-- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Tokenization, production RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, multi-modal models, KV cache, CoT
+- 💬 [LLM Interview Questions](docs/machine-learning/llm-interviews.md) — Tokenization, three-axis adaptation selection, production RAG, PEFT methods (LoRA, QLoRA, DoRA, AdaLoRA, IA3, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, evaluation, serving latency, MoE, multi-modal models, KV cache, CoT
 
 </details>
 

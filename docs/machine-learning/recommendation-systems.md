@@ -74,6 +74,17 @@ $$
 | `experiment_id`, `variant_id` | Required for A/B analysis. |
 | `impression_time`, `event_time`, `label_time` | Handles delayed labels and temporal splits. |
 
+### Label Quality And Attribution
+
+| Concern | Production control |
+|---------|--------------------|
+| **Delayed outcomes** | Define attribution windows by event type; freeze or update labels consistently when late conversions arrive. |
+| **Duplicate events** | Use event IDs and idempotent ingestion so retries do not inflate impressions or outcomes. |
+| **Bots, fraud, accidental actions** | Filter or down-weight non-human and low-intent events before training. |
+| **Identity changes** | Version account/device joins and avoid leaking future identity resolution into historical features. |
+| **Deletes and privacy** | Propagate consent, retention, and deletion requirements through logs, features, embeddings, and training snapshots. |
+| **Availability mismatch** | Do not train on items that were ineligible, out of stock, blocked, or unavailable in the serving context. |
+
 ### Explicit vs Implicit Feedback
 
 | Feedback | Examples | Strength | Weakness |
@@ -110,6 +121,14 @@ User request
 | Ranking | Precise utility scoring with rich features. | hundreds/thousands -> ordered list | 10-100 ms. |
 | Reranking | Optimize the final slate. | top hundreds -> final K | Low single-digit to tens of ms. |
 | Logging | Capture exposure and outcomes. | all shown items | Async, durable. |
+
+### Reliability And Fallbacks
+
+- Give each stage a deadline and trace span; cancel downstream work when the request budget is exhausted.
+- Fall back in layers: cached personalized slate, item-item or popularity source, then a safe editorial/default list.
+- Version model, feature definitions, embedding model, ANN index, filters, and reranking policy as a compatible release bundle.
+- Monitor per-source timeout/error rate, candidate count, ANN recall canaries, empty-slate rate, feature freshness, and fallback frequency.
+- Never let a retrieval or ranking failure bypass eligibility, safety, inventory, or policy filters.
 
 ### Retrieval Features vs Ranking Features
 
@@ -189,9 +208,9 @@ $$
 
 In practice, item-item co-visitation is a strong production retrieval source because item similarities can be precomputed.
 
-### 4.3 Matrix Factorization Family
+### 4.3 Explicit Matrix Factorization
 
-Matrix factorization learns dense user and item vectors from sparse interactions.
+For explicit ratings, matrix factorization learns dense user and item vectors over observed entries.
 
 $$
 \hat y_{u,i}=\mu+b_u+b_i+p_u^Tq_i
@@ -200,22 +219,23 @@ $$
 $$
 \mathcal{L}=
 \sum_{(u,i)\in\Omega}(y_{u,i}-\hat y_{u,i})^2+
-\lambda(\lVert p_u\rVert_2^2+\lVert q_i\rVert_2^2+b_u^2+b_i^2)
+\lambda\left(
+\sum_u(\lVert p_u\rVert_2^2+b_u^2)+
+\sum_i(\lVert q_i\rVert_2^2+b_i^2)
+\right)
 $$
 
 | Variant | What it adds | Use when |
 |---------|--------------|----------|
 | Basic MF / Funk SVD | User and item vectors optimized over observed entries. | Explicit ratings baseline. |
 | Biased MF | Global, user, and item bias terms. | Almost always better than plain MF for ratings. |
-| ALS | Alternating closed-form least-squares updates. | Distributed and stable training. |
-| WRMF / implicit ALS | Preference/confidence split for implicit events. | Clicks, plays, purchases, views. |
+| Explicit ALS | Alternating least-squares updates for the squared-error objective. | Stable distributed optimization when biases are absent or handled separately. |
 | SVD++ | Implicit-history vectors. | Ratings plus implicit history. |
-| BPR-MF | Pairwise ranking loss. | Top-K implicit recommendation. |
 
-ALS user update:
+For a no-bias explicit ALS formulation, let \(Q_{\Omega_u}\) contain item vectors for items rated by user \(u\):
 
 $$
-p_u=(Q_u^TQ_u+\lambda I)^{-1}Q_u^Ty_u
+p_u=(Q_{\Omega_u}^TQ_{\Omega_u}+\lambda I)^{-1}Q_{\Omega_u}^Ty_u
 $$
 
 SVD++:
@@ -226,10 +246,10 @@ $$
 
 ### 4.4 Implicit ALS / WRMF
 
-Implicit feedback separates preference from confidence:
+Implicit feedback separates binary preference from confidence. Use \(a_{u,i}\) for preference to avoid confusing it with the user vector \(p_u\) above:
 
 $$
-p_{u,i}=\mathbf{1}[r_{u,i}>0]
+a_{u,i}=\mathbf{1}[r_{u,i}>0]
 $$
 
 $$
@@ -240,11 +260,17 @@ $$
 
 $$
 \min_{X,Y}
-\sum_{u,i}c_{u,i}(p_{u,i}-x_u^Ty_i)^2+
+\sum_{u,i}c_{u,i}(a_{u,i}-x_u^Ty_i)^2+
 \lambda(\lVert X\rVert_F^2+\lVert Y\rVert_F^2)
 $$
 
-Missing interactions are weak unknowns, not strong negatives. Repeated actions increase confidence.
+With \(C_u=\operatorname{diag}(c_{u,1},\ldots,c_{u,|I|})\), \(a_u\) the user preference vector, and \(Y\) the item-factor matrix, the user update is:
+
+$$
+x_u=(Y^TC_uY+\lambda I)^{-1}Y^TC_ua_u
+$$
+
+WRMF sums over all items: missing interactions have preference zero but low confidence, so they are weak unknowns rather than strong negatives. Repeated actions increase confidence.
 
 ### 4.5 BPR Matrix Factorization
 
@@ -323,10 +349,10 @@ Negative sampling makes retrieval training scalable, but it also defines what th
 | Exposure-aware negatives | Uses shown-but-not-engaged items, which are more meaningful than random unseen items. | Inherits position bias and the old recommendation policy. |
 | Mixed strategy | Production default. | Needs tuning and monitoring. |
 
-If negatives are sampled from distribution `q(j)`, a common correction is:
+For sampled-softmax objectives, a log-\(q\) correction can compensate for a nonuniform proposal distribution. The exact correction depends on the estimator and expected sample count; it is not a generic rule for BPR, every InfoNCE setup, or impression labels:
 
 $$
-s_{corr}(u,j)=s(u,j)-\log q(j)
+\tilde s(u,j)=s(u,j)-\log q(j)
 $$
 
 **Production recipe**
@@ -335,8 +361,9 @@ $$
 2. Remove known positives, duplicate items, near-duplicates, and positive interactions from other label windows to reduce accidental false negatives.
 3. Mix random or popularity-weighted negatives for catalog coverage.
 4. Once the model is stable, mine difficult candidates from the current ANN index and mix them with easier negatives rather than training only on hard negatives.
-5. When impression logs exist, use exposure-aware negatives for ranking or retrieval fine-tuning, with position/context features or counterfactual correction.
-6. Monitor sampler composition, false-negative rate, popularity shift, long-tail recall, and segment performance.
+5. Treat shown-but-not-engaged items as ranking labels only after defining examination assumptions, delayed-positive windows, accidental interactions, and position/context propensities. Position as an input feature does not itself remove exposure bias.
+6. Keep multi-positive examples from becoming in-batch negatives for one another, and monitor mismatch between the sampler and the serving candidate distribution.
+7. Monitor sampler composition, false-negative rate, popularity shift, long-tail recall, and segment performance.
 
 Use sampled softmax / InfoNCE for retrieval embeddings. Use impression-level binary or listwise labels for the downstream ranker when calibrated engagement probability matters.
 
@@ -353,25 +380,22 @@ $$
 \frac{|\operatorname{TopK}_{\text{exact}}(q)\cap \operatorname{TopK}_{\text{ANN}}(q)|}{K}
 $$
 
-| Index | How it works | Key parameters | Use when |
-|-------|--------------|----------------|----------|
-| HNSW | Layered proximity graph with greedy search. | `M`, `efConstruction`, `efSearch` | High recall and low latency with memory budget. |
-| IVF-PQ / FAISS | Cluster vectors, search nearby lists, compress with product quantization. | `nlist`, `nprobe`, PQ code size | Very large catalogs and memory constraints. |
-| ScaNN | Partition, quantize, and exact-rescore shortlist for dot-product search. | partition count, reorder size | Maximum inner-product retrieval. |
+| Index family | How it works | Key parameters | Use when |
+|--------------|--------------|----------------|----------|
+| Flat / exact | Scores every item vector. | batch size, hardware, metric | Small catalogs, offline ground truth, and exact-recall canaries. |
+| HNSW | Layered proximity graph with greedy search. | `M`, `efConstruction`, `efSearch` | Low latency and high recall when memory is available. |
+| IVF | Partitions vectors and searches selected cells. | `nlist`, `nprobe` | Large catalogs needing lower query cost. |
+| IVF-PQ | Adds product-quantized codes to IVF. | PQ code size plus IVF parameters | Very large or memory-constrained catalogs. |
 
-HNSW rule of thumb:
+FAISS implements flat, HNSW, IVF, PQ, and GPU variants. ScaNN combines partitioning, quantization, and shortlist reordering. Managed vector databases add filtering, persistence, sharding, and operations; they are implementations/services rather than ANN algorithms.
 
-$$
-\text{Memory}\approx O(NM),
-\qquad
-\text{Build time}\approx O(N\log N)
-$$
-
-MIPS reranking:
+Approximate retrieval should over-fetch and exactly rescore a shortlist when the original vectors or a higher-fidelity scorer are available:
 
 $$
 C_{K'}=\operatorname{TopK}_{K',\text{approx}}(q), \qquad K'>K
 $$
+
+Tune the end-to-end recall-latency-memory curve, including metric compatibility, vector normalization, metadata-filter selectivity, sharding, updates/deletes, index staleness, and model/index version compatibility.
 
 $$
 \operatorname{FinalTopK}(q)=\operatorname{TopK}_{x_i\in C_{K'}}(q^\top x_i)
@@ -398,6 +422,12 @@ Use content signals for:
 - cold-start bootstrapping
 
 Hybrid retrieval merges several sources: popularity, item-item, two-tower ANN, content similarity, graph walks, recent trends, and editorial or business sources.
+
+#### Candidate Source Fusion
+
+Source scores are usually not comparable. Give each source a latency and candidate budget, union and deduplicate by canonical item ID, then fuse by source quotas, normalized scores, reciprocal-rank fusion, or a learned source-aware model. Preserve source IDs and source ranks as downstream features.
+
+Monitor recall, unique contribution, overlap, latency, freshness, and failure rate per source. A source that produces many candidates but no incremental relevant items should not keep its full budget.
 
 ### 4.11 Sequential Recommendation
 
@@ -465,9 +495,9 @@ New-item cold start is often the hardest at catalog-heavy companies. Mention con
 
 ## 5. Ranking Methods
 
-Ranking scores a smaller candidate set with richer features. The output is usually a calibrated probability, expected utility, or vector of predicted outcomes.
+Ranking scores a smaller candidate set with richer features. The output may be a probability, an expected outcome, a pairwise/listwise score, or a vector of predicted outcomes. Logistic output is not automatically calibrated after negative sampling, class weighting, drift, or candidate-policy changes.
 
-### 5.1 Logistic / Calibrated CTR Ranker
+### 5.1 Logistic CTR Ranker And Calibration
 
 $$
 P(y=1\mid x)=\sigma(w^Tx+b)
@@ -478,7 +508,7 @@ $$
 -\sum_n[y_n\log p_n+(1-y_n)\log(1-p_n)]
 $$
 
-Use as a fast interpretable baseline and for calibrated probabilities.
+Use as a fast interpretable baseline. When probabilities matter, calibrate on the actual serving candidate distribution and inspect reliability by segment.
 
 ### 5.2 GBDT / XGBoost / LightGBM
 
@@ -519,7 +549,8 @@ $$
 \sum_i\sum_{j>i}\langle v_i,v_j\rangle x_ix_j
 =
 \frac{1}{2}\left[
-\left(\sum_i v_ix_i\right)^2-\sum_i v_i^2x_i^2
+\left\lVert\sum_i v_ix_i\right\rVert_2^2-
+\sum_i \lVert v_i\rVert_2^2x_i^2
 \right]
 $$
 
@@ -700,13 +731,21 @@ DPP is elegant but can be more expensive than MMR. It is useful to mention as an
 
 ### Constrained Slate Reranking
 
+For order-dependent constraints, use assignment variable \(x_{i,k}\in\{0,1\}\), indicating that item \(i\) is placed at position \(k\):
+
 $$
-\max_{S:|S|=K}\sum_{i\in S}\operatorname{score}(u,i)
-\quad
-\text{s.t. category/fairness/freshness constraints}
+\max_x \sum_i\sum_{k=1}^{K}d_k\,x_{i,k}\operatorname{score}(u,i)
 $$
 
-Examples:
+subject to:
+
+$$
+\sum_i x_{i,k}=1\ \forall k,
+\qquad
+\sum_k x_{i,k}\le 1\ \forall i
+$$
+
+Additional linear constraints can cap a creator/category, require fresh inventory, control sponsored slots, or enforce position-discounted provider exposure. Adjacency constraints such as "no repeated category in neighboring positions" require position-aware variables; an unordered set objective cannot express them.
 
 - at most two items from one creator
 - at least one fresh item
@@ -717,7 +756,7 @@ Examples:
 
 ### Calibration In Reranking
 
-If ranker scores are predicted probabilities, calibrate before combining scores. An uncalibrated score cannot be safely mixed with price, margin, quality, or risk penalties.
+If a score is interpreted as a probability or expected outcome, calibrate it on serving-distribution data before multiplying it by value or cost. Other rerankers may use normalized utilities or learned score transformations instead. The requirement is a meaningful, stable scale, not probability calibration for every ranking score.
 
 ---
 
@@ -728,7 +767,7 @@ The loss defines what the model learns from data.
 | Loss | Formula sketch | Teaches | Use when |
 |------|----------------|---------|----------|
 | MSE | mean squared error | Numeric rating/value prediction. | Explicit ratings, dwell regression. |
-| BCE | `-y log p - (1-y) log(1-p)` | Calibrated binary probability. | CTR/CVR/hide/report rankers. |
+| BCE | `-y log p - (1-y) log(1-p)` | Binary probability under the training distribution. | CTR/CVR/hide/report rankers; recalibrate when sampling or serving distribution differs. |
 | Weighted BCE | weighted positive/negative BCE | Handles imbalance or asymmetric cost. | Rare positives or costly mistakes. |
 | Pairwise hinge | `max(0, margin - s_pos + s_neg)` | Positive should beat negative by margin. | Simple pairwise ranking. |
 | BPR | `-log sigmoid(s_pos - s_neg)` | Smooth pairwise implicit ranking. | MF/GNN top-K recommendation. |
@@ -738,7 +777,7 @@ The loss defines what the model learns from data.
 
 ### When To Use Each
 
-- Use **BCE** for calibrated ranking probabilities.
+- Use **BCE** for binary probability estimation, then verify or recalibrate on serving-distribution data when probabilities matter.
 - Use **BPR** when only implicit positives and sampled unobserved negatives exist.
 - Use **sampled softmax / InfoNCE** for two-tower retrieval.
 - Use **listwise/LambdaMART** when list position and graded relevance are directly labeled.
@@ -767,6 +806,8 @@ $$
 $$
 
 Use Recall@K heavily for retrieval, because the ranker cannot recover missed candidates.
+
+Define the evaluation population before averaging. Exclude or separately report users with no relevant held-out item; for \(IDCG@K=0\), define NDCG as zero or exclude consistently. Report macro averages across users and, when useful, micro/event-weighted results. Full-catalog and sampled-candidate metrics are not directly comparable unless the candidate set and sampler are fixed.
 
 ### NDCG
 
@@ -797,8 +838,13 @@ $$
 $$
 
 $$
-r_n=\operatorname{rank}_n^{\text{first relevant}}, \qquad
-\operatorname{MRR}=\frac{1}{N}\sum_{n=1}^{N}\frac{1}{r_n}
+\operatorname{RR}_n=
+\begin{cases}
+1/r_n, & \text{if a relevant result is retrieved}\\
+0, & \text{otherwise}
+\end{cases}
+\qquad
+\operatorname{MRR}=\frac{1}{N}\sum_{n=1}^{N}\operatorname{RR}_n
 $$
 
 Use MAP for multiple binary relevant items; use MRR when the first good result matters most.
@@ -807,10 +853,10 @@ Use MAP for multiple binary relevant items; use MRR when the first good result m
 
 | Metric | Measures | Use |
 |--------|----------|-----|
-| AUC-ROC | Probability a positive scores above a negative. | General ranking quality. |
+| AUC-ROC | Probability a sampled positive scores above a sampled negative. | Broad discrimination; may be dominated by easy negatives and ignore top-rank quality. |
 | PR-AUC | Precision-recall trade-off for rare positives. | Sparse positives. |
 | Log loss | Confidence and correctness. | Calibrated rankers. |
-| Brier score | Mean squared probability error. | Calibration. |
+| Brier score | Mean squared probability error. | Overall probabilistic accuracy; mixes calibration and refinement. |
 | ECE | Expected calibration error by bins. | Probability reliability. |
 
 ### Catalog And Slate Health
@@ -844,7 +890,8 @@ $$
 ### Offline Evaluation Protocol
 
 - Use temporal splits: train on the past, test on the future.
-- Use realistic candidate sets, not only easy sampled negatives.
+- Use full-catalog retrieval or a fixed realistic candidate protocol; metrics from different negative samplers are not comparable.
+- Report candidate-source recall, ranker quality conditional on retrieval, and end-to-end recall so a ranking improvement cannot hide retrieval loss.
 - Report segment metrics for new users, power users, new items, long-tail items, countries, devices, and protected segments when appropriate.
 - Track confidence intervals; tiny metric differences may be noise.
 - Do not optimize offline metrics alone; exposure bias makes offline evaluation incomplete.
@@ -881,11 +928,19 @@ Mitigations:
 - segment and catalog coverage monitoring
 - controlled exploration
 
+### Production Feedback Loop
+
+```text
+policy -> exposure -> observed interaction -> label construction -> training -> next policy
+```
+
+The model changes which labels can be observed. Monitor exposure distribution, concentration, source mix, creator/provider outcomes, and long-term user satisfaction alongside clicks. Preserve randomized exploration or holdout traffic with known propensities, use temporal attribution windows for delayed outcomes, and review whether retraining cadence amplifies short-lived trends or harmful homogenization.
+
 ### Position Bias
 
 Items near the top receive more clicks even if relevance is unchanged.
 
-Let \(C\) denote click, \(E\) examination, \(R\) relevance, and \(k\) rank position:
+Under the position-based model (PBM), let \(C\) denote click, \(E\) examination, \(R\) relevance, and \(k\) rank position. PBM assumes examination depends on position and separates from relevance:
 
 $$
 \begin{aligned}
@@ -897,24 +952,35 @@ $$
 
 Estimate propensities through randomized buckets, swaps, or intervention harvesting.
 
+PBM is an assumption, not a probability identity. Cascade or dependent-click models are more appropriate when examination depends on previous items or clicks in the slate.
+
 ### IPS, SNIPS, And Doubly Robust Estimation
 
-IPS reweights observed examples by inverse exposure probability:
+#### Propensity-Weighted Learning
+
+For \(N\) eligible exposure opportunities, let \(O_t\) indicate whether the outcome is observed and \(e_t=P(O_t=1\mid x_t,a_t)\). A Horvitz-Thompson risk estimator is:
 
 $$
 \hat L_{IPS}=
-\frac{1}{|U||I|}
-\sum_{(u,i):O_{u,i}=1}
-\frac{\operatorname{loss}(r_{u,i},\hat r_{u,i})}{P(O_{u,i}=1)}
+\frac{1}{N}\sum_{t=1}^{N}
+\frac{O_t\,\ell(y_t,\hat y_t)}{e_t}
 $$
 
-For logged policy evaluation, define importance weight
+The target population, observation indicator, and propensity model must match the estimand. Item-level examination weights do not automatically debias an entire ordered slate.
+
+#### Off-Policy Evaluation
+
+For logged policy evaluation, define importance weight:
 
 $$
 w_t=\frac{\pi(a_t\mid x_t)}{\pi_0(a_t\mid x_t)}
 $$
 
 where \(\pi_0\) is the logging policy, \(\pi\) is the candidate policy, and \(r_t\) is the observed reward. Self-normalized IPS (SNIPS) divides by the total weight:
+
+$$
+\hat V_{IPS}=\frac{1}{T}\sum_{t=1}^{T}w_t r_t
+$$
 
 $$
 \hat V_{SNIPS}=
@@ -925,6 +991,10 @@ $$
 SNIPS is often lower variance than plain IPS, but it is biased in finite samples. Both methods fail when the logging policy had no support for actions the candidate policy wants to take.
 
 Doubly robust policy-value estimator:
+
+$$
+\hat r(x,\pi)=\sum_a\pi(a\mid x)\hat r(x,a)
+$$
 
 $$
 \hat V_{DR}=
@@ -943,7 +1013,9 @@ $$
 | **Propensity diagnostics** | Check calibration, missing support, position/context dependence, and logging-policy version. |
 | **Doubly robust estimation** | Combines a reward model with propensity weighting; remains consistent if either component is correct under standard assumptions. |
 
-IPS is unbiased only if propensities are correct and the positivity/support assumption holds. Report confidence intervals and compare IPS, SNIPS, and doubly robust estimates instead of trusting one counterfactual number.
+These estimators require a well-defined action, correct propensity logging, consistency, and overlap: the logging policy must assign positive probability wherever the candidate policy does. Deterministic logging policies provide no support for unseen actions. Clipping reduces variance but introduces bias. Slate actions, interference between users/items, and sequential recommendations require estimators matching that structure; one-step item propensities are insufficient.
+
+Report confidence intervals and compare IPS, SNIPS, doubly robust estimates, effective sample size, and direct reward-model estimates instead of trusting one counterfactual number.
 
 ### Exploration vs Exploitation
 
@@ -991,18 +1063,17 @@ $$
 
 Bandits are useful when feedback is fairly immediate. Full reinforcement learning is theoretically attractive for long-horizon recommendation but much harder to train and evaluate safely.
 
-### Filter Bubbles And Fairness
+### Fairness
 
-Monitor:
-
-$$
-\mathrm{NDCG}_{\text{group A}}\approx \mathrm{NDCG}_{\text{group B}}
-$$
+Define the fairness target for the product: parity, proportional-to-merit exposure, minimum guarantees, or bounded disparity. Raw item counts are insufficient because top positions receive more attention. With position discount \(d_k\), provider exposure can be written:
 
 $$
-\frac{\mathbb{E}[\operatorname{exposure}_{\text{provider }i}]}{\mathbb{E}[\operatorname{exposure}_{\text{provider }j}]}\approx 1
-\quad \text{for similar quality}
+\operatorname{Exposure}(g)=
+\mathbb{E}\left[\sum_{k=1}^{K}d_k\,
+\mathbf{1}[\operatorname{provider}(i_k)=g]\right]
 $$
+
+Monitor user-group relevance and outcome quality separately from provider exposure. Equal exposure is not automatically fair when eligibility or quality differs; the chosen target must be explicit and audited.
 
 Mitigations:
 
@@ -1075,7 +1146,7 @@ User preference has multiple timescales:
 - **Short-term intent:** the current session, search, cart, location, or recent consumption.
 - **Population drift:** seasonality, trends, supply changes, promotions, or policy changes.
 
-TimeSVD++ models temporal drift:
+The following is a simplified temporal matrix-factorization illustration, not the full TimeSVD++ formulation:
 
 $$
 \hat r_{u,i}(t)=\mu+b_i+b_u(t)+q_i^\top p_u(t)
@@ -1084,6 +1155,8 @@ $$
 $$
 b_u(t)=b_u+\alpha_u \operatorname{sign}(t-t_u)|t-t_u|^\beta
 $$
+
+Here \(t_u\) is a user reference time and \(\beta\) controls the drift shape. Full TimeSVD++ also includes time-varying item/user terms and implicit-history factors; use it only when that additional complexity is justified.
 
 Practical production patterns:
 
@@ -1183,14 +1256,15 @@ Logs are exposure-biased: they only contain outcomes for items the old system sh
 
 ## 15. Adjacent Topic: RAG vs Recommendation Retrieval
 
-RAG retrieval and recommender retrieval share vector search, reranking, and evaluation ideas, but the objective is different.
+RAG retrieval and recommender retrieval share vector search, reranking, and evaluation ideas, but their downstream decision and supervision differ.
 
-| System | Retrieves | Optimizes |
-|--------|-----------|-----------|
-| Recommendation | items/actions for a user and context | product utility, engagement quality, satisfaction, safety |
-| RAG | evidence chunks for a query | factual grounding, answer support, citation quality |
+| System | Retrieval output is used to | Primary optimization |
+|--------|-----------------------------|----------------------|
+| Recommendation | Select or order items/actions shown to a user. | User/platform utility, satisfaction, safety, and ecosystem health. |
+| RAG | Supply evidence to a generator. | Evidence relevance/coverage plus end-to-end correctness, grounding, and citation support. |
+| Personalized RAG | Select user-relevant evidence for generation. | Preserve factual relevance, ACLs, provenance, and citation support while using personalization only where appropriate. |
 
-If asked about RAG specifically, discuss chunking, metadata, ACLs, dense/sparse hybrid retrieval, reranking, context construction, generation, and faithfulness evaluation. Keep it separate from recommendation system design unless the product is recommending documents or knowledge assets.
+The content type does not decide whether a system is RAG or recommendation. The deciding question is whether retrieval selects an item/action for user utility or supplies evidence for a generated answer. If asked about RAG, discuss chunking, metadata, ACLs, dense/sparse/structured retrieval, reranking, context construction, generation, and faithfulness evaluation.
 
 ---
 
