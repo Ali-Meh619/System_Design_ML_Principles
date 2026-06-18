@@ -179,6 +179,22 @@ Do not collapse every model change into "fine-tuning." Each stage optimizes a di
 | **Preference optimization** | Chooses better outputs among alternatives | RLHF, DPO, KTO, ORPO, and related methods tune trade-offs like helpfulness, brevity, refusal, and grounding. |
 | **Deployment adaptation** | Compresses, routes, caches, and serves the model | Quantization, distillation, pruning, adapters, and batching must be validated on task slices, not only generic benchmarks. |
 
+### Choose The Right Adaptation Mechanism
+
+Do not answer every product gap with "fine-tune the model." First identify whether the missing capability is knowledge, language distribution, common behavior, a preference trade-off, or serving efficiency.
+
+| Need | Prefer | Why | Common mistake |
+|------|--------|-----|----------------|
+| **Current or private factual knowledge** | RAG, search, SQL, or APIs | Knowledge remains updateable, attributable, and permission-aware at inference time. | Fine-tuning facts into weights, where they become stale and difficult to cite or delete. |
+| **Domain vocabulary and input distribution** | Continual pre-training | Self-supervised training teaches terminology, style, syntax, and recurring patterns from the target corpus. | Expecting continual pre-training alone to teach tool policy, confirmations, or desired response behavior. |
+| **Output format and common instruction behavior** | SFT / instruction tuning | Demonstrations teach schemas, response style, task procedures, and standard tool-call patterns. | Training only successful examples, which creates overconfidence and weak recovery. |
+| **Subtle preferences and trade-offs** | DPO, RLHF, KTO, ORPO, or RLAIF | Preference data can rank concise vs verbose, grounded vs invented, and safe escalation vs unsafe compliance. | Scoring only the final answer when the intermediate trajectory matters. |
+| **Task- or tenant-specific behavior at low cost** | PEFT such as LoRA, adapters, prefix tuning, or prompt tuning | Keeps the base model frozen while storing small task-specific deltas. | Ignoring adapter routing, version compatibility, and regression tests. |
+| **Large capability shift with enough data and compute** | Full fine-tuning or additional pre-training | Provides more capacity than a small adapter when the target distribution is substantially different. | Catastrophic forgetting, data leakage, or paying full-training cost for a problem RAG or PEFT could solve. |
+| **Lower serving latency or memory** | Distillation, quantization, pruning, caching, batching, or model routing | Changes deployment cost rather than product knowledge or policy. | Treating compression as behavior training and skipping post-compression task-slice evaluation. |
+
+**Interview rule:** use RAG/tools for changing knowledge, continual pre-training for domain language, SFT for demonstrations, preference optimization for trade-offs, PEFT/full tuning for durable behavior changes, and serving optimization for cost and latency.
+
 ---
 
 ## 4. Fine-Tuning Strategies
