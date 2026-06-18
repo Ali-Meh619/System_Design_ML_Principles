@@ -312,7 +312,7 @@ Online: compute user/session embedding -> ANN lookup -> candidate set
 
 ### 4.8 Negative Sampling
 
-Negative sampling shapes what the model learns.
+Negative sampling makes retrieval training scalable, but it also defines what the model learns to treat as irrelevant. An item with no interaction may be disliked, unseen, unavailable, or simply never exposed; **unobserved is not automatically negative**.
 
 | Strategy | Benefit | Risk |
 |----------|---------|------|
@@ -320,6 +320,7 @@ Negative sampling shapes what the model learns.
 | Popularity-based negatives | Teaches competition against plausible items. | Can over-penalize popular items. |
 | In-batch negatives | Efficient for two-tower training. | Batch distribution bias. |
 | Hard negatives | Improves top-rank quality. | False negatives can hurt learning. |
+| Exposure-aware negatives | Uses shown-but-not-engaged items, which are more meaningful than random unseen items. | Inherits position bias and the old recommendation policy. |
 | Mixed strategy | Production default. | Needs tuning and monitoring. |
 
 If negatives are sampled from distribution `q(j)`, a common correction is:
@@ -327,6 +328,17 @@ If negatives are sampled from distribution `q(j)`, a common correction is:
 $$
 s_{corr}(u,j)=s(u,j)-\log q(j)
 $$
+
+**Production recipe**
+
+1. Start with in-batch negatives for efficient matrix-based training.
+2. Remove known positives, duplicate items, near-duplicates, and positive interactions from other label windows to reduce accidental false negatives.
+3. Mix random or popularity-weighted negatives for catalog coverage.
+4. Once the model is stable, mine difficult candidates from the current ANN index and mix them with easier negatives rather than training only on hard negatives.
+5. When impression logs exist, use exposure-aware negatives for ranking or retrieval fine-tuning, with position/context features or counterfactual correction.
+6. Monitor sampler composition, false-negative rate, popularity shift, long-tail recall, and segment performance.
+
+Use sampled softmax / InfoNCE for retrieval embeddings. Use impression-level binary or listwise labels for the downstream ranker when calibrated engagement probability matters.
 
 ### 4.9 ANN Vector Search
 
@@ -873,15 +885,19 @@ Mitigations:
 
 Items near the top receive more clicks even if relevance is unchanged.
 
+Let \(C\) denote click, \(E\) examination, \(R\) relevance, and \(k\) rank position:
+
 $$
-P(click\mid u,i,position=k)=
-P(examine\mid k)P(relevant\mid u,i,examined)
-=\theta(k)r(u,i)
+\begin{aligned}
+P(C\mid u,i,k)
+&=P(E\mid k)P(R\mid u,i,E)\\
+&=\theta(k)r(u,i)
+\end{aligned}
 $$
 
 Estimate propensities through randomized buckets, swaps, or intervention harvesting.
 
-### IPS And Doubly Robust Estimation
+### IPS, SNIPS, And Doubly Robust Estimation
 
 IPS reweights observed examples by inverse exposure probability:
 
@@ -892,13 +908,42 @@ $$
 \frac{\operatorname{loss}(r_{u,i},\hat r_{u,i})}{P(O_{u,i}=1)}
 $$
 
-Doubly robust estimator:
+For logged policy evaluation, define importance weight
 
 $$
-\hat r(u,i)+\frac{c(u,i)-\hat r(u,i)}{\theta(k)}
+w_t=\frac{\pi(a_t\mid x_t)}{\pi_0(a_t\mid x_t)}
 $$
 
-IPS is unbiased only if propensities are correct and every item has nonzero exposure probability. It can have high variance.
+where \(\pi_0\) is the logging policy, \(\pi\) is the candidate policy, and \(r_t\) is the observed reward. Self-normalized IPS (SNIPS) divides by the total weight:
+
+$$
+\hat V_{SNIPS}=
+\frac{\sum_{t=1}^{T}w_t r_t}
+{\sum_{t=1}^{T}w_t}
+$$
+
+SNIPS is often lower variance than plain IPS, but it is biased in finite samples. Both methods fail when the logging policy had no support for actions the candidate policy wants to take.
+
+Doubly robust policy-value estimator:
+
+$$
+\hat V_{DR}=
+\frac{1}{T}\sum_{t=1}^{T}
+\left[
+\hat r(x_t,\pi)
++w_t\left(r_t-\hat r(x_t,a_t)\right)
+\right]
+$$
+
+| Control | Why it matters |
+|---------|----------------|
+| **Randomized or exploration traffic** | Provides known propensities and support beyond the old ranker's narrow choices. |
+| **Weight clipping / capping** | Prevents a few tiny propensities from dominating the estimate, at the cost of some bias. |
+| **Effective sample size** | Use \(\mathrm{ESS}=(\sum_t w_t)^2/\sum_t w_t^2\) to detect when nominally large logs contain little usable counterfactual information because weights are concentrated. |
+| **Propensity diagnostics** | Check calibration, missing support, position/context dependence, and logging-policy version. |
+| **Doubly robust estimation** | Combines a reward model with propensity weighting; remains consistent if either component is correct under standard assumptions. |
+
+IPS is unbiased only if propensities are correct and the positivity/support assumption holds. Report confidence intervals and compare IPS, SNIPS, and doubly robust estimates instead of trusting one counterfactual number.
 
 ### Exploration vs Exploitation
 

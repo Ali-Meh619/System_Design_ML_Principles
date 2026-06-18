@@ -163,6 +163,43 @@ Production agents should not be either "pure LLM" or "hard-coded workflow" every
 
 ---
 
+## Uncertainty-Aware Agent Control
+
+Confidence should be a control signal for choosing the next action, not a number shown to the user. A production agent should distinguish why it is uncertain, because different uncertainty sources require different recovery behavior.
+
+| Uncertainty type | Meaning | Correct agent response |
+|------------------|---------|------------------------|
+| **Epistemic uncertainty** | The system lacks knowledge, examples, or relevant evidence. More data, retrieval, or training may reduce it. | Retrieve another source, ask a targeted question, use a stronger model, or escalate. Log the case for active learning. |
+| **Aleatoric uncertainty** | The request or available evidence is inherently ambiguous; more training cannot recover information that is not present. | Present the plausible interpretations, ask the user to disambiguate, and confirm action-critical values. |
+| **Tool uncertainty** | Intent is understood, but the correct tool, argument values, permissions, or external system state is unclear. | Prefer a read-only lookup or clarification, then validate schema, authorization, freshness, and result consistency before a write. |
+| **Policy uncertainty** | The model is unsure whether an action is allowed or which rule applies. | Route to deterministic policy logic or human review. The LLM must not invent policy. |
+| **Evidence uncertainty** | Retrieved sources conflict, are stale, or do not directly support the proposed answer. | Retrieve again, prefer authoritative/current sources, expose the conflict, or abstain. |
+
+### Act, Ask, Retrieve, Or Escalate
+
+| Decision | Use when | Required controls |
+|----------|----------|-------------------|
+| **Act** | Intent, required slots, authorization, evidence, and tool state meet the threshold for this risk tier. | Schema validation, confirmation where required, idempotency, audit log, and tool-confirmed success. |
+| **Ask** | A small amount of user-provided information would resolve ambiguity. | Ask one targeted question; do not restart the whole workflow or request already-known fields. |
+| **Retrieve / inspect** | Missing knowledge or external state can be resolved safely without changing the world. | Read-only tools, ACL filters, freshness checks, source provenance, and bounded retries. |
+| **Escalate / abstain** | Risk is high, policy is unclear, evidence remains weak, or repeated attempts make no progress. | Preserve structured state, explain the boundary honestly, and transfer the unresolved reason and evidence. |
+
+### Calibration For Agent Decisions
+
+Raw LLM confidence and token probability are not automatically calibrated for tool choice or action safety. Calibrate the task-specific decision signal and evaluate it by action type and risk slice.
+
+| Method | What it tells you | Agent use |
+|--------|-------------------|-----------|
+| **Reliability diagram** | Whether predicted confidence matches empirical correctness in each bin. | Plot separately for intent, slot extraction, tool routing, and action approval; a global curve can hide a dangerous action slice. |
+| **Expected Calibration Error (ECE)** | Weighted average gap between confidence and observed accuracy. | Use as a diagnostic, but inspect high-confidence errors directly because they create the largest automation risk. |
+| **Temperature scaling** | Recalibrates classifier logits without changing their ranking. | Fit on held-out production-like data, preferably per task or risk tier rather than one global temperature. |
+| **Selective prediction** | Acts only above a threshold; otherwise asks, retrieves, or escalates. | Use lower thresholds for reversible reads and stricter thresholds plus confirmation for external writes. |
+| **Conformal prediction** | Returns a set of plausible labels under stated coverage assumptions. | If several intents or tools remain plausible, ask a disambiguating question instead of silently choosing one. |
+
+**Good interview line:** I would calibrate the decision that controls automation, then use risk-dependent thresholds to choose whether the agent acts, asks, retrieves, or escalates.
+
+---
+
 ## Brittle Agent Behaviors
 
 Brittleness is what happens when a probabilistic planner is allowed to behave like a reliable state machine. In production, the goal is not to "prompt harder"; it is to make the brittle cases explicit and put deterministic controls around them.
@@ -233,6 +270,8 @@ LLM judges are accelerators, not ground truth. Treat judge scores like model out
 | **Verbosity bias** | Longer answers score higher even when concise answers are better | Include brevity, directness, and task completion in the rubric. |
 | **Style bias** | Judge rewards wording similar to its own style | Calibrate against human labels and use multiple judges for major releases. |
 | **Rubric ambiguity** | Judge grades helpfulness but misses tool correctness or safety | Use explicit criteria: correct tool, valid args, grounded answer, no unsafe action. |
+| **Domain blindness** | Judge lacks the policy, tool observation, or business rule needed to recognize a wrong answer | Provide reference evidence and gold constraints; use deterministic checks for facts the judge should not infer. |
+| **Safety under-sensitivity** | Judge accepts false commitment, missing confirmation, or an unauthorized action because the response sounds helpful | Add explicit action-safety rubric items and deterministic assertions for restricted operations. |
 | **Judge drift** | Changing judge model or prompt changes historical scores | Version judge model, rubric, prompt, and calibration set. |
 
 ---
@@ -646,6 +685,21 @@ Standardized benchmarks for measuring agent capabilities.
 | **GAIA** | General AI assistants (multi-step reasoning + tools) | Accuracy across difficulty levels |
 | **HumanEval** | Code generation (function completion) | Pass@k |
 | **AgentBench** | Multi-environment agent tasks (OS, DB, web, game) | Success rate per environment |
+
+### Interactive Evaluation Ladder
+
+Agents change the environment and therefore change what happens next. Evaluation should progress from cheap deterministic checks to interactive evidence instead of treating one offline score as production truth.
+
+| Evaluation mode | What it gives | Blind spot |
+|-----------------|---------------|------------|
+| **Offline replay** | Fast regression tests on fixed prompts, tool traces, incidents, and labeled trajectories. | The next user or environment state is frozen, so it cannot react to the candidate agent's different decision. |
+| **Deterministic simulation** | Injects timeouts, malformed results, permission errors, stale state, and policy boundaries reproducibly. | Covers programmed failures but not realistic open-ended behavior. |
+| **User / environment simulation** | Tests multi-turn recovery, goal changes, ambiguity, and long-horizon behavior at scale. | A weak simulator may be too cooperative, fail to represent real users, or share the agent's biases. |
+| **Shadow mode** | Measures latency, tool proposals, score distributions, and candidate decisions on live inputs without user impact. | **Actor-observer gap:** the real user reacted to the production agent, not the shadow agent's alternative action. |
+| **Canary / A/B test** | Measures real interaction outcomes when users and tools respond to the candidate policy. | Requires action gates, rollback, enough traffic, delayed-outcome tracking, and careful randomization. |
+| **Human review** | Calibrates subtle correctness, recovery quality, policy interpretation, and judge reliability. | Expensive and inconsistent unless reviewers use a versioned rubric and adjudication process. |
+
+Use shadow mode confidently for observer-like tasks such as classification, extraction, summarization, or tool-proposal scoring. For multi-turn agents, use simulation and limited live exposure because the candidate's action changes the next state.
 
 ### How to Evaluate Your Own Agent
 

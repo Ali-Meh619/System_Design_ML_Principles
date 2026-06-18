@@ -9,11 +9,11 @@
 | # | Topic | Difficulty | What You'll Learn |
 |---|-------|------------|-------------------|
 | 1 | [Machine Learning in System Design](ml-in-system-design.md) | Advanced | Production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback |
-| 2 | [Recommendation Systems](recommendation-systems.md) | Advanced | Candidate generation, collaborative filtering, matrix factorization, two-tower retrieval, ANN search, ranking, reranking, losses, metrics, cold start, bias, exploration, A/B tests |
-| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, autonomy levels, function calling, memory/state, agentic RAG, ANN indexes, tool reliability, observability, evaluation, online experiments |
+| 2 | [Recommendation Systems](recommendation-systems.md) | Advanced | Candidate generation, two-tower retrieval, negative sampling, ANN search, ranking, reranking, metrics, counterfactual evaluation, exploration, fairness, A/B tests |
+| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, uncertainty-aware control, function calling, memory/state, agentic RAG, tool reliability, interactive evaluation, observability, online experiments |
 | 4 | [Classic Machine Learning](classic-ml.md) | Intermediate | Bias-variance, Naive Bayes, KNN, bagging vs boosting, SVM, PCA, SHAP/LIME, calibration, active learning, selective prediction |
 | 5 | [Deep Learning](deep-learning.md) | Intermediate | CNNs, LSTMs, Transformers, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA |
-| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, RAG, PEFT variants (LoRA, QLoRA, DoRA, AdaLoRA, prompt tuning, prefix tuning, adapters), pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
+| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, adaptation-method selection, RAG, PEFT variants, pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
 
 *These sections are actively maintained and optimized for interview prep rather than textbook completeness.*
 
@@ -60,6 +60,8 @@ Theory / modeling focus:
 - "Explain NDCG, MAP, MRR, Recall@K, and when to use each."
 - "How do you balance relevance, diversity, freshness, policy, and fairness?"
 - "How do you handle exposure bias, position bias, and exploration?"
+- "How do in-batch, hard, popularity, and exposure-aware negatives change two-tower training?"
+- "Compare IPS, SNIPS, and doubly robust evaluation. When do they fail?"
 
 ### AI Agent Design
 
@@ -72,6 +74,8 @@ Theory / modeling focus:
 - "How would you evaluate an agent's performance?"
 - "How do you handle cost control and model routing in a production agent?"
 - "How do you decide whether an agent should answer, ask, act, or escalate?"
+- "How should epistemic, aleatoric, tool, and policy uncertainty change agent behavior?"
+- "Why is shadow mode incomplete for multi-turn agents, and what is the actor-observer gap?"
 - "How do you prevent an agent from saying an action succeeded before the tool confirms it?"
 - "How do you prevent brittle behaviors like overcommitment, sycophancy, premature action, instruction dilution, and looped retries?"
 
@@ -103,6 +107,7 @@ Theory / modeling focus:
 ### LLMs
 
 - "Explain how RAG works and when you'd prefer it over fine-tuning."
+- "When would you choose continual pre-training, SFT, preference optimization, PEFT, or full fine-tuning?"
 - "What is LoRA? Why does it work?"
 - "How does the KV cache improve inference efficiency?"
 - "Why does Chain-of-Thought sometimes fail?"
@@ -135,9 +140,12 @@ Theory / modeling focus:
 | **Two-tower model** | Separate user/context and item towers produce embeddings whose dot product supports ANN retrieval. |
 | **MMR** | Reranking method that trades relevance against similarity to already-selected items. |
 | **IPS** | Counterfactual evaluation method that reweights observed outcomes by exposure propensity. |
+| **SNIPS** | Self-normalized IPS divides weighted reward by total importance weight to reduce variance, with finite-sample bias. |
 | **Explore vs exploit** | Balance immediate predicted reward with learning about uncertain users/items. |
 | **ReAct Agent** | Pattern where an agent iterates through Reason -> Act -> Observe. |
 | **Agent autonomy level** | Defines whether the model may answer, read, prepare, execute, or must escalate. |
+| **Uncertainty-aware control** | Epistemic uncertainty triggers retrieval/learning; ambiguity triggers clarification; tool or policy uncertainty limits action. |
+| **Actor-observer gap** | A shadow agent does not change the next user/environment state, so multi-turn behavior needs simulation or limited live evaluation. |
 | **False commitment** | Agent claims a side effect happened before tool-confirmed success; prevent with explicit action state. |
 | **Agent sycophancy** | Agent lets user pressure or preferred answers override truth, policy, or authorization; prevent with preference data and external policy gates. |
 | **Bias vs Variance** | Bias = model too simple; variance = model too sensitive to training data. |
@@ -149,6 +157,7 @@ Theory / modeling focus:
 | **Active learning** | Choose labels from uncertainty, disagreement, high-impact cases, and production failures. |
 | **Self-attention complexity** | O(n^2) in sequence length; FlashAttention and sparse/windowed attention reduce practical cost. |
 | **RAG vs Fine-tuning** | RAG for updatable external knowledge; fine-tuning for behavior, style, or task adaptation. |
+| **Adaptation mechanism** | Continual pre-training changes domain language, SFT teaches demonstrations, preferences tune trade-offs, and PEFT/full tuning changes durable behavior. |
 | **PEFT design** | LoRA rank, target modules, alpha, dropout, and adapter routing determine capacity and risk. |
 | **TTFT / TPOT** | Time-to-first-token measures prefill/startup; time-per-output-token measures decode speed. |
 | **KV cache** | Stores prior keys/values so decoding only processes the new token. |

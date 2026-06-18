@@ -703,7 +703,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🎯",
     difficulty: "advanced",
-    summary:    "End-to-end recommender-system interview guide: data and exposure logging, candidate generation, retrieval models, ANN search, ranking, reranking, losses, metrics, A/B tests, cold start, exploration, bias, fairness, and production operations.",
+    summary:    "End-to-end recommender-system interview guide: exposure logging, candidate generation, retrieval models, negative sampling, ANN search, ranking, reranking, metrics, counterfactual evaluation, A/B tests, exploration, and fairness.",
     subtopics:  [
       "Interview Answer Spine",
       "Data, Labels, and Interaction Metrics",
@@ -713,12 +713,14 @@ window.TOPICS = [
       "Two-Tower Retrieval and ANN Search",
       "Ranking Methods: GBDT, Wide & Deep, DeepFM, DCN, DLRM, DIN",
       "Reranking: MMR, DPP, Diversity, Freshness, Constraints",
-      "Loss Functions and Negative Sampling",
+      "Negative Sampling - in-batch, hard, exposure-aware, false-negative filtering, log-Q correction",
+      "Loss Functions for retrieval, ranking, and multi-task learning",
       "Evaluation Metrics: Recall@K, NDCG, MAP, MRR, Calibration",
-      "Bias, Exploration, IPS, Bandits, and Fairness",
+      "Bias and Counterfactual Evaluation - IPS, SNIPS, doubly robust estimation",
+      "Exploration, Bandits, Filter Bubbles, and Fairness",
       "Scenario-Based Model Selection",
     ],
-    tags:  ["recommendation", "recommender systems", "rec sys", "collaborative filtering", "matrix factorization", "implicit als", "wrmf", "bpr", "two tower", "two-tower", "ann", "faiss", "hnsw", "ranking", "reranking", "ndcg", "mrr", "map", "cold start", "bandits", "ips", "fairness", "diversity"],
+    tags:  ["recommendation", "recommender systems", "rec sys", "collaborative filtering", "matrix factorization", "implicit als", "wrmf", "bpr", "two tower", "two-tower", "negative sampling", "in-batch negatives", "hard negatives", "exposure-aware negatives", "false negatives", "log q correction", "ann", "faiss", "hnsw", "ranking", "reranking", "ndcg", "mrr", "map", "cold start", "counterfactual evaluation", "ips", "snips", "doubly robust", "propensity", "bandits", "fairness", "diversity"],
     path:  "../docs/machine-learning/recommendation-systems.md"
   },
 
@@ -728,7 +730,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "🧠",
     difficulty: "advanced",
-    summary:    "Agent anatomy, hybrid orchestration, autonomy levels, brittle behavior controls, function calling mechanics, structured state, agentic RAG with ANN indexes, tool reliability, memory compaction, LangGraph, AutoGen, MCP, observability & tracing, model routing, evaluation, and online experiments.",
+    summary:    "Agent anatomy, hybrid orchestration, uncertainty-aware control, brittle behavior defenses, function calling, structured state, agentic RAG, tool reliability, interactive evaluation, observability, model routing, and online experiments.",
     subtopics:  [
       "Core Agent Anatomy (Planner, Tool Executor, Memory)",
       "Cognitive Architectures (ReAct, plan-execute, Reflection)",
@@ -736,6 +738,8 @@ window.TOPICS = [
       "Multi-Agent Patterns (Orchestrator-Worker, Planner-Critic, Handoffs)",
       "Agent Frameworks & Tooling (LangGraph, AutoGen, MCP)",
       "Hybrid Orchestration and Autonomy Levels",
+      "Uncertainty-Aware Control - epistemic, aleatoric, tool, policy, act/ask/retrieve/escalate",
+      "Agent Calibration - reliability diagrams, ECE, selective prediction, conformal sets",
       "Brittle Agent Behaviors - overcommitment, sycophancy, premature action, instruction dilution",
       "Structured Agent State",
       "Agentic RAG Chunking — fixed, recursive, semantic, sentence-window, parent-child, hierarchical",
@@ -747,6 +751,7 @@ window.TOPICS = [
       "Tool Reliability, Retries & Idempotency",
       "Agentic Dataset Design and Regression Tests",
       "Trace-Level Judge Evaluation — deterministic checks plus calibrated LLM judge",
+      "Interactive Evaluation Ladder - replay, simulation, shadow, actor-observer gap, A/B tests",
       "Memory Pruning & Cost Control",
       "Observability & Tracing — LangSmith, Langfuse, full step tracing",
       "Agent Benchmarks — SWE-bench, WebArena, ToolBench, GAIA",
@@ -754,7 +759,7 @@ window.TOPICS = [
       "Model Routing — Cheap vs expensive model selection, cascading",
       "Evaluation and Online Experiments",
     ],
-    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "ann", "ann index", "hnsw", "faiss", "scann", "ivf", "ivf-pq", "product quantization", "vector index", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "policy gate", "false commitment", "overcommitment", "sycophancy", "premature action", "instruction dilution", "social pressure", "metric gaming", "trace-level judge", "llm-as-a-judge", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "swe-bench", "observability", "model routing", "online experiments"],
+    tags:  ["llm", "agent", "rag", "agentic rag", "chunking strategies", "recursive chunking", "semantic chunking", "sentence-window chunks", "parent-child chunking", "hierarchical retrieval", "retrieval methods", "bm25", "dense retrieval", "sparse retrieval", "hybrid retrieval", "ann", "ann index", "hnsw", "faiss", "scann", "ivf", "ivf-pq", "product quantization", "vector index", "metadata filters", "query decomposition", "query rewriting", "hyde", "multi-query retrieval", "router rag", "corrective rag", "multi-hop rag", "graphrag", "reranking", "evidence checks", "citations", "citation precision", "faithfulness", "abstention", "tool use", "function calling", "memory", "structured state", "guardrails", "autonomy", "uncertainty", "epistemic uncertainty", "aleatoric uncertainty", "tool uncertainty", "policy uncertainty", "act ask escalate", "selective prediction", "conformal prediction", "calibration", "ece", "policy gate", "false commitment", "overcommitment", "sycophancy", "premature action", "instruction dilution", "social pressure", "metric gaming", "trace-level judge", "llm-as-a-judge", "user simulation", "shadow mode", "actor-observer gap", "interactive evaluation", "langchain", "langgraph", "mcp", "autogen", "orchestrator", "multi-agent", "react", "swe-bench", "observability", "model routing", "online experiments"],
     path:  "../docs/machine-learning/ai-agent-system-design.md"
   },
 
@@ -882,7 +887,7 @@ window.TOPICS = [
     category:   "AI & Machine Learning",
     icon:       "💬",
     difficulty: "advanced",
-      summary:    "Modern GenAI for engineering interviews: tokenization, Transformer architecture, training lifecycle, PEFT/LoRA/QLoRA, production RAG, RLHF/DPO/KTO/ORPO, sycophancy and preference data, LLM evaluation, serving latency, MoE, KV cache, quantization, pruning, decoding, and long-context strategy.",
+      summary:    "Modern GenAI for engineering interviews: Transformers, training lifecycle, adaptation-method selection, PEFT, production RAG, preference optimization, evaluation, serving latency, quantization, pruning, decoding, and long-context strategy.",
       subtopics:  [
         "Tokenization — BPE, WordPiece, SentencePiece; arithmetic & multilingual pitfalls",
         "Transformer Block — Embedding, MHA, FFN, LayerNorm, residuals (sketch from memory)",
@@ -891,6 +896,7 @@ window.TOPICS = [
         "Positional Encoding — Sinusoidal vs Learned vs RoPE vs ALiBi",
         "Causal LM (GPT) vs Masked LM (BERT) — Autoregressive vs bidirectional",
         "Instruction Fine-Tuning — SFT on (instruction, response) pairs",
+        "Adaptation Mechanism Selection - RAG vs continual pre-training vs SFT vs preferences vs PEFT",
         "Catastrophic Forgetting — Replay buffers, EWC, small LR",
         "LoRA — Low-rank ΔW = B·A; rank r; which layers to adapt",
         "QLoRA — 4-bit quantized base + BF16 LoRA; enables fine-tune on single GPU",
@@ -921,7 +927,7 @@ window.TOPICS = [
         "Lost in the Middle — Primacy/recency bias, accuracy by position, mitigations",
         "Attention Dilution — Softmax normalisation over longer sequences, design implications",
     ],
-    tags:  ["llm", "genai", "transformers", "rag", "production rag", "ann", "vector search", "hnsw", "faiss", "scann", "ivf", "ivf-pq", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "preference data", "trajectory labels", "sycophancy", "overcommitment", "safe refusal", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "pruning", "llm pruning", "sparsegpt", "wanda", "perplexity", "hallucination", "attention", "interview"],
+    tags:  ["llm", "genai", "transformers", "training lifecycle", "adaptation mechanism", "continual pre-training", "domain adaptation", "rag vs fine-tuning", "rag", "production rag", "ann", "vector search", "hnsw", "faiss", "scann", "ivf", "ivf-pq", "lora", "qlora", "dora", "adalora", "peft", "prompt tuning", "prefix tuning", "adapter", "adapters", "bottleneck adapters", "fine-tuning", "sft", "instruction tuning", "tokenization", "bpe", "moe", "mixture of experts", "scaling laws", "multi-modal", "constitutional ai", "synthetic data", "prompt engineering", "cot", "chain-of-thought", "rlhf", "dpo", "kto", "orpo", "prm", "orm", "preference data", "trajectory labels", "sycophancy", "overcommitment", "safe refusal", "kv cache", "ttft", "tpot", "mixed precision", "quantization", "pruning", "llm pruning", "sparsegpt", "wanda", "perplexity", "hallucination", "attention", "interview"],
     path:  "../docs/machine-learning/llm-interviews.md"
   },
 
