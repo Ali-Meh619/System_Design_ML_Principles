@@ -9,11 +9,11 @@
 | # | Topic | Difficulty | What You'll Learn |
 |---|-------|------------|-------------------|
 | 1 | [Machine Learning in System Design](ml-in-system-design.md) | Advanced | Production ML pipelines, feature stores, training, registry, serving, rollout, evaluation ladder, A/B tests, monitoring, data flywheel, retraining, rollback |
-| 2 | [Recommendation Systems](recommendation-systems.md) | Advanced | Candidate generation, two-tower retrieval, negative sampling, ANN search, ranking, reranking, metrics, counterfactual evaluation, exploration, fairness, A/B tests |
-| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, uncertainty-aware control, function calling, memory/state, agentic RAG, tool reliability, interactive evaluation, observability, online experiments |
+| 2 | [Recommendation Systems](recommendation-systems.md) | Advanced | Candidate generation, source fusion, two-tower retrieval, negative sampling, ANN search, ordered-slate reranking, counterfactual evaluation, feedback loops, fairness, A/B tests |
+| 3 | [AI Agent System Design](ai-agent-system-design.md) | Advanced | Agent anatomy, hybrid orchestration, uncertainty-aware control, structured state vs retrieval, agentic RAG, tool reliability, interactive evaluation, observability, online experiments |
 | 4 | [Classic Machine Learning](classic-ml.md) | Intermediate | Bias-variance, Naive Bayes, KNN, bagging vs boosting, SVM, PCA, SHAP/LIME, calibration, active learning, selective prediction |
 | 5 | [Deep Learning](deep-learning.md) | Intermediate | CNNs, LSTMs, Transformers, GANs, VAEs, diffusion, distillation, compression, distributed training, GQA/MQA |
-| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, adaptation-method selection, RAG, PEFT variants, pruning, RLHF/DPO/KTO/ORPO, serving latency, MoE, scaling laws, multi-modal, CoT |
+| 6 | [LLM Interview Questions](llm-interviews.md) | Advanced | Tokenization, three-axis adaptation selection, RAG, PEFT methods, pruning, RLHF/DPO/KTO/ORPO, evaluation, serving latency, MoE, scaling laws, multi-modal, CoT |
 
 *These sections are actively maintained and optimized for interview prep rather than textbook completeness.*
 
@@ -107,7 +107,7 @@ Theory / modeling focus:
 ### LLMs
 
 - "Explain how RAG works and when you'd prefer it over fine-tuning."
-- "When would you choose continual pre-training, SFT, preference optimization, PEFT, or full fine-tuning?"
+- "How do you choose the training objective, parameter-update scope, and deployment form independently?"
 - "What is LoRA? Why does it work?"
 - "How does the KV cache improve inference efficiency?"
 - "Why does Chain-of-Thought sometimes fail?"
@@ -157,7 +157,7 @@ Theory / modeling focus:
 | **Active learning** | Choose labels from uncertainty, disagreement, high-impact cases, and production failures. |
 | **Self-attention complexity** | O(n^2) in sequence length; FlashAttention and sparse/windowed attention reduce practical cost. |
 | **RAG vs Fine-tuning** | RAG for updatable external knowledge; fine-tuning for behavior, style, or task adaptation. |
-| **Adaptation mechanism** | Continual pre-training changes domain language, SFT teaches demonstrations, preferences tune trade-offs, and PEFT/full tuning changes durable behavior. |
+| **Adaptation decision** | Choose the objective (continual pre-training, SFT, preferences), trainable-parameter scope (full or PEFT), and deployment form independently. |
 | **PEFT design** | LoRA rank, target modules, alpha, dropout, and adapter routing determine capacity and risk. |
 | **TTFT / TPOT** | Time-to-first-token measures prefill/startup; time-per-output-token measures decode speed. |
 | **KV cache** | Stores prior keys/values so decoding only processes the new token. |

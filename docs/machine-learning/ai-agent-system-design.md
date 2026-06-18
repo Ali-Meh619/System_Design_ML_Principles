@@ -13,9 +13,10 @@ An AI agent is a runtime system that uses an LLM as a reasoning engine to pursue
 | Component | Function | Implementation Pattern |
 |-----------|---------|----------------------|
 | **Profile / Persona** | Defines role, constraints, and personality. "You are a senior SRE. You are cautious." | System Prompt. |
-| **Memory** | **Short-term:** current context window. **Long-term:** Vector DB (RAG). **Episodic:** Past session logs. | Redis (chat history), Pinecone (knowledge), SQL (structured logs). |
-| **Planning** | Decomposing goals into steps. **ReAct** (Reason+Act), reflection, or plan-and-execute. | LLM generating a structured plan or stepwise reasoning trace. |
-| **Tools** | Capabilities the agent can invoke (Search, Calculator, Code Interpreter, Database). | Function Calling API (OpenAI/Anthropic), Sandbox environment. |
+| **State and memory** | Current goal, confirmed facts, pending actions, recent context, and durable user/session facts. | Structured state store, bounded chat history, episodic database. |
+| **Knowledge retrieval** | External evidence from documents, search, databases, and APIs. | Agentic RAG with sparse/dense retrieval, structured tools, ACLs, reranking, and citations. |
+| **Planning** | Decomposes goals and selects the next action. | Structured plan, decision, observation, and checkpoint records rather than relying on hidden free-form reasoning. |
+| **Tools** | Capabilities the agent can invoke, such as search, calculation, code execution, and databases. | Typed tool schemas, deterministic validation, scoped credentials, and sandboxed execution. |
 
 ---
 
@@ -25,15 +26,15 @@ An AI agent is a runtime system that uses an LLM as a reasoning engine to pursue
 
 | Pattern | Mechanism | Best For |
 |---------|-----------|---------|
-| **ReAct Loop** | **Observation → Thought → Action.** Run in a loop. "I see X, I should do Y." Immediate feedback. | Tasks requiring exploration or where the next step depends on the previous step's result (e.g., debugging). |
+| **ReAct Loop** | **Observation → decision → action.** Run one bounded step at a time and update structured state after each observation. | Tasks requiring exploration or where the next step depends on the previous result, such as debugging. |
 | **Plan-and-Solve** | **Plan → Execute.** Generate a full checklist first, then execute sequentially. | Tasks with clear, independent steps (e.g., "Write a blog post about X"). Reduces getting lost in the weeds. |
-| **Reflection / Self-Correction** | **Draft → Critique → Revise.** Agent generates output, then plays role of "critic" to find errors, then fixes them. | Code generation, content writing. Improves quality significantly at cost of latency. |
+| **Reflection / Self-Correction** | **Draft → Critique → Revise.** A separate pass checks the output against explicit criteria. | Useful when verification can catch errors; adds latency and can repeat the same bias if the critic lacks independent evidence. |
 
 ---
 
 ## Multi-Agent Patterns (How They Collaborate)
 
-For complex tasks, one agent context window is often insufficient. Multi-agent systems (MAS) specialize agents by role.
+Multi-agent systems are useful when work benefits from parallelism, specialization, permission isolation, or independent review. They do not automatically create a larger coherent context and they add coordination, consistency, latency, and failure-handling costs.
 
 **Common MAS Patterns:**
 
@@ -50,25 +51,17 @@ For complex tasks, one agent context window is often insufficient. Multi-agent s
 
 ## Agent Frameworks & Tooling
 
-Building agents from scratch using raw LLM APIs (like OpenAI's) is possible but often tedious due to state management, tool execution loops, and observability needs. The ecosystem has evolved to provide robust frameworks:
+Choose frameworks by runtime requirements, not popularity. The durable interview distinction is between a high-level agent API, a lower-level orchestration runtime, multi-agent coordination, application UI, and a protocol for exposing tools or resources.
 
-### 1. LangChain & LangGraph
-- **LangChain:** The original, most popular framework for building LLM applications. Provides abstractions for Prompts, LLMs, Memory, and Tools. However, standard LangChain (chains) struggles with complex, cyclic agent loops.
-- **LangGraph:** An extension of LangChain built specifically for stateful, multi-actor applications. It models the agent's workflow as a **cyclic graph** (nodes = functions/agents, edges = conditional routing).
-  - *Why it matters:* It gives developers fine-grained control over the agent loop, making it much easier to implement complex patterns like reflection, human-in-the-loop, and multi-agent handoffs compared to "black box" agents.
+| Layer | Representative option | Owns | Still your responsibility |
+|-------|-----------------------|------|---------------------------|
+| **High-level agent API** | LangChain agents or provider SDKs | Model calls, tool schemas, common agent loops | State contracts, policy gates, evaluation, and operations. |
+| **Graph/workflow runtime** | LangGraph or a durable workflow engine | Cyclic state graphs, checkpoints, interrupts, recovery | Correct state transitions, idempotency, and compensation. |
+| **Multi-agent runtime** | AutoGen-style agent coordination | Agent messaging, roles, handoffs, event-driven workflows | Shared-state consistency, termination, permissions, and conflict resolution. |
+| **Application AI SDK** | Vercel AI SDK and similar libraries | Streaming, tool-result UI, client/server message handling | Backend authorization, tool safety, persistence, and model evaluation. |
+| **Tool/resource protocol** | Model Context Protocol (MCP) | Standard interfaces for tools, resources, prompts, and transports | Server trust, credentials, user consent, tenant isolation, sandboxing, and policy enforcement. |
 
-### 2. AutoGen (Microsoft)
-- A framework specifically designed for **Multi-Agent Systems (MAS)**.
-- *How it works:* You define multiple agents (e.g., a "Coder" agent and a "Reviewer" agent), assign them system prompts and tools, and let them converse with each other to solve a task.
-- *Best for:* Code generation, complex problem-solving where specialized personas need to debate or iterate.
-
-### 3. AI SDKs (Vercel AI SDK, etc.)
-- For web developers, frameworks like the Vercel AI SDK provide React/Next.js primitives to stream agent responses, render UI components dynamically based on tool calls (Generative UI), and manage chat state on the client/server.
-
-### 4. Model Context Protocol (MCP)
-- An emerging open standard (introduced by Anthropic) that standardizes how AI models connect to data sources and tools.
-- *The problem it solves:* Previously, every agent needed custom API integrations for Slack, GitHub, local file systems, etc.
-- *How it works:* MCP uses a client-server architecture. An "MCP Server" exposes data and tools (e.g., a GitHub MCP server). An "MCP Client" (like Claude Desktop or a custom agent) can connect to any MCP Server to instantly gain those capabilities without custom integration code.
+MCP reduces bespoke protocol glue, but it does not make a tool safe or authorized by itself. Treat every server and tool result as a trust boundary and apply the same validation, least-privilege, prompt-injection, and audit controls described below.
 
 ---
 
@@ -108,7 +101,7 @@ Function calling (tool use) is the mechanism by which an LLM invokes external to
 - **Descriptive names and docstrings** — the LLM uses these to decide when to call a tool
 - **Constrained schemas** — use enums, required fields, and type annotations to reduce malformed calls
 - **Idempotent reads** — GET-style tools should be safe to retry
-- **Confirmation for writes** — destructive operations need human approval
+- **Risk-based confirmation** — require approval for irreversible, high-impact, ambiguous, or unusually expensive actions; low-risk reversible writes may be policy-approved
 - **Error messages, not stack traces** — return actionable errors the LLM can reason about
 
 ### Common Function Calling Failures
@@ -130,9 +123,9 @@ Allowing LLMs to execute code or API calls creates massive risk (**Prompt Inject
 
 | Guardrail | Implementation |
 |-----------|---------------|
-| **Sandboxing** | Run all code execution tools (Python REPL, Bash) in ephemeral, network-isolated Firecracker microVMs or Docker containers. Never run on the host. |
+| **Sandboxing** | Isolate code execution according to the threat model: unprivileged containers or microVMs, syscall and resource limits, scoped filesystems, short-lived credentials, and denied or allowlisted network egress. Never execute untrusted code directly on the host. |
 | **Human-in-the-loop (HITL)** | Pause execution before sensitive actions (send email, buy ticket). Require explicit user approval (Y/N). |
-| **Read-only vs Read-write** | Classify tools. Give the agent "Read" tools by default. "Write" tools require elevated privileges or HITL. |
+| **Read-only vs Read-write** | Classify tools by risk and reversibility. Give the agent read tools by default; gate sensitive writes with scoped authorization, previews, confirmation, or human review. |
 | **Budget Limits** | Hard limits on: Max Steps (loop count), Max Token Cost, and Max Wall Time to prevent infinite loops (agent getting stuck retrying). |
 
 ---
@@ -241,65 +234,16 @@ Do not rely on raw message history or chat history as the only source of truth. 
 | **Confirmed facts** | Facts the user or system has verified | Separates known state from model guesses. |
 | **Pending action** | Tool name, arguments, risk tier, confirmation status | Prevents accidental execution. |
 | **Tool observations** | Latest tool outputs, timestamps, and errors | Lets the agent recover from partial failures. |
-| **Policy constraints** | Authorization, privacy, safety, and business rules | Keeps rules close to the decision point. |
+| **Policy decision** | Policy version/reference, authorization result, risk tier, and required gate | Keeps the applicable decision close while authoritative rules remain in the policy service. |
 | **Escalation reason** | Why automation stopped | Gives the next handler useful context. |
 
 Pinned structured state is usually more reliable than stuffing every prior message into context. Use free-form history for language nuance; use structured state for commitments and actions.
 
 ---
 
-## Trace-Level Judge Evaluation
-
-Some agent behavior cannot be tested with exact string equality. Use deterministic assertions for schemas, permissions, and tool results; use an LLM judge only for semantic or trajectory quality that cannot be captured by simple assertions.
-
-```
-Trace evaluation pipeline:
-1. Dataset: Input: "Book a flight to Paris", Expected: "Tool call book_flight(destination='CDG')"
-2. Run Agent: Record the trace (steps taken, tool calls made).
-3. Judge: "Did the agent call the correct tool with valid arguments? (Yes/No)"
-4. Score: Pass rate across 100 test cases.
-```
-
-### Judge Failure Modes And Controls
-
-LLM judges are accelerators, not ground truth. Treat judge scores like model outputs that need calibration.
-
-| Risk | What happens | Control |
-|------|--------------|---------|
-| **Position bias** | Judge prefers the first or second answer independent of quality | Randomize order and average swapped comparisons. |
-| **Verbosity bias** | Longer answers score higher even when concise answers are better | Include brevity, directness, and task completion in the rubric. |
-| **Style bias** | Judge rewards wording similar to its own style | Calibrate against human labels and use multiple judges for major releases. |
-| **Rubric ambiguity** | Judge grades helpfulness but misses tool correctness or safety | Use explicit criteria: correct tool, valid args, grounded answer, no unsafe action. |
-| **Domain blindness** | Judge lacks the policy, tool observation, or business rule needed to recognize a wrong answer | Provide reference evidence and gold constraints; use deterministic checks for facts the judge should not infer. |
-| **Safety under-sensitivity** | Judge accepts false commitment, missing confirmation, or an unauthorized action because the response sounds helpful | Add explicit action-safety rubric items and deterministic assertions for restricted operations. |
-| **Judge drift** | Changing judge model or prompt changes historical scores | Version judge model, rubric, prompt, and calibration set. |
-
----
-
 ## Memory Architecture
 
-**Short-term (in-context) memory:**
-- The LLM's context window (128K tokens for GPT-4o)
-- Most recent messages in conversation
-- Working set for current task
-
-**Long-term memory (RAG — Retrieval Augmented Generation):**
-
-```
-At indexing time:
-Codebase / Documents → Chunked → Embeddings → Vector DB (Pinecone/FAISS)
-
-At query time:
-User query → Embedding → 
-Vector similarity search → Top 5 most relevant chunks →
-Inject into LLM prompt as context →
-LLM answers with grounded information
-```
-
-**Episodic memory (past sessions):**
-- Store key events/decisions from past conversations in database
-- Retrieve relevant past sessions at start of new conversation
-- Enables "memory" across conversations without unlimited context
+Memory stores task or user state. Retrieval supplies external evidence. Keeping them separate prevents stale documents from silently becoming user facts and prevents recalled preferences from being treated as authoritative knowledge.
 
 ### Memory Taxonomy For Agents
 
@@ -307,9 +251,10 @@ LLM answers with grounded information
 |-------------|--------|-----------|---------|
 | **Working memory** | Current task, recent turns, tool results | Bloats context and cost | Sliding window plus state object |
 | **Episodic memory** | Prior interactions and outcomes | Stale or sensitive context | TTLs, consent, tenant isolation, retrieval filters |
-| **Semantic memory** | Stable facts, docs, policies, FAQs | Stale or conflicting knowledge | Versioned retrieval and freshness metadata |
+| **Semantic/user memory** | Durable user-provided facts and preferences | Incorrect, sensitive, or outdated recollection | Provenance, edit/delete controls, confidence, and expiry |
 | **Procedural memory** | How to perform workflows | Hidden policy in prompts | Encode as skills, schemas, and workflow definitions |
-| **Policy memory** | Authorization, privacy, safety constraints | Prompt injection or instruction dilution | Enforce outside the model too |
+
+Authorization, privacy, safety constraints, and business policy are not ordinary memory. Keep them in versioned policy services and deterministic gates. Use the **Structured Agent State** section for current commitments and **Agentic RAG** for external documents, search, databases, and APIs.
 
 ---
 
@@ -345,12 +290,12 @@ Traditional RAG retrieves once before generation. Agentic RAG treats retrieval a
 User request
   -> intent/source router
   -> query planner or query rewriter
-  -> parallel retrieval:
-       dense vector search
-       sparse BM25 / keyword search
-       structured tools or SQL where needed
-       graph/entity lookup where needed
-  -> metadata, ACL, freshness, and tenant filters
+  -> parallel retrieval inside the authorized tenant/source scope:
+       dense vector search with supported ACL/metadata prefilters
+       sparse BM25 / keyword search over authorized partitions
+       structured tools or SQL with row-level authorization
+       graph/entity lookup with permitted edge/node scope
+  -> freshness and validity filtering
   -> reranker over the small candidate set
   -> context constructor:
        dedupe
@@ -396,18 +341,20 @@ Chunking determines what the retriever can find. Bad chunks create bad evidence 
 
 ### Dense ANN Indexes For Agentic RAG
 
-ANN (Approximate Nearest Neighbor) search is the first-stage infrastructure for dense vector retrieval. The agent embeds the query, asks the ANN index for a fast top-k candidate set, then applies ACL/freshness filters, hybrid fusion, reranking, evidence compression, and citation checks. ANN is not the final judge of relevance; it is a latency/recall trade-off before the more precise stages.
+Dense retrieval may use exact search for a small corpus or ANN for a large one. Sparse search, structured lookup, or live APIs may be the primary retriever when identifiers, freshness, or exact constraints matter.
 
-| Index / library | How it works | Best fit | Key parameters and risks |
-|-----------------|--------------|----------|--------------------------|
-| **HNSW** | Builds a multi-layer small-world graph; search greedily moves through neighbors toward the query vector. | Low-latency serving with high recall and frequently updated indexes. Common in Qdrant, Weaviate, Milvus, OpenSearch, and many vector DBs. | `M` controls graph degree and memory, `efConstruction` controls build quality, `efSearch` controls query recall/latency. Memory can be high; strict metadata filtering can hurt recall if applied only after search. |
-| **FAISS** | Meta's vector-search library with exact flat search, HNSW, IVF, IVF-PQ, OPQ, and GPU indexes. | Custom retrieval services, offline evaluation, GPU batch search, very large corpora, and experiments comparing index families. | `IndexFlat` is exact but expensive; IVF uses `nlist` clusters and `nprobe` searched clusters; PQ compresses vectors but can lose recall. Rebuild and version indexes with the embedding model. |
-| **ScaNN** | Google's ANN library using partitioning, asymmetric hashing / quantization, and a reordering step over the best candidates. | CPU-heavy semantic retrieval where high throughput and good recall/latency trade-offs matter. | Tune leaves searched, candidate count, quantization, and reorder size. Quantization improves speed and memory but can drop hard-neighbor recall. |
-| **IVF / IVF-PQ** | Clusters vectors into coarse partitions; searches only nearby partitions, optionally compressing residual vectors with product quantization. | Huge indexes where flat or pure graph search is too expensive. | Needs representative training data. Too few probes misses relevant chunks; too much compression hurts exact evidence retrieval. |
+| Index family | How it works | Best fit | Key parameters and risks |
+|--------------|--------------|----------|--------------------------|
+| **Flat / exact** | Scores every vector. | Small corpora, offline ground truth, and recall canaries. | Highest recall but linear query cost. |
+| **HNSW** | Builds a multi-layer proximity graph and searches greedily through neighbors. | Low-latency serving when memory is available. | `M`, `efConstruction`, and `efSearch` trade memory/build time/latency for recall. Deletes, selective filters, and rebuild strategy need explicit design. |
+| **IVF** | Partitions vectors into coarse cells and searches only selected cells. | Large indexes where scanning all vectors is too expensive. | `nlist` and `nprobe`; representative training data and routing quality matter. |
+| **PQ / IVF-PQ** | Compresses vectors into product-quantized codes, often inside IVF cells. | Very large or memory-constrained corpora. | Code size, quantization error, and exact rescoring pool determine recall. |
+
+FAISS implements exact, HNSW, IVF, PQ, OPQ, and GPU variants. ScaNN combines partitioning, quantization, and shortlist reordering. Managed vector databases package index families with filtering, persistence, replication, and operations; the library or service is not itself an ANN algorithm.
 
 **Production rules for agents**
 
-- Apply tenant, permission, source, and freshness filters before or inside retrieval when the vector DB supports it; do not rely only on post-generation filtering.
+- Constrain candidate generation by tenant and authorization through secure partitions, prefiltering, or supported filtered ANN. Post-filtering unauthorized candidates is not an access-control strategy and can collapse recall. Freshness may be enforced before retrieval or by bounded post-filtering, depending on semantics.
 - Over-retrieve from ANN (`top_k` larger than final context) because rerankers and evidence checks need enough candidates to recover from approximate misses.
 - Evaluate ANN separately from generation: Recall@K, MRR/NDCG, P95 latency, memory footprint, filter selectivity, and stale-index rate.
 - Keep embedding model, normalization method, distance metric, and index version tied together. Changing one without rebuilding or recalibrating can silently degrade retrieval.
@@ -506,66 +453,27 @@ Use child chunks for **finding** and parent sections for **understanding**. This
 
 ---
 
-## Agentic Dataset Design
-
-Agent datasets need more than final answers. They should capture the path the agent took and the decision boundaries it faced.
-
-| Dataset component | Capture | Why it matters |
-|-------------------|---------|----------------|
-| **Turn-level labels** | intent, slots, ambiguity, next action, tool need, escalation state | Trains the agent to make the next correct move. |
-| **Trajectory labels** | final outcome, number of clarifications, recovery quality, policy compliance | Catches workflows that "succeed" through unsafe or poor intermediate steps. |
-| **Tool traces** | selected tool, arguments, result, timeout/error, retry behavior | Tool-use learning fails without observations after success and failure. |
-| **Negative examples** | wrong tool, malformed args, premature action, hallucinated result, missing confirmation | Teaches boundaries and recovery, not only happy paths. |
-| **Human repair examples** | how an expert fixed confusion or recovered from bad state | High-value data for recovery behavior. |
-| **Slice metadata** | domain, tenant, language, risk tier, tool path, length, customer segment | Enables targeted evaluation instead of aggregate-only metrics. |
-
-**Active learning signals**
-
-- high model uncertainty or unstable action choice
-- disagreement across models, prompts, or reruns
-- high-risk or high-value workflows
-- tool failures, retries, and timeouts
-- repeated clarifications or abandonment
-- new product, policy, region, or customer segment
-
----
-
-## Regression Testing Nondeterministic Agents
-
-Do not regression-test agents by exact string equality. Test invariants, schemas, and outcomes.
-
-| Test type | What to assert |
-|-----------|----------------|
-| **Schema tests** | Tool calls parse and match allowed JSON schema. |
-| **Policy invariants** | The agent never performs restricted actions without required gates. |
-| **Semantic equivalence** | The final answer is correct even if wording changes. |
-| **Trajectory tests** | The agent chooses acceptable steps, not only an acceptable final response. |
-| **Slice tests** | Known hard slices remain above threshold after model, prompt, or tool changes. |
-| **Replay tests** | Historical incidents do not recur. |
-| **Canary monitors** | Online guardrails detect regressions that offline tests miss. |
-
-For high-risk agents, a release should pass old success cases, previous incidents, synthetic edge cases, and current production failure slices.
-
----
-
 ## Tool Reliability, Retries & Idempotency
 
 Agents fail more often at the tool boundary than in raw text generation.
 
-| Failure | Example | Mitigation |
-|---------|---------|-----------|
-| Timeout | Search API too slow | Retry with deadline, fallback tool |
-| Invalid arguments | Malformed JSON tool call | Schema validation + repair loop |
-| Duplicate action | Agent retries "send email" twice | Idempotency key / action UUID |
-| Partial success | File created but DB not updated | Compensating action or workflow checkpoint |
+| Failure class | Example | Production handling |
+|---------------|---------|---------------------|
+| **Permanent rejection** | Invalid schema, denied permission, unsupported request | Do not retry unchanged. Repair arguments, ask for missing data, or escalate. |
+| **Transient failure** | Rate limit, dependency unavailable, temporary timeout before execution | Retry only within a deadline, using exponential backoff, jitter, and `Retry-After`; use a circuit breaker or fallback when appropriate. |
+| **Unknown outcome** | Connection drops after a write may have committed | Do not blindly repeat. Query by idempotency key, request receipt, or read after write to determine the outcome. |
+| **Duplicate or concurrent write** | Two retries send the same email or overwrite changed state | Idempotency key with retained result, optimistic concurrency/version checks, and serialized workflow ownership. |
+| **Partial success** | External object created but local state update failed | Durable checkpoint, saga/compensation where valid, and explicit recovery state. |
+| **Cancellation or expiry** | User cancels, approval expires, credentials rotate | Propagate cancellation, invalidate stale approvals, re-check authorization and external state before resuming. |
 
 ### Practical rules
 
-- Treat tools like unreliable distributed systems
-- Separate **read tools** from **write tools**
-- Require approval for destructive or expensive actions
-- Log every tool call with arguments, result, and latency
-- Never tell the user a side effect happened until the tool returns confirmed success
+- Treat tools like unreliable distributed systems with typed inputs and validated outputs.
+- Retry only failures classified as retryable and only when the operation is idempotent or protected by an idempotency key.
+- Separate **definitely failed**, **succeeded**, and **outcome unknown** states.
+- Re-check authorization, approval freshness, and mutable preconditions immediately before a sensitive write.
+- Log request and idempotency IDs, arguments or redacted hashes, result/receipt, latency, retry count, and final outcome.
+- Never tell the user a side effect happened until a receipt or follow-up read confirms it.
 
 ---
 
@@ -577,7 +485,8 @@ Unbounded memory is a trap. Agents need selective memory, not infinite memory.
 
 - **Sliding window** for most recent conversational turns
 - **Summarization** for older turns
-- **Episodic memory** for key decisions and durable facts
+- **Episodic memory** for key events, decisions, and outcomes
+- **Semantic/user memory** for durable user-provided facts and preferences
 - **Tool trace compaction** so intermediate noise does not dominate the prompt
 
 If you do not prune memory, the agent gets slower, more expensive, and less accurate.
@@ -607,28 +516,14 @@ Production agents need hard limits:
 
 | Component | Purpose | Technology |
 |-----------|---------|-----------|
-| **Inference servers** | Serve LLM predictions | Triton, vLLM, TGI (HuggingFace) |
-| **KV Cache** | Reuse computed attention keys/values for repeated prompts | Built into vLLM |
-| **Continuous batching** | Dynamic batch incoming requests for GPU efficiency | vLLM, TGI |
-| **Speculative decoding** | Small model drafts tokens, large model verifies | 2-3× latency improvement |
+| **Inference servers** | Serve LLM predictions | Triton, vLLM, SGLang, or another maintained runtime |
+| **Per-request KV cache** | Reuse attention keys/values for prior tokens during autoregressive decoding | Standard serving runtime capability |
+| **Prefix caching** | Reuse KV blocks for identical shared prompt prefixes across requests | Runtime-dependent; requires exact compatible prefixes |
+| **Continuous batching** | Dynamic batch incoming requests for GPU efficiency | Supported by several specialized LLM serving runtimes |
+| **Speculative decoding** | Draft tokens with a cheaper model and verify with the target model | Benefit depends on acceptance rate, hardware, batch load, and output length |
 | **Quantization** | INT8/INT4 quantized weights to reduce VRAM | bitsandbytes, AWQ |
 
-**Latency budget for a chat turn:**
-```
-User types → Submit
-    ↓
-API Gateway: token validation, rate limiting (5ms)
-    ↓
-Context retrieval (RAG): embedding query + vector search (50ms)
-    ↓
-LLM inference: first token = 200ms, streaming tokens = 20ms/token
-    ↓
-Tool call (if needed): code execution (500ms)
-    ↓
-Post-processing: safety filter, format response (10ms)
-    ↓
-Total: 200-2000ms depending on response length
-```
+Measure latency on the actual critical path: routing, retrieval, prefill/time-to-first-token, decode time per output token, each sequential tool call, retries, verification, and post-processing. Report p50/p95/p99 end-to-end latency and per-stage spans; fixed example timings do not generalize across models, hardware, prompt lengths, and tools.
 
 ---
 
@@ -640,17 +535,17 @@ Production agents are non-deterministic multi-step systems. Without observabilit
 
 ```
 Request ID: abc-123
-├── Step 1: LLM call (model: gpt-4, tokens: 1200, latency: 800ms)
+├── Step 1: LLM call (model: planner-v3, tokens: 1200, latency: 800ms)
 │   └── Decision: call tool "search_codebase"
 ├── Step 2: Tool call (search_codebase, query: "auth middleware", latency: 120ms)
 │   └── Result: 3 files found
-├── Step 3: LLM call (model: gpt-4, tokens: 2400, latency: 1200ms)
+├── Step 3: LLM call (model: planner-v3, tokens: 2400, latency: 1200ms)
 │   └── Decision: call tool "read_file"
 ├── Step 4: Tool call (read_file, path: "src/auth.ts", latency: 5ms)
 │   └── Result: file contents
-├── Step 5: LLM call (model: gpt-4, tokens: 3100, latency: 1500ms)
+├── Step 5: LLM call (model: synthesizer-v2, tokens: 3100, latency: 1500ms)
 │   └── Decision: generate final answer
-└── Total: 5 steps, 6700 tokens, 3625ms, cost: $0.12
+└── Total: 5 steps, 6700 tokens, 3625ms, cost recorded from provider usage
 ```
 
 ### Observability Stack
@@ -672,9 +567,11 @@ Request ID: abc-123
 
 ---
 
-## Agent Benchmarks & Evaluation
+## Agent Evaluation And Release
 
-Standardized benchmarks for measuring agent capabilities.
+External benchmarks are useful orientation, but release decisions require product-specific datasets, deterministic invariants, trajectory evaluation, calibrated semantic judges, interactive tests, and online evidence.
+
+### External Benchmarks
 
 | Benchmark | What it tests | Metric |
 |-----------|--------------|--------|
@@ -685,6 +582,37 @@ Standardized benchmarks for measuring agent capabilities.
 | **GAIA** | General AI assistants (multi-step reasoning + tools) | Accuracy across difficulty levels |
 | **HumanEval** | Code generation (function completion) | Pass@k |
 | **AgentBench** | Multi-environment agent tasks (OS, DB, web, game) | Success rate per environment |
+
+### Evaluation Dataset Design
+
+Agent datasets need more than final answers. They should capture the path the agent took and the decision boundaries it faced.
+
+| Dataset component | Capture | Why it matters |
+|-------------------|---------|----------------|
+| **Turn-level labels** | intent, slots, ambiguity, next action, tool need, escalation state | Trains or evaluates the next correct move. |
+| **Trajectory labels** | final outcome, clarifications, recovery quality, policy compliance | Catches workflows that "succeed" through unsafe or poor intermediate steps. |
+| **Tool traces** | selected tool, arguments, result, timeout/error, retry behavior | Evaluates decisions after both successful and failed observations. |
+| **Negative examples** | wrong tool, malformed args, premature action, false success, missing confirmation | Tests boundaries and recovery, not only happy paths. |
+| **Human repair examples** | how an expert fixed confusion or recovered from bad state | Provides high-value examples of acceptable recovery. |
+| **Slice metadata** | domain, tenant, language, risk tier, tool path, length, customer segment | Prevents aggregate metrics from hiding dangerous regressions. |
+
+Prioritize active-learning cases with high uncertainty, model or rerun disagreement, risky workflows, tool failures, repeated clarification, abandonment, and new product/policy segments.
+
+### Regression Tests For Nondeterministic Agents
+
+Do not use exact string equality as the primary agent test. Assert contracts and acceptable outcomes.
+
+| Test type | What to assert |
+|-----------|----------------|
+| **Schema tests** | Tool calls parse and match allowed JSON schema. |
+| **Policy invariants** | Restricted actions never bypass required gates. |
+| **Semantic equivalence** | Final meaning is correct even when wording changes. |
+| **Trajectory tests** | The agent chooses acceptable steps, not only an acceptable final response. |
+| **Slice tests** | Known hard slices remain above risk-specific thresholds after model, prompt, or tool changes. |
+| **Replay tests** | Historical incidents do not recur. |
+| **Canary monitors** | Online guardrails catch failures that offline tests miss. |
+
+For high-risk agents, a release should pass prior successes, incident replays, synthetic edge cases, injected tool failures, and current production failure slices.
 
 ### Interactive Evaluation Ladder
 
@@ -701,38 +629,48 @@ Agents change the environment and therefore change what happens next. Evaluation
 
 Use shadow mode confidently for observer-like tasks such as classification, extraction, summarization, or tool-proposal scoring. For multi-turn agents, use simulation and limited live exposure because the candidate's action changes the next state.
 
-### How to Evaluate Your Own Agent
+### Trace-Level Assertions And Judge Evaluation
 
+Use deterministic assertions for schemas, permissions, required slots, confirmation, tool receipts, and policy invariants. Use a judge only for semantic correctness, recovery quality, or trajectory properties that cannot be encoded reliably.
+
+```text
+Example: "Book a flight to Paris."
+1. Deterministic checks: no purchase without dates, passengers, airport choice, price preview,
+   valid authorization, and explicit confirmation.
+2. Run the agent and record state transitions, tool calls, observations, and final status.
+3. Judge only semantic properties such as whether clarification was targeted and helpful.
+4. Report pass rate and confidence interval by risk tier and hard slice.
 ```
-Evaluation Pipeline:
-1. Build a test suite: 50-200 (input, expected_output/behavior) pairs
-2. Run agent on each test case
-3. Score with LLM-as-a-Judge:
-   - Did the agent complete the task? (binary)
-   - Was the tool usage correct? (rubric 1-5)
-   - Was the response accurate? (rubric 1-5)
-4. Track pass rate over time; set regression threshold (e.g., >85%)
-5. A/B test agent changes with statistical significance
-```
 
-**Key evaluation dimensions:**
-- **Task completion rate** — did it actually solve the problem?
-- **Tool efficiency** — did it use the minimum number of steps?
-- **Cost per task** — is it economically viable?
-- **Safety** — did it avoid harmful actions?
-- **Latency** — is it fast enough for the use case?
+LLM judges are accelerators, not ground truth. Calibrate them against human labels.
 
----
+| Risk | What happens | Control |
+|------|--------------|---------|
+| **Position or verbosity bias** | Judge prefers one answer order or longer prose. | Swap order, randomize presentation, and include directness in the rubric. |
+| **Self/style preference** | Judge rewards wording or behavior similar to itself. | Use human calibration, reference evidence, and multiple judges for major releases. |
+| **Rubric ambiguity** | Helpfulness hides wrong tools, unsupported claims, or unsafe actions. | Score task success, tool correctness, grounding, and action safety separately. |
+| **Domain blindness** | Judge lacks policy, tool observations, or business rules. | Provide gold constraints and use deterministic checks for facts it should not infer. |
+| **Prompt injection in evaluated text** | Candidate output tells the judge how to score it. | Isolate evaluated content as data and test adversarial judge inputs. |
+| **Nondeterminism and drift** | Scores change across runs or judge versions. | Repeat uncertain cases; version model, prompt, rubric, and calibration set. |
 
-## Online Experiments For Agents
+### Release Evaluation Pipeline
+
+1. Build datasets from normal traffic, hard slices, prior incidents, negative trajectories, and injected failures.
+2. Run schema, policy, authorization, state-transition, and tool-outcome invariants first.
+3. Measure RAG retrieval/reranking/generation separately, then score the complete trajectory.
+4. Calibrate semantic judges against human review and report judge agreement.
+5. Compare confidence intervals and risk-specific release thresholds, not one universal pass target.
+6. Progress through simulation, shadow mode, canary, and online experiment with rollback guardrails.
+
+**Key dimensions:** task success; tool-call success; unsafe-action, false-success, and hallucinated-tool rates; recovery success and escalation quality; retry amplification and unknown outcomes; missed and unnecessary approvals; timeout/abandonment; retrieval Recall@K/MRR/NDCG, route accuracy, faithfulness, citation precision/recall, and abstention correctness; p50/p95/p99 latency; and steps/cost per successful task. Efficiency metrics are meaningful only after correctness and safety gates pass.
+
+### Online Experiments For Agents
 
 Agent changes need online validation because users and tools react to the agent's behavior. Offline replay is necessary but not sufficient.
 
 | Experiment concern | Production guidance |
 |--------------------|---------------------|
 | **Randomization unit** | Randomize by stable user, account, organization, or workflow owner. Request-level assignment can contaminate multi-step behavior. |
-| **Shadow mode** | Run the new agent beside production first, but remember that shadow mode observes rather than changes the interaction. |
-| **Canary rollout** | Ramp gradually and stop automatically on safety, latency, cost, or tool-error guardrails. |
 | **Primary metric** | Pick the real outcome: task success, resolution, accepted edit, completed workflow, or human override reduction. |
 | **Guardrails** | Track unsafe action rate, hallucinated completion, invalid tool calls, latency, cost, escalations, complaints, and rollback triggers. |
 | **Delayed outcomes** | Wait for downstream labels such as user correction, support follow-up, refund reversal, or human review. |
@@ -760,10 +698,10 @@ Agent Plan:
   ↓
 Execution (ReAct loop):
   Observe: test error "TypeError: user.role is undefined"
-  Think: "The user object doesn't have a role field. Let me check the User model."
+  Decision: inspect the User model because the failing object lacks a role value.
   Act: read_file("src/models/user.ts")
   Observe: role field exists but is optional
-  Think: "The test creates a user without a role. I need to add a default."
+  Decision: add a default because the test creates a user without a role.
   Act: edit_file("src/models/user.ts", add default role)
   Act: run_test("auth.test.ts")
   Observe: test passes ✓
@@ -808,11 +746,11 @@ Production agents should use the right model for each subtask rather than one mo
 User request
     ↓
 [Router / Classifier]
-    ├── Simple query (factual, short) → Fast model (GPT-4o-mini, Claude Haiku)
-    ├── Complex reasoning → Strong model (GPT-4, Claude Opus)
-    ├── Code generation → Code-specialized model (Claude Sonnet, Codestral)
+    ├── Simple extraction or classification → Fast low-cost model
+    ├── Complex planning or synthesis → Higher-capability model
+    ├── Code generation → Code-specialized model
     ├── Structured extraction → Fine-tuned small model
-    └── Embedding/search → Embedding model (text-embedding-3-small)
+    └── Retrieval → Embedding model, sparse search, or structured tool
 ```
 
 ### Router Implementation
@@ -826,15 +764,15 @@ User request
 
 ### Cost Optimization Pattern
 
-```
-Tier 1: GPT-4o-mini ($0.15/1M input) — handles 70% of requests
-Tier 2: GPT-4o ($2.50/1M input) — handles 25% of requests
-Tier 3: o1 / Claude Opus ($15/1M input) — handles 5% of complex requests
+For route \(j\), let \(p_j\) be traffic share and \(c_j\) include input tokens, output tokens, cache effects, retries, and provider charges. Include router overhead \(c_{router}\):
 
-Blended cost: ~$0.55/1M input vs $2.50 if using Tier 2 for everything
-```
+$$
+C_{blended}=c_{router}+\sum_j p_j c_j
+$$
 
-**Interview tip:** "In production, I'd never use one model for everything. A classifier routes simple requests to a fast, cheap model and only escalates to the expensive model for complex reasoning. This cuts costs by 70%+ while maintaining quality where it matters."
+Routing is useful only if measured task quality and safety remain within slice-specific guardrails. Evaluate confusion cost: sending a hard request to a weak model can add retries, tool errors, or escalation latency that erase the apparent model-price savings.
+
+**Interview tip:** route by task and risk, then report the measured quality-latency-cost frontier. Do not promise a fixed savings percentage from an illustrative traffic split.
 
 ---
 
@@ -868,7 +806,7 @@ For most interview settings, I would recommend:
 
 1. **Hybrid planner/reactor** loop
 2. **Agentic RAG with source routing, BM25 + dense ANN retrieval, re-ranking, evidence checks, and abstention**
-3. **Read tools by default, write tools behind approval**
+3. **Read tools by default; sensitive writes behind risk-based authorization and approval**
 4. **Checkpointed execution** for long tasks
 5. **Memory compaction** via sliding window + summaries + episodic store
 6. **Hard budgets** on steps, tokens, time, and cost
@@ -878,36 +816,21 @@ This is a much stronger answer than "just call an LLM with tools."
 
 ---
 
-## Metrics
-
-- Task success rate
-- Tool-call success rate
-- Mean steps per task
-- Human-approval rate for write actions
-- Timeout / abandonment rate
-- Cost per successful task
-- Hallucinated tool-call rate
-- Retrieval Recall@K / MRR / NDCG@K
-- Answer faithfulness and citation precision / recall
-- Retrieval route accuracy and abstention correctness
-
----
-
 ## Interview Answer Sketch
 
-I would design the agent as a loop, not a prompt: a planner/reactor LLM with memory, agentic RAG, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is not just vector search: route to the right source, combine BM25 with dense ANN indexes such as HNSW, FAISS, or ScaNN, rerank, construct compact evidence, verify citations, and abstain when evidence is weak. Tool calls are treated like unreliable distributed systems with validation, retries, and idempotency. Read tools are default; write tools are gated by approval. I would cap step count, tokens, latency, and cost, and I would ship only after measuring task success, retrieval recall, answer faithfulness, tool reliability, and hallucinated action rate.
+I would design the agent as a loop, not a prompt: a planner/reactor with structured state, agentic RAG, and tools. The agent starts with a short plan, executes one step at a time, and replans after important observations. Retrieval is not just vector search: route to the right source, combine sparse search with dense retrieval when useful, rerank, construct compact evidence, verify citations, and abstain when evidence is weak. For dense retrieval, choose an index family such as HNSW or IVF/PQ and an implementation such as FAISS, ScaNN, or a managed vector database. Tool calls are treated like unreliable distributed systems with validation, retry classification, idempotency, and unknown-outcome handling. Read tools are default; sensitive writes use risk-based authorization and approval. I would cap steps, tokens, time, and cost, and ship only after deterministic invariants, slice evaluation, simulation, canary, and online guardrails pass.
 
 ---
 
 ## Interview Talking Points
 
-- "The ReAct loop: Observe → Think → Act → Observe. The agent sees the codebase, decides what to grep, reads the result, decides on the fix. Iterative, exploratory."
-- "Safety: all code execution in a Firecracker microVM — network disabled, filesystem read-only except /tmp, 2-second CPU limit. The agent can't break out."
-- "For the coding agent: tools are UNIX commands (grep, cat, ls, git, python). Read-only by default. Write tools (edit file, git commit) require HITL approval."
+- "The ReAct loop: observe, make a bounded decision, act, then update structured state from the observation. It is iterative and works well for exploratory tasks."
+- "Safety: isolate code execution according to the threat model with unprivileged containers or microVMs, resource and syscall limits, scoped filesystems and credentials, and denied or allowlisted egress."
+- "For a coding agent, read tools are default. Writes use scoped authorization and risk-based approval; every external side effect requires a verifiable receipt."
 - "Evaluation: use deterministic checks for schemas, permissions, and tool results; use a calibrated judge model for semantic trajectory quality. Target a release threshold before shipping a new agent version."
-- "Frameworks: LangGraph is the standard for complex, stateful agents because standard LangChain chains are too linear for real-world agent loops. For tool integration at scale, the Model Context Protocol (MCP) standardizes how agents securely talk to external APIs."
-- "Function calling: the LLM outputs structured JSON tool calls, the application executes them, and returns results as tool messages. Parallel calls for independent lookups, sequential for dependent ones. Schema validation prevents malformed calls."
-- "Agentic RAG: route to the right source, retrieve with BM25 plus dense ANN such as HNSW/FAISS/ScaNN, rerank, compress evidence, verify citations, and abstain when support is weak. Measure ANN Recall@K separately from final answer quality."
+- "Frameworks: use a high-level agent API for common loops and a graph or durable workflow runtime when you need explicit state, cycles, checkpoints, or interrupts. MCP standardizes tool/resource interfaces, but authorization and tool trust remain application responsibilities."
+- "Function calling: the LLM outputs structured tool calls, the application validates and executes them, and returns results as tool messages. Parallel calls fit independent lookups; sequential calls fit dependencies. Validation detects and rejects malformed calls, while supported constrained output can prevent schema-invalid generation."
+- "Agentic RAG: route to the right source, combine BM25 with dense retrieval when appropriate, rerank, compress evidence, verify citations, and abstain when support is weak. Measure index Recall@K separately from final answer quality."
 - "Observability: every agent step is traced — LLM calls with tokens and latency, tool calls with arguments and results, total cost per request. LangSmith or Langfuse for tracing, with alerts on cost spikes and error rate increases."
-- "Model routing: not every request needs GPT-4. A classifier routes 70% of simple requests to a fast cheap model, 25% to a mid-tier model, and only 5% of complex reasoning tasks to the expensive model. Cuts blended cost by 70%+."
-- "Agent benchmarks: SWE-bench measures ability to fix real GitHub issues, but public leaderboard numbers change quickly and may not match your repository. We build custom eval suites of 100+ test cases, scored with LLM-as-a-Judge, targeting >85% pass rate before shipping."
+- "Model routing: route by task, confidence, and risk. Include router cost, output tokens, retries, and misrouting cost, then measure the quality-latency-cost frontier on production-like slices."
+- "Agent benchmarks provide external signals, but repository-specific release decisions need deterministic invariants, incident replays, calibrated semantic judges, confidence intervals, and risk-specific thresholds."
